@@ -1287,6 +1287,98 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
     from employees
     where last_name like'F_e%';
     
-    ---- ***  like 연산자와 함께 사용되어지는 % 와 _ 인 wild character 의 escape(탈출) 시키기 *** ----
     
+    
+    
+   -- drop table tbl_watch purge;
+    
+    create table tbl_watch
+    (-- watchname varchar2(10) -- varchar2(10)은 최대 10 byte 까지만 허용.     '쌍용교육센터' --> 12byte 이므로 입력불가    'oracle' --> 6byte 이므로 입력가능
+    watchname Nvarchar2(10) -- Nvarchar2(10)은 최대 글자수가 10 글자 까지만 허용. '쌍용교육센터' --> 6글자 이므로 입력가능    'oracle' --> 6글자 이므로 입력가능
+    , bigo Nvarchar2(100)
+    );
+    -- Table TBL_WATCH이(가) 생성되었습니다.
+    
+    -- 어떤 테이블에 데이터(행)를 입력할때는 insert 라는 명령어를 사용한다.
+    insert into tbl_watch(watchname, bigo) values('금시계','순금 99.99% 함유 고급시계');
+    --> 1 행 이(가) 삽입되었습니다.
+    
+    commit; -- 파일(DISK)에 적용(저장)시킨다.
+    -- 커밋 완료.
+    
+    select *
+    from tbl_watch;
+    
+    insert into tbl_watch(watchname, bigo) values('은시계','고객만족도 99.99점 획득한 고급시계');
+    insert into tbl_watch(watchname, bigo) values('동시계','가성비가 뛰어난 고급시계');
+    --> 1 행 이(가) 삽입되었습니다.
+    --> 1 행 이(가) 삽입되었습니다.
+    
+    commit; -- 파일(DISK)에 적용(저장)시킨다.
+    -- 커밋 완료.
+    
+    select *
+    from tbl_watch;
+    
+    -- 특정행 삭제하기 -- 
+    delete from tbl_watch
+    where watchname = '은시계';
+    --> 1 행 이(가) 삭제되었습니다.
+    
+    select *
+    from tbl_watch;
+    
+    commit;
+    -- 커밋 완료.
+    
+    select *
+    from tbl_watch;
+    
+    -- 모든행 삭제하기 -- 
+    delete from tbl_watch;
+    --> 2개 행 이(가) 삭제되었습니다.
+    
+    select *
+    from tbl_watch;
+    
+    rollback;
+    -- 롤백 완료.
+    
+    select *
+    from tbl_watch;
+    
+    delete from tbl_watch;
+    
+    commit;
+    
+    select *
+    from tbl_watch;
+    
+    insert into tbl_watch(watchname, bigo) values('금시계','순금 99.99% 함유 고급시계');
+    insert into tbl_watch(watchname, bigo) values('은시계','고객만족도 99.99점 획득한 고급시계');
+    insert into tbl_watch(watchname, bigo) values('동시계','가성비가 뛰어난 고급시계');
+    
+    commit; -- 파일(DISK)에 적용(저장)시킨다.
+    -- 커밋 완료.
+    
+    -- tbl_watch 테이블에서 bigo 컬럼에 99.99% 라는 글자가 들어있는 행만 추출하세요. --
+    select *
+    from tbl_watch
+    where bigo like '%99.99%%';      -- 99.99% 가 아닌 99.99가 들어간 모든 글자가 나온다.
+    
+    ---- ***  like 연산자와 함께 사용되어지는 % 와 _ 인 wild character 의 escape(탈출) 시키기 *** ----
+    select *
+    from tbl_watch
+    where bigo like '%99.99\%%' escape '\';     -- escape '아무거나 입력' => 탈출시키고 싶은 % 나 _ 앞에 놓기
+    --  escape 문자로 '\' 을 주었으므로 '\' 다음에 나오는 % 1개만 wild character 기능에서 탈출시켜 버리므로 % 는 진짜 글자 퍼센트(%) 로 된다.
+    
+    select *
+    from tbl_watch
+    where bigo like '%99.992%%' escape '2';     -- escape '아무거나 입력' => 탈출시키고 싶은 % 나 _ 앞에 놓기 => 숫자는 헷갈리게 할 수 있기 때문에 특수문자 사용.
+    --  escape 문자로 '2' 을 주었으므로 '2' 다음에 나오는 % 1개만 wild character 기능에서 탈출시켜 버리므로 % 는 진짜 글자 퍼센트(%) 로 된다.
+    
+    select *
+    from tbl_watch
+    where bigo like '%99.99a%%' escape 'a';     -- escape '아무거나 입력' => 탈출시키고 싶은 % 나 _ 앞에 놓기 => 문자는 헷갈리게 할 수 있기 때문에 특수문자 사용.
+    --  escape 문자로 'a' 을 주었으므로 'a' 다음에 나오는 % 1개만 wild character 기능에서 탈출시켜 버리므로 % 는 진짜 글자 퍼센트(%) 로 된다.
     
