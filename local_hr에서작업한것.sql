@@ -496,7 +496,209 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
         department_id = 80 or
         department_id is null
     order by "부서번호";
+    
+    -- 또는
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , salary as "기본급여"
+        , department_id as "부서번호"
+    from employees
+    where nvl(department_id, -9999) in(30, 60, 80, -9999)  -- in() 는 비교연산자 ' = ' 로 보면 된다.
+    order by "부서번호";
+    
+    -- employees 테이블에서 30번, 60번, 80번 부서에 근무하지 않는 사원들만
+    -- 사원번호, 사원명, 기본급여, 부서번호를 나타내세요.
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , salary as "기본급여"
+        , department_id as "부서번호"
+    from employees
+    where nvl(department_id, -9999) != 30 and
+        nvl(department_id, -9999) != 60 and
+        nvl(department_id, -9999) != 80
+    order by "부서번호";
+    
+    -- 또는
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , salary as "기본급여"
+        , department_id as "부서번호"
+    from employees
+    where nvl(department_id, -9999) not in(30, 60, 80, -9999)
+    order by "부서번호";
+    
+    -- 또는
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , salary as "기본급여"
+        , department_id as "부서번호"
+    from employees
+    where not nvl(department_id, -9999) in(30, 60, 80, -9999)
+    order by "부서번호";
+    
+    -- employees 테이블에서 부서번호가 30, 50, 60번 부서에 근무하는 사원들중에 
+    -- 연봉(월급*12)이 20000 이상 60000 이하인 사원들만 
+    -- 사원번호, 사원명, 연봉(월급*12), 부서번호를 나타내되 
+    -- 부서번호의 오름차순으로 정렬한 후 동일한 부서번호내에서는 연봉의 내림차순으로 나타내세요. 
+   
+   /*
+      === !!!!! AND 와 OR 가 혼용되어지면 연산의 우선순위에 따라 AND 가 먼저 실행된다. !!!!!
+      === !!!!! 연산자에 있어서 가장 최우선은 괄호( )가 제일 우선한다. !!!!!
+      
+      select 2+3*4, (2+3)*4
+      from dual;
+      --      14      20
+   */
+   
+   --- !!! 이것은 틀린 풀이이다. !!! ---
+   select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) * 12 as "연봉(월급*12)"
+        , department_id as "부서번호"
+   from employees
+   where department_id = 30 or
+        department_id = 50 or
+        department_id = 60 and
+        nvl(salary + (salary * commission_pct), salary) * 12 >= 20000 and
+        nvl(salary + (salary * commission_pct), salary) * 12 <= 60000
+    -- where department_id in(30, 50, 60)
+    order by 부서번호, "연봉(월급*12)" desc;    -- () 가 들어가 있으므로 "" 이 필요하다.
+    -- or와 and 가 혼용되면 and 가 우선이기 때문에 원하는 값이 나오지 않는다.(60번 부서만 연봉을 따지고 있다.)
+    
+    --- !!! 이것이 올바르게 풀이한 것이다. !!! ---
+    --- !!! 이것은 틀린 풀이이다. !!! ---
+   select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) * 12 as "연봉(월급*12)"
+        , department_id as "부서번호"
+   from employees
+   where (department_id = 30 or
+        department_id = 50 or
+        department_id = 60) and     -- 부서번호를 먼저 () 해서 먼저 구한 다음에 and 계산하기
+        nvl(salary + (salary * commission_pct), salary) * 12 >= 20000 and
+        nvl(salary + (salary * commission_pct), salary) * 12 <= 60000
+    -- where department_id in(30, 50, 60)
+    order by 부서번호, "연봉(월급*12)" desc;    -- () 가 들어가 있으므로 "" 이 필요하다.
+    
+    -- 또는
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) * 12 as "연봉(월급*12)"
+        , department_id as "부서번호"
+   from employees
+    where department_id in(30, 50, 60) and
+        nvl(salary + (salary * commission_pct), salary) * 12 >= 20000 and
+        nvl(salary + (salary * commission_pct), salary) * 12 <= 60000
+    order by 부서번호, "연봉(월급*12)" desc;    --> IN( ) 은 괄호가 있는 OR 이다.
+   
+   
+   
+   
+   
+   ------ **** ==== 범위 연산자 ==== **** ------
+   --     >   <   >=    <=   between A and B ==> A 이상 B 이하
+   
+   --  범위 연산자에 사용되는 데이터는 숫자 뿐만 아니라 문자, 날짜 까지 모두 사용된다. 
+   
+   select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) * 12 as "연봉(월급*12)"
+        , department_id as "부서번호"
+   from employees
+    where department_id in(30, 50, 60) and
+        nvl(salary + (salary * commission_pct), salary) * 12 between 20000 and 60000
+    order by 부서번호, "연봉(월급*12)" desc;
+   
+   select first_name, last_name, salary
+   from employees
+   where first_name >= 'J' and first_name <= 'S'
+   order by first_name;
+   
+   select first_name, last_name, salary
+   from employees
+   where first_name between 'J' and 'S'
+   order by first_name;
+   
+   ---- *** === 현재 시각을 알려주는 것 ==== *** ----
+    select sysdate, current_date, localtimestamp, current_timestamp, systimestamp
+    from dual;
+    -- 24/02/16     24/02/16   24/02/16 14:15:18.030000000  24/02/16 14:15:18.030000000 +09:00  24/02/16 14:15:18.030000000 +09:00
+    /*
+       날짜타입은 date 이다.
+       date 타입의 기본적인 표현방식은 'RR/MM/DD' 으로 나타내어진다.
+       RR 은 년도의 2자리만 나타내어주는데 50 ~ 99 는  1950 ~ 1999 을 말하는 것이다.
+       RR 은 년도의 2자리만 나타내어주는데 00 ~ 49 는  2000 ~ 2049 을 말하는 것이다.
+       MM 은 월이고, DD 는 일이다.
+   */
+   
+   select sysdate
+        , to_char(sysdate,'yyyy-mm-dd')
+        , to_char(sysdate, 'hh24:mi:ss')
+        , to_char(sysdate,'yyyy-mm-dd hh24:mi:ss')
+        , to_char(sysdate,'yyyy/mm/dd hh24:mi:ss')
+        , to_char(sysdate,'yyyy/mm/dd am hh:mi:ss')
+        , to_char(sysdate,'yyyy/mm/dd pm hh:mi:ss')
+   from dual;
+    -- 24/02/16     2024-02-16      14:20:21    2024-02-16 14:20:21     2024/02/16 14:20:21 2024/02/16 오후 02:20:21      2024/02/16 오후 02:20:21
 
+    desc employees;
+    -- HIRE_DATE(입사일자)   NOT NULL    DATE(날짜)  
+    
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , hire_date as "입사일자1"
+        , to_char(hire_date, 'yyyy-mm-dd hh24:mi:ss') as "입사일자2"
+    from employees;
+    
+    -- 154	Nanette Cambrault	06/12/09	2006-12-09 00:00:00
+    -- employees 테이블에 저장된 사원번호가 154 인 행에 대해서 hire_date(입사일자) 컬럼의 값을 '2006-12-31 09:00:00' 로 수정(변경)하고자 한다.
+    update employees set hire_date = to_date('2006-12-31 09:00:00', 'yyyy-mm-dd hh24:mi:ss')
+    where employee_id = 154;
+    -- 1 행 이(가) 업데이트되었습니다.
+    
+    commit;
+    -- 커밋 완료.
+    
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , hire_date as "입사일자1"
+        , to_char(hire_date, 'yyyy-mm-dd hh24:mi:ss') as "입사일자2"
+    from employees;
+    
+    -- employees 테이블에서 입사일자가 2005년 1월 1일 부터 2006년 12월 31일 까지 입사한 사원들만
+    -- 사원번호, 사원명, 입사일자를 나타내세요.
+    
+    --- 틀린 풀이 !!! (1) ---
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , hire_date as "입사일자1"
+        , to_char(hire_date, 'yyyy-mm-dd hh24:mi:ss') as "입사일자2"
+    from employees
+    where '05/01/01' <= hire_date and hire_date <= '06/12/31'   -- 'yy/mm/dd 만 적으면 00:00:00 으로 간주(틀린 풀이법)
+    order by 3;     -- 입사일자1 오름차순 배열
+    --- !!!!! 중요 !!!!  날짜를 나타낼때 시,분,초 가 없는 년,월,일만 나타내어주면 자동적으로 0시0분0초가 된다.
+    ---                 즉, 자정(그날의 시작)을 뜻한다.
+   
+    --- 틀린 풀이 !!! (2) ---
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , hire_date as "입사일자1"
+        , to_char(hire_date, 'yyyy-mm-dd hh24:mi:ss') as "입사일자2"
+    from employees
+-- where '05/01/01' <= hire_date and hire_date <= '06/12/31' 
+-- 또는
+    where hire_date between '05/01/01' and '06/12/31'
+    order by 3;     -- 입사일자1 오름차순 배열
+    
+
+    --- 올바른 풀이 !!! ---
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , hire_date as "입사일자1"
+        , to_char(hire_date, 'yyyy-mm-dd hh24:mi:ss') as "입사일자2"
+    from employees
+    where '05/01/01' <= hire_date and hire_date <= '07/01/01'   -- '06/12/31' 까지 알고 싶으면 그 다음날로 설정해야 한다.   
+    order by 3;     -- 입사일자1 오름차순 배열
     
     
     
