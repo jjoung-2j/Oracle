@@ -198,3 +198,317 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
         , NVL2(commission_pct, salary + (salary * commission_pct), salary) 월급2
     from employees;
     
+    
+    
+    
+    
+    
+    
+    ----------- **** 비교연산자 **** -------------------
+    /*
+    1. 같다                   = 
+    2. 같지않다               !=  <>  ^=
+    3. 크다. 작다             >   <
+    4. 같거나크다. 같거나작다   >=  <=
+    5. NULL 은 존재하지 않는 것이므로 비교대상이 될 수가 없다.!!!!!
+      그러므로 비교연산( =  !=  <>  ^=  >  <  >=  <= )을 할 수가 없다.
+      그래서 비교연산을 하려면 nvl()함수, nvl2()함수를 사용하여 처리한다.!!!!!
+    */
+    -- 오라클에서 컬럼들을 붙일때(연결할때)는 문자타입이든 숫자타입이든 날짜타입이든 관계없이 || 를 쓰면된다.  
+    
+    select '대한민국' || '서울시' || 1234 || sysdate
+    from dual;
+    
+    
+    
+    
+    
+    
+    -- employees 테이블에서 부서번호가 30번에 근무하는 사원들만
+    -- 사원번호, 사원명, 월급, 부서번호를 나타내세요.
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"
+        , department_id as "부서번호"
+    from employees
+    where department_id = 30;
+    
+    -- employees 테이블에서 부서번호가 null 인 사원들만
+    -- 사원번호, 사원명, 월급, 부서번호를 나타내세요.
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"
+        , department_id as "부서번호"
+    from employees
+    where department_id = null;
+    --> 데이터가 출력되지 않는다.
+    -- 왜냐하면 null 은 존재하지 않는 것이므로 비교대상이 될 수가 없기 때문이다.
+    
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"
+        , department_id as "부서번호"
+        , nvl(department_id, -9999) as "부서번호2"  -- 부서번호가 null 이면 -9999 출력
+    from employees;
+    
+    -- 부서가 null 인 사원만 출력하기 
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"
+        , department_id as "부서번호"
+    from employees
+    where nvl(department_id, -9999) = -9999;        -- 부서번호가 null 이면 -9999 가 출력되는데, -9999 인 사원인 경우(조건)
+    
+    -- 또는
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"
+        , department_id as "부서번호"
+    from employees
+    where department_id is null;    -- null은 is 연산자를 사용하여 구한다.
+                                    -- department_id 컬럼의 값이 null 인 행들만 RAM(메모리)에 퍼올리는 것이다.
+    
+    -- employees 테이블에서 부서번호가 30번이 아닌 사원들만
+    -- 사원번호, 사원명, 월급, 부서번호를 나타내세요.
+    
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"
+        , department_id as "부서번호"
+    from employees
+    where department_id != 30;      -- 부서번호가 null 인 사원을 제외하고 30을 계산하니 안된다!!(오류)
+    -- where department_id <> 30;
+    -- where department_id ^= 30;
+    
+    -- !!!! select 구문을 작성하기 전 반드시 해당 테이블의 구조를 먼저 확인하자.!!!!
+    desc employees;
+    
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"
+        , department_id as "부서번호"
+    from employees
+    where nvl(department_id,-9999) != 30;   -- 부서번호가 null 을 포함한 30과 동일하지 않은 경우
+    
+    -- employees 테이블에서 부서번호가 null 이 아닌 사원들만
+    -- 사원번호, 사원명, 월급, 부서번호를 나타내세요.
+    
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"
+        , department_id as "부서번호"
+    from employees
+    where nvl(department_id,-9999) != -9999;    
+    
+    -- 또는
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"
+        , department_id as "부서번호"
+    from employees
+    where department_id is not null;    -- null 은 is 연산자를 사용하여 구한다.
+    
+    -- 또는
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"
+        , department_id as "부서번호"
+    from employees
+    where not department_id is null;    -- null 은 is 연산자를 사용하여 구한다.
+ 
+ 
+ 
+ 
+ 
+ 
+    --- *** select 되어져 나온 결과 데이터를 정렬(오름차순정렬, 내림차순정렬)하여 보여주기 *** ---
+    
+    -- 오름차순
+    select employee_id, first_name, last_name, salary, department_id
+    from employees
+    order by salary asc;    -- salary 컬럼의 값을 기준으로 오름차순 정렬
+    
+    -- 또는
+    select employee_id, first_name, last_name, salary, department_id
+    from employees
+    order by salary;        -- asc 은 생략 가능하다.
+    
+    -- 내림차순
+    select employee_id, first_name, last_name, salary, department_id
+    from employees
+    order by salary desc;   -- salary 컬럼의 값을 기준으로 내림차순 정렬
+    
+    
+    
+    -- 월급의 오름차순으로 나타내세요.
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"
+        , department_id as "부서번호"
+    from employees
+    order by nvl(salary*commission_pct,salary) asc;
+
+    -- 또는
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"     -- nvl(salary*commission_pct,salary) 와 "월급" 은 같다라는 뜻 => as
+        , department_id as "부서번호"
+    from employees
+    order by "월급" asc;      -- 공백이 없을 경우 "" 을 지워도 되지만 있을경우 반드시 "" 이 필요하다.
+    
+    -- 또는
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"    
+        , department_id as "부서번호"
+    from employees
+    order by 3 asc;         -- select 되어져 나오는 3번째 순서의 오름차순 정렬
+    
+    -- 또는
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"    
+        , department_id as "부서번호"
+    from employees
+    order by 3;             -- asc 은 생략가능함.
+    
+    -- 월급의 내림차순으로 나타내세요.
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"    
+        , department_id as "부서번호"
+    from employees
+    order by 3 desc;
+    -- order by "월급" desc;
+    -- order by 월급 desc;
+    -- order by nvl(salary*commission_pct,salary) desc;
+    
+    
+    -- 정렬(오름차순정렬, 내림차순정렬)을 할때 null 은 존재하지 않는 것이므로
+    -- 오라클에서는 정렬시 null 을 가장 큰 것으로 간주를 해주고,
+    -- 마이크로소프트사의 MS-SQL 에서는 정렬시 null 을 가장 작은 것으로 간주를 한다. 
+    
+    -- department_id 컬럼의 값을 기준으로 오름차순 정렬하여 나타내세요.
+    select employee_id, first_name, last_name, salary, department_id
+    from employees
+    order by department_id asc;         -- Oracle 은 null 을 가장 큰 것으로 간주한다.
+    
+    -- department_id 컬럼의 값을 기준으로 내림차순 정렬하여 나타내세요.
+    select employee_id, first_name, last_name, salary, department_id
+    from employees
+    order by department_id desc;        -- Oracle 은 null 을 가장 큰 것으로 간주한다.
+    
+    
+    
+    ------ *** 1차정렬, 2차정렬에 대해서 알아봅니다. *** ------
+    
+    -- employees 테이블에서 부서번호별 오름차순 정렬을 한 후에 동일한 부서번호내에서는 
+    -- 월급의 내림차순으로 정렬하여 사원번호, 사원명, 월급, 부서번호를 나타내세요.
+    
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"    
+        , department_id as "부서번호"
+    from employees
+    order by 4 asc, 3 desc;     -- 부서번호 오름차순, 월급 내림차순
+        -- 1차정렬, 2차정렬
+    
+    -- 또는
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급"
+        , department_id as "부서번호"
+    from employees
+    order by 4, 3 desc;     -- asc 은 생략 가능함 => 4 asc, 3 desc 와 동일
+        -- 1차정렬, 2차정렬
+    
+    -- employees 테이블에서 수당퍼센티지가 null 인 사원들만 
+    -- 사원번호, 사원명, 월급(기본급여+수당금액), 부서번호를 나타내되 
+    -- 부서번호의 오름차순으로 정렬한 후 동일한 부서번호내에서는 월급의 내림차순으로 나타내세요.
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급(기본급여+수당금액)"    
+        , department_id as "부서번호"
+    from employees
+    where commission_pct is null
+    order by 4,3 desc;      -- 부서번호 오름차순, 월급 내림차순
+    
+    -- employees 테이블에서 수당퍼센티지가 null 이 아닌 사원들만 
+    -- 사원번호, 사원명, 월급(기본급여+수당금액), 부서번호를 나타내되 
+    -- 부서번호의 오름차순으로 정렬한 후 동일한 부서번호내에서는 월급의 내림차순으로 나타내세요.
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급(기본급여+수당금액)"    
+        , department_id as "부서번호"
+    from employees
+    where nvl(commission_pct,-9999) = commission_pct
+    order by 4,3 desc;      -- 부서번호 오름차순, 월급 내림차순
+    
+    -- employees 테이블에서 월급(기본급여+수당금액)이 10000 보다 큰 사원들만 
+    -- 사원번호, 사원명, 월급(기본급여+수당금액), 부서번호를 나타내되 
+    -- 부서번호의 오름차순으로 정렬한 후 동일한 부서번호내에서는 월급의 내림차순으로 나타내세요.
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급(기본급여+수당금액)"    
+        , department_id as "부서번호"
+    from employees
+    where nvl(salary + (salary * commission_pct), salary) > 10000
+    order by 4,3 desc;      -- 부서번호 오름차순, 월급 내림차순
+    
+    -- employees 테이블에서 부서번호가 50번 부서가 아닌 사원들만 
+    -- 사원번호, 사원명, 월급(기본급여+수당금액), 부서번호를 나타내되 
+    -- 부서번호의 오름차순으로 정렬한 후 동일한 부서번호내에서는 월급의 내림차순으로 나타내세요.
+    
+    desc employees;     -- 구조 먼저 파악하기
+    
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , nvl(salary + (salary * commission_pct), salary) as "월급(기본급여+수당금액)"    
+        , department_id as "부서번호"
+    from employees
+    where nvl(department_id,-9999) != 50
+    order by 4,3 desc;      -- 부서번호 오름차순, 월급 내림차순
+    
+    
+    
+    
+    
+    --- *** AND     OR      IN()        NOT연산자 *** ---
+    
+    -- employees 테이블에서 80번 부서에 근무하는 사원들중에 기본급여가 10000 이상인 사원들만 
+    -- 사원번호, 사원명, 기본급여, 부서번호를 나타내세요.
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , salary as "기본급여"
+        , department_id as "부서번호"
+    from employees
+    where nvl(department_id,-9999) = 80 and salary >= 10000;
+    
+    -- employees 테이블에서 30번, 60번, 80번, null 부서에 근무하는 사원들만
+    -- 사원번호, 사원명, 기본급여, 부서번호를 나타내세요.
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , salary as "기본급여"
+        , department_id as "부서번호"
+    from employees
+    where department_id = 30 or 
+        department_id = 60 or
+        department_id = 80 or
+        department_id is null
+    order by "부서번호";
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
