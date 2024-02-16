@@ -1290,7 +1290,7 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
     
     
     
-   -- drop table tbl_watch purge;
+   -- drop table tbl_watch purge;       -- 테이블 글자 수 잘못 작성하여 삭제하기
     
     create table tbl_watch
     (-- watchname varchar2(10) -- varchar2(10)은 최대 10 byte 까지만 허용.     '쌍용교육센터' --> 12byte 이므로 입력불가    'oracle' --> 6byte 이므로 입력가능
