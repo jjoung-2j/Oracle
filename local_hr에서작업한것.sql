@@ -705,12 +705,588 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
     
     
     
+    'A' --> 65
+    'a' --> 97
+    '0' --> 48
+    ' ' --> 32
+    select ascii('A'), ascii('a'), ascii('0'), ascii(' ')
+    from dual;
+    --          65      97          48          32
+ 
+    select chr(65), chr(97), chr(48), chr(32)
+    from dual;
+    --      A       a           0       ' '
+    
+    -- employees 테이블에서 first_name 컬럼의 값이 'Elj' 부터 'I' 까지인 데이터를 가지는 사원들만
+    -- first_name 을 출력하세요.
+    select first_name
+    from employees
+    where 'Elj' <= first_name and first_name <= 'I'
+    order by 1;
+    -- 'Elj' 'Elja' 'EljaSt' 'Eljasnkjasnhkmasjo' ~~~ 'Harrison' 'Hazel' 'Hermann' 'I'
+    
+    select first_name
+    from employees
+    where first_name between 'Elj' and 'I'
+    order by 1;
+    
+    
+    
+    
+    
+    --------------------------------------------------------------------------------------
+    -- 어떤 테이블에 존재하는 행의 컬럼의 값을 변경(수정)하려고 할 때는 update 명령어를 사용해서 변경해준다.
+    select *
+    from employees
+    where employee_id = 100;
+    
+    /*
+    ------------------------------------------------------
+    employee_id     first_name      last_name   hire_date
+    ------------------------------------------------------
+    100             Steven          King        03/06/17
+    */
+    
+    update employees set first_name = '혜정', last_name = '양', hire_date = sysdate
+    where employee_id = 100;    --> 메모리(RAM)상에서 변경된 것이다.
+    -- 1 행 이(가) 업데이트되었습니다.
+    
+    select  employee_id, first_name, last_name, hire_date   -- 실제 디스크 적용 x RAM에만 적용
+    
+    from employees
+    where employee_id = 100;
+     /*
+    ------------------------------------------------------
+    employee_id     first_name      last_name   hire_date
+    ------------------------------------------------------
+    100             혜정              양        24/02/16
+    */
+    
+    commit; --> 메모리(RAM)상에서 변경되어진 것을 실제 디스크(DISK) 파일에 적용(저장)시켜주는 것이다.
+    -- 커밋 완료.
+
+    update employees set first_name = 'sfsdf', last_name = 'ㅋㅋㅋ', hire_date = sysdate
+    where employee_id = 100;    --> 메모리(RAM)상에서 변경된 것이다.
+    -- 1 행 이(가) 업데이트되었습니다.
+    
+    select employee_id, first_name, last_name, hire_date, salary
+    from employees
+    where employee_id = 100;
+    
+    rollback; --> 메모리(RAM)상에서 변경되어진 정보(sfsdf ㅋㅋㅋ)를 삭제해주는 것이다.
+            -- 즉, 위에서 실행한 update 명령을 한 결과를 취소하겠다는 말이다.
+    -- 롤백 완료
+
+    select employee_id, first_name, last_name, hire_date, salary
+    from employees
+    where employee_id = 100;
+    
+    update employees set first_name = 'HyeJoung', last_name = 'Yang', hire_date = sysdate
+    where employee_id = 100;
+    -- 1 행 이(가) 업데이트되었습니다.
+     /*
+    ------------------------------------------------------
+    employee_id     first_name      last_name   hire_date
+    ------------------------------------------------------
+    100             HyeJoung           Yang     24/02/16
+    */
+    
+    commit;
+    -- rollback;
+    -- 커밋 완료.
+    
+    select employee_id, first_name, last_name, hire_date, salary
+    from employees
+    where employee_id = 100;
+    
+    update employees set first_name = 'ㅎㅎㅎ', last_name = 'ㅋㅋㅋ', hire_date = sysdate, salary = 10
+    where employee_id = 100;
+    -- 1 행 이(가) 업데이트되었습니다.
+    
+    select employee_id, first_name, last_name, hire_date, salary
+    from employees
+    where employee_id = 100;
+    
+    commit;
+    -- rollback;
+    -- 커밋 완료. 
+    
+    update employees set first_name = 'Steven', last_name = 'King'
+        , hire_date = to_date('03/06/17','RR/MM/DD')
+        , salary = 24000
+    where employee_id = 100;
+    -- 1 행 이(가) 업데이트되었습니다.
+    
+    commit;
+    -- 커밋 완료.
+    
+    update employees set first_name = 'fdas', last_name = '....'
+        , hire_date = to_date('03/06/17','RR/MM/DD')
+        , salary = 24000
+    where employee_id = 100;
+    -- 1 행 이(가) 업데이트되었습니다.
+    
+    commit;
+    -- 커밋 완료.
+    
+    select employee_id, first_name, last_name, hire_date, salary
+    from employees
+    where employee_id = 100;
+    
+    rollback;
+    -- 롤백 완료.
+    
+    select employee_id, first_name, last_name, hire_date, salary
+    from employees
+    where employee_id = 100;
+    -- rollback 은 commit 한 이후로 변경되어진 정보를 취소하는 것(이전 상태로 되돌리는 것)이므로
+    -- commit 한 이후에 rollback 하더라도 원상복구는 안된다.
+    
+    ---- 다시 원상복구 ----
+    update employees set first_name = 'Steven', last_name = 'King'
+        , hire_date = to_date('03/06/17','RR/MM/DD')
+        , salary = 24000
+    where employee_id = 100;
+    -- 1 행 이(가) 업데이트되었습니다.
+    
+    commit;
+    -- 커밋 완료.
     
     
     
     
     
     
+    --- *** employees 테이블에 jubun(주민번호) 이라는 컬럼을 추가하겠습니다. *** ---
+    desc employees; 
     
+    select 0010204234567, 9010201234567     -- 숫자 형태
+        , '0010204234567', '9010201234567'  -- 문자 형태
+    from dual;
+    /*
+       jubun(주민번호) 컬럼의 값을 입력할때는 '-' 는 빼고 숫자로만 입력할 것입니다.
+       jubun(주민번호) 컬럼의 값을 입력할 때 맨 처음 첫자리에 0 이 들어올 수 있다라면 
+       number 타입이 아니라 varchar2 타입으로 해야 한다.
+       왜냐하면 number 타입으로 해주면 맨 앞에 입력한 값이 0 일때는 0이 생략 되어지기 때문이다.
+       맨 앞의 0 도 나오게 하려면 컬럼의 데이터 타입은 varchar2 가 되어야 한다.
+   */
+    
+    -- *** 컬럼 추가하기 *** --
+    alter table employees
+    add jubun varchar2(13);     -- 문자타입(varchar2) 13자리
+    -- Table EMPLOYEES이(가) 변경되었습니다.
+    
+    desc employees;
+    -- JUBUN                   VARCHAR2(13) 
+    
+    select *
+    from employees;
+    
+    update employees set jubun = '6101131234567'
+    where employee_id = 100;
+    
+    update employees set jubun = '8510151234567'
+    where employee_id = 101;
+    
+    update employees set jubun = '6510152234567'
+    where employee_id = 102;
+    
+    update employees set jubun = '7510151234567'
+    where employee_id = 103;
+    
+    update employees set jubun = '6110152234567'
+    where employee_id = 104;
+    
+    update employees set jubun = '6510151234567'
+    where employee_id = 105;
+    
+    update employees set jubun = '6107221234567'
+    where employee_id = 106;
+    
+    update employees set jubun = '0803153234567'
+    where employee_id = 107;
+    
+    update employees set jubun = '0712154234567'
+    where employee_id = 108;
+    
+    update employees set jubun = '8810151234567'
+    where employee_id = 109;
+    
+    update employees set jubun = '8908152234567'
+    where employee_id = 110;
+    
+    update employees set jubun = '9005052234567'
+    where employee_id = 111;
+    
+    update employees set jubun = '6610151234567'
+    where employee_id = 112;
+    
+    update employees set jubun = '6710151234567'
+    where employee_id = 113;
+    
+    update employees set jubun = '6709152234567'
+    where employee_id = 114;
+    
+    update employees set jubun = '6110151234567'
+    where employee_id = 115;
+    
+    update employees set jubun = '6204291234567'
+    where employee_id = 116;
+    
+    update employees set jubun = '6110152234567'
+    where employee_id = 117;
+    
+    update employees set jubun = '7810151234567'
+    where employee_id = 118;
+    
+    update employees set jubun = '7909151234567'
+    where employee_id = 119;
+    
+    update employees set jubun = '7702152234567'
+    where employee_id = 120;
+    
+    update employees set jubun = '7009151234567'
+    where employee_id = 121;
+    
+    update employees set jubun = '7111011234567'
+    where employee_id = 122;
+    
+    update employees set jubun = '8010131234567'
+    where employee_id = 123;
+    
+    update employees set jubun = '8110191234567'
+    where employee_id = 124;
+    
+    update employees set jubun = '9012132234567'
+    where employee_id = 125;
+    
+    update employees set jubun = '9406251234567'
+    where employee_id = 126;
+    
+    update employees set jubun = '9408252234567'
+    where employee_id = 127;
+    
+    update employees set jubun = '9204152234567'
+    where employee_id = 128;
+    
+    update employees set jubun = '8507251234567'
+    where employee_id = 129;
+    
+    update employees set jubun = '6511111234567'
+    where employee_id = 130;
+    
+    update employees set jubun = '0010153234567'
+    where employee_id = 131;
+    
+    update employees set jubun = '0005254234567'
+    where employee_id = 132;
+    
+    update employees set jubun = '0110194234567'
+    where employee_id = 133;
+    
+    update employees set jubun = '0412154234567'
+    where employee_id = 134;
+    
+    update employees set jubun = '0503253234567'
+    where employee_id = 135;
+    
+    update employees set jubun = '9510012234567'
+    where employee_id = 136;
+    
+    update employees set jubun = '9510021234567'
+    where employee_id = 137;
+    
+    update employees set jubun = '9610041234567'
+    where employee_id = 138;
+    
+    update employees set jubun = '9610052234567'
+    where employee_id = 139;
+    
+    update employees set jubun = '7310011234567'
+    where employee_id = 140;
+    
+    update employees set jubun = '7310092234567'
+    where employee_id = 141;
+    
+    update employees set jubun = '7510121234567'
+    where employee_id = 142;
+    
+    update employees set jubun = '7612012234567'
+    where employee_id = 143;
+    
+    update employees set jubun = '7710061234567'
+    where employee_id = 144;
+    
+    update employees set jubun = '7810052234567'
+    where employee_id = 145;
+    
+    update employees set jubun = '6810251234567'
+    where employee_id = 146;
+    
+    update employees set jubun = '6811062234567'
+    where employee_id = 147;
+    
+    update employees set jubun = '6712052234567'
+    where employee_id = 148;
+    
+    update employees set jubun = '6102231234567'
+    where employee_id = 149;
+    
+    update employees set jubun = '6210062234567'
+    where employee_id = 150;
+    
+    update employees set jubun = '6110191234567'
+    where employee_id = 151;
+    
+    update employees set jubun = '5712062234567'
+    where employee_id = 152;
+    
+    update employees set jubun = '5810231234567'
+    where employee_id = 153;
+    
+    update employees set jubun = '6311051234567'
+    where employee_id = 154;
+    
+    update employees set jubun = '6412182234567'
+    where employee_id = 155;
+    
+    update employees set jubun = '6110191234567'
+    where employee_id = 156;
+    
+    update employees set jubun = '6210112234567'
+    where employee_id = 157;
+    
+    update employees set jubun = '6311132234567'
+    where employee_id = 158;
+    
+    update employees set jubun = '8511112234567'
+    where employee_id = 159;
+    
+    update employees set jubun = '8710131234567'
+    where employee_id = 160;
+    
+    update employees set jubun = '8710072234567'
+    where employee_id = 161;
+    
+    update employees set jubun = '9010171234567'
+    where employee_id = 162;
+    
+    update employees set jubun = '9112072234567'
+    where employee_id = 163;
+    
+    update employees set jubun = '9110241234567'
+    where employee_id = 164;
+    
+    update employees set jubun = '9212251234567'
+    where employee_id = 165;
+    
+    update employees set jubun = '9310232234567'
+    where employee_id = 166;
+    
+    update employees set jubun = '9811151234567'
+    where employee_id = 167;
+    
+    update employees set jubun = '9810252234567'
+    where employee_id = 168;
+    
+    update employees set jubun = '9910301234567'
+    where employee_id = 169;
+    
+    update employees set jubun = '0910153234567'
+    where employee_id = 170;
+    
+    update employees set jubun = '1011153234567'
+    where employee_id = 171;
+    
+    update employees set jubun = '1006153234567'
+    where employee_id = 172;
+    
+    update employees set jubun = '1111154234567'
+    where employee_id = 173;
+    
+    update employees set jubun = '1209103234567'
+    where employee_id = 174;
+    
+    update employees set jubun = '1207154234567'
+    where employee_id = 175;
+    
+    update employees set jubun = '0906153234567'
+    where employee_id = 176;
+    
+    update employees set jubun = '0812113234567'
+    where employee_id = 177;
+    
+    update employees set jubun = '9810132234567'
+    where employee_id = 178;
+    
+    update employees set jubun = '8712111234567'
+    where employee_id = 179;
+    
+    update employees set jubun = '8310012234567'
+    where employee_id = 180;
+    
+    update employees set jubun = '6510191234567'
+    where employee_id = 181;
+    
+    update employees set jubun = '6510221234567'
+    where employee_id = 182;
+    
+    update employees set jubun = '6510232234567'
+    where employee_id = 183;
+    
+    update employees set jubun = '8512131234567'
+    where employee_id = 184;
+    
+    update employees set jubun = '8510182234567'
+    where employee_id = 185;
+    
+    update employees set jubun = '7510192234567'
+    where employee_id = 186;
+    
+    update employees set jubun = '8512192234567'
+    where employee_id = 187;
+    
+    update employees set jubun = '9511151234567'
+    where employee_id = 188;
+    
+    update employees set jubun = '7509302234567'
+    where employee_id = 189;
+    
+    update employees set jubun = '8510161234567'
+    where employee_id = 190;
+    
+    update employees set jubun = '9510192234567'
+    where employee_id = 191;
+    
+    update employees set jubun = '0510133234567'
+    where employee_id = 192;
+    
+    update employees set jubun = '0810194234567'
+    where employee_id = 193;
+    
+    update employees set jubun = '0910183234567'
+    where employee_id = 194;
+    
+    update employees set jubun = '1010134234567'
+    where employee_id = 195;
+    
+    update employees set jubun = '9510032234567'
+    where employee_id = 196;
+    
+    update employees set jubun = '9710181234567'
+    where employee_id = 197;
+    
+    update employees set jubun = '9810162234567'
+    where employee_id = 198;
+    
+    update employees set jubun = '7511171234567'
+    where employee_id = 199;
+    
+    update employees set jubun = '7810172234567'
+    where employee_id = 200;
+    
+    update employees set jubun = '7912172234567'
+    where employee_id = 201;
+    
+    update employees set jubun = '8611192234567'
+    where employee_id = 202;
+    
+    update employees set jubun = '7810252234567'
+    where employee_id = 203;
+    
+    update employees set jubun = '7803251234567'
+    where employee_id = 204;
+    
+    update employees set jubun = '7910232234567'
+    where employee_id = 205;
+    
+    update employees set jubun = '8010172234567'
+    where employee_id = 206;
+    
+    commit;
+    
+    select *
+    from employees;
+    -- order by employee_id;    employee_id 순서대로 안 나올 경우
+    
+    
+    
+    
+    ------------------------------------------------------------------------------------------------
+    
+    
+    
+    ------ **** ===== like 연산자 ===== **** ------
+    select *
+    from employees
+    where department_id = 30;
+    
+    select *
+    from employees
+    where department_id like 30;
+    
+    /*
+    like 연산자와 함께 사용되어지는 % 와 _ 를 wild character 라고 부른다.
+    like 연산자와 함께 사용되어지는 % 의 뜻은 글자수와는 관계없이 글자가 있든지 없든지 관계없다라는 말이고,
+    like 연산자와 함께 사용되어지는 _ 의 뜻은 반드시 아무글자 1개만을 뜻하는 것이다.
+    */
+    
+    -- employees 테이블에서 여자 1990년생과 남자 1991년생의 사원들만
+    -- 사원번호, 사원명, 주민번호를 나타내세요.
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name as "사원명"
+        , jubun as "주민번호"
+    from employees
+    where jubun like '90____2%' or
+        jubun like '91____1%';
+    
+    
+    -- employees 테이블에서 first_name 컬럼의 값이 'J' 로 시작하는 사원들만
+    -- 사원번호, 이름, 성, 기본급여를 나타내세요.
+    select employee_id as "사원번호"
+        , first_name as "이름"
+        , last_name as "성"
+        , salary as "기본급여"
+    from employees
+    where first_name like 'J%';
+    
+    -- employees 테이블에서 first_name 컬럼의 값이 's' 로 끝하는 사원들만
+    -- 사원번호, 이름, 성, 기본급여를 나타내세요.
+    select employee_id as "사원번호"
+        , first_name as "이름"
+        , last_name as "성"
+        , salary as "기본급여"
+    from employees
+    where first_name like '%s';
+    
+    -- employees 테이블에서 first_name 컬럼의 값중에 'ee'라는 글자가 들어있는 사원들만
+    -- 사원번호, 이름, 성, 기본급여를 나타내세요.
+    select employee_id as "사원번호"
+        , first_name as "이름"
+        , last_name as "성"
+        , salary as "기본급여"
+    from employees
+    where first_name like '%ee%';
+    
+    -- employees 테이블에서 first_name 컬럼의 값중에 'e'가 2개 이상 들어있는 사원들만
+    -- 사원번호, 이름, 성, 기본급여를 나타내세요.
+    select employee_id as "사원번호"
+        , first_name as "이름"
+        , last_name as "성"
+        , salary as "기본급여"
+    from employees
+    where first_name like '%e%e%';
+    
+    -- employees 테이블에서 last_name 컬럼의 값이 첫글자는 'F' 이고 두번째 글자는 아무거나 이고
+    -- 세번째 글자는 소문자 'e' 이며 4번째 부터는 글자가 있든지 없든지 상관없는 사원들만 
+    -- 사원번호, 이름, 성, 기본급여를 나타내세요. 
+    select employee_id as "사원번호"
+        , first_name as "이름"
+        , last_name as "성"
+        , salary as "기본급여"
+    from employees
+    where last_name like'F_e%';
+    
+    ---- ***  like 연산자와 함께 사용되어지는 % 와 _ 인 wild character 의 escape(탈출) 시키기 *** ----
     
     
