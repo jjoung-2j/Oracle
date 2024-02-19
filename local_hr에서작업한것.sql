@@ -1426,7 +1426,7 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
     
     select *
     from employees
-    where uppeer(last_name) = upper('king');
+    where upper(last_name) = upper('king');
     
     select *
     from employees
@@ -1643,7 +1643,6 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
                     ,'영일이삼사오육칠팔구')   -- 바꾼 후
     from dual;
     
-    
     -- 1.13   replace *** ------
     select replace('쌍용교육센터 서울교육대학교 교육문화원'   -- 전체글자
                   ,'교육'                                -- 바꾸기 전
@@ -1687,7 +1686,6 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
        , trunc(94.547, -2)     -- 0        -2 은 정수 100자리까지만 나타내어준다.
   from dual;
   
-    drop table tbl_sungjuk purge; -- 테이블 삭제하기
     
     -- *** [성적처리] *** --
      create table tbl_sungjuk
