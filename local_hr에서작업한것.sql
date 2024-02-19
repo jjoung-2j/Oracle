@@ -1604,13 +1604,55 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
     
     
     
+    -- 1.7  lpad : 왼쪽부터 문자를 자리채움 *** -----
+    -- 1.8  rpad : 오른쪽부터 문자를 자리채움 *** -----
+    select lpad('교육센터',20,'*')  -- 20 byte 를 확보해서 거기에 '교육센터'를 넣습니다. 넣은 후 빈공간(12byte)이 있으면 왼쪽부터 * 로 채워라 
+         , rpad('교육센터',20,'*')  -- 20 byte 를 확보해서 거기에 '교육센터'를 넣습니다. 넣은 후 빈공간(12byte)이 있으면 오른쪽부터 * 로 채워라 
+    from dual;
+    
+    select lpad('*',10,'*'), rpad('=',10,'=')
+    from dual;
+    
+    -- 1.9   ltrim : 왼쪽부터 문자를 제거한다. *** ------
+    -- 1.10  rtrim : 오른쪽부터 문자를 제거한다. *** ------
+    -- 1.11  trim :  왼쪽,오른쪽부터 공백문자를 제거한다. *** ------
+    
+    select ltrim('abbbcccccdaabbccdTabaacccdddSSS', 'abcd'),    -- abcd 가 아닌 것이 나오면 멈춘다.
+           rtrim('abbbcccccdaabbccdTabaacccddd', 'abcd'),
+           rtrim( ltrim('abbbcccccdaabbccdTabaacccddd', 'abcd'), 'abcd')
+            -- trim('abbbcccccdaabbccdTabaacccddd', 'abcd') 불가!!
+    from dual;
+    
+    select '쌍용' || '                     교육                 센터'
+         , '쌍용' || ltrim('                     교육                 센터')  -- 지워야 할 글자가 없을 경우 공백을 지운다.(왼쪽)
+    from dual;
+    
+    select '쌍용                    ' || '교육                 센터' 
+         , rtrim('쌍용                    ') || '교육                 센터'   -- 지워야 할 글자가 없을 경우 공백을 지운다.(오른쪽)
+    from dual;
     
     
+    select '쌍용' || '          교육              ' || '센터' 
+         , '쌍용' || trim('          교육              ') || '센터'           -- 지워야 할 글자가 없을 경우 공백을 지운다.
+    from dual;
     
     
+    -- 1.12   translate *** ------
+    select translate('010-3456-7890'        -- 전체 글자
+                    ,'0123456789'           -- 바꾸기 전
+                    ,'영일이삼사오육칠팔구')   -- 바꾼 후
+    from dual;
     
     
+    -- 1.13   replace *** ------
+    select replace('쌍용교육센터 서울교육대학교 교육문화원'   -- 전체글자
+                  ,'교육'                                -- 바꾸기 전
+                  ,'education')                         -- 바꾼 후
+    from dual;
     
     
+    -- 1.14   length  ==> 문자열의 길이를 알려주는 것  *** ------
+    select length('쌍용center')  -- 8
+    from dual;
     
     
