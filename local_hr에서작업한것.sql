@@ -1828,10 +1828,230 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
     
     
     
+    -- 3-1. add_months(날짜, 숫자)
+    /*
+        ==> 숫자가 양수이면 날짜에서 숫자 개월수 만큼 더해준 날짜를 나타내는 것이고,
+            숫자가 음수이면 날짜에서 숫자 개월수 만큼 뺀    날짜를 나타내는 것이다.
+            
+        여기서 숫자의 단위는 개월수 이다.     
+   */
+    
+    
+    select to_char(add_months(sysdate, -2), 'yyyy-mm-dd hh24:mi:ss') as "2개월전"
+            ,to_char(sysdate, 'yyyy-mm-dd hh24:mi:ss') as "현재시각"
+            , to_char(add_months(sysdate, 2), 'yyyy-mm-dd hh24:mi:ss') as "2개월후"
+    from dual;
+    
+    -- [퀴즈] 현재일로 부터 1개월 2일 3시간 4분 5초 뒤를 나타내세요.
+    select to_char(sysdate, 'yyyy-mm-dd hh24:mi:ss') as "현재시각"
+        , to_char(add_months(sysdate,1) + 2 + 3/24 + 4/(24*60) + 5/(24*60*60), 'yyyy-mm-dd hh24:mi:ss') as "1개월 2일 3시간 4분 5초 뒤"
+        --          1개월                2일   3시간     4분          5초
+    from dual;
+    -- 2024-02-19 15:14:28	    2024-03-21 18:18:33
+    
+    
+    -- 3-2. months_between(날짜1, 날짜2) 
+    /*
+          날짜1 에서 날짜2 를 뺀 값으로 그 결과는 숫자가 나오는데 결과물 숫자의 단위는 개월수 이다.
+          즉, 두 날짜의 개월차이를 구할 때 사용한다.
+    */
+    
+    select months_between(add_months(sysdate, 3), sysdate)
+    from dual;
+    -- 3
     
     
     
     
+    
+    --  ****   날짜1 - 날짜2 = 숫자   ==> 날짜1 에서 날짜2 를 뺀 값으로 숫자가 나오는데 결과물 숫자의 단위는 일수 이다.
+    --                                  즉, 두 날짜의 일수차이를 구할 때 사용한다.
+    
+    select sysdate + 3 - sysdate
+    from dual;
+    
+    select add_months(sysdate, 1) -sysdate
+    from dual;
+    
+    
+    -- 3-3. extract ==> 날짜에서 년, 월,일을 숫자형태로 추출해주는 것이다.
+    select sysdate
+        , extract(year from sysdate), to_char(sysdate, 'yyyy')
+        , extract(month from sysdate), to_char(sysdate, 'mm')
+        , extract(day from sysdate), to_char(sysdate, 'dd')
+    from dual;
+    
+    select to_date('2024-08-09','yyyy-mm-dd') - sysdate
+        , to_date('2024/08/09','yyyy/mm/dd') - sysdate
+        , to_date('20240809','yyyymmdd') - sysdate
+    from dual;
+    
+    
+    
+    
+    162 '901017123456'
+    168 '981025223'
+    173 '1111154234'
+    
+    update employees set jubun = '901017123456'
+    where employee_id = 162;
+      
+    update employees set jubun = '981025223'
+    where employee_id = 168;
+      
+    update employees set jubun = '1111154234'
+    where employee_id = 173;
+        
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name "사원명"
+        , substr(jubun,1,7) || '******' as "주민번호1"
+        -- 주민번호의 개수가 모두 다를 경우
+        , substr(jubun, 1,7) || lpad('*',6,'*') as  "주민번호2"
+        , substr(jubun, 1,7) || lpad('*',length(jubun)-7, '*') as  "주민번호3"
+       --  , substr(jubun, 1,7) || lpad('*',to_number(substr(jubun,8))) as  "주민번호" --> 실행 안해봄
+        
+    from employees;
+    
+    rollback;
+    
+    select employee_id as "사원번호"
+        , first_name || ' ' || last_name "사원명"
+        
+        , substr(jubun,1,7) || lpad('*',length(jubun)-7, '*') as  "주민번호1"
+        , rpad(substr(jubun,1,7), length(jubun),'*') as "주민번호2"
+        
+        -- 숫자타입1 --
+        , case substr(jubun,7,1)
+        when '1' then 1900 + to_number(substr(jubun,1,2))
+        when '2' then 1900 + to_number(substr(jubun,1,2))
+        else 2000 + to_number(substr(jubun,1,2))
+        end as "태어난년도"
+        
+        , case substr(jubun,7,1)
+        when '1' then  '19' 
+        when '2' then '19'
+        else '20'
+        end || substr(jubun,1,2) as "태어난년도1"
+        
+        -- 숫자타입2 --
+        , case
+        when substr(jubun,7,1) in('1', '2') then '19'
+        else '20'
+        end || substr(jubun,1,2) as "태어난년도2"
+        
+        , decode(substr(jubun,7,1),'1','19'
+                                ,'2','19'
+                                    ,'20') || substr(jubun,1,2) as "태어난년도3"
+    
+        , to_number(substr(jubun,1,2)) + case when substr(jubun,7,1) in('1','2') then 1900 else 2000 end as "태어난년도4"
+    
+        , to_number(substr(jubun,1,2)) + decode(substr(jubun,7,1), '1',1900,'2', 1900 , 2000) as "태어난년도5"
+        
+    from employees
+    order by employee_id;
+    
+    
+    
+    
+    select sysdate
+        , to_char(sysdate, 'yyyy-mm-dd hh24:mi:ss')
+        , to_char(sysdate, 'yyyy-mm-dd')
+        , to_date(to_char(sysdate, 'yyyy-mm-dd'), 'yyyy-mm-dd')
+        , to_char(to_date(to_char(sysdate, 'yyyy-mm-dd'), 'yyyy-mm-dd'), 'yyyy-mm-dd hh24:mi:ss')
+    from dual;
+    
+    select employee_id as "사원번호"
+    , first_name || ' ' || last_name "사원명"
+    , rpad(substr(jubun,1,7), length(jubun),'*') as "주민번호2"
+    , to_number(substr(jubun,1,2)) + decode(substr(jubun,7,1), '1', 1900, '2', 1900 , 2000) as "태어난년도"
+    
+    -- 만나이 ==> 올해 생일이 현재일과 같든지 또는 현재일 보다 과거라면 현재년도 - 태어난년도
+    --       ==> 올해 생일이 현재일 보다 미래 라면 현재년도 - 태어난년도 - 1
+    
+    , to_date(to_char(sysdate, 'yyyy') || substr(jubun,3,4 ), 'yyyymmdd') AS 올해생일
+    
+    --, 올해생일 - sysdate > 0
+    --    to_date(to_char(sysdate, 'yyyy') || substr(jubun,3,4), 'yyyymmdd') - to_date(to_char(sysdate, 'yyyymmdd'),'yyyy-mm-dd')
+      /*
+      , case
+      ,when to_date(to_char(sysdate, 'yyyy') || substr(jubun,3,4), 'yyyymmdd') - to_date(to_char(sysdate, 'yyyy-mm-dd'),'yyyy-mm-dd' > 0
+        then 현재년도 - 태어난년도 -1
+        else 현재년도 - 태어난년도
+        end as 만나이
+    */
+    , case
+      when to_date(to_char(sysdate, 'yyyy') || substr(jubun,3,4), 'yyyymmdd') - to_date(to_char(sysdate, 'yyyy-mm-dd'),'yyyy-mm-dd') > 0
+         then extract(year from sysdate) - (to_number( substr(jubun, 1, 2) ) + decode( substr(jubun, 7, 1), '1', 1900, '2', 1900, 2000 )) - 1
+         else extract(year from sysdate) - (to_number( substr(jubun, 1, 2) ) + decode( substr(jubun, 7, 1), '1', 1900, '2', 1900, 2000 ))
+        end as 만나이
+    
+    from employees
+    order by employee_id;
+    
+    
+    -- 3-4. last_day(특정날짜)
+    --      ==> 특정날짜가 포함된 달력에서 맨 마지막 날짜를 알려주는 것이다.
+    select sysdate, last_day(sysdate)
+    from dual;
+    -- 24/02/19	    24/02/29
+    
+    
+    -- 3-5. next_day(특정날짜,'일')  '일'~'토'
+    --      ==> 특정날짜로부터 다음번에 돌아오는 가장 빠른 '일'~'토' 의 날짜를 알려주는 것이다.
+    select sysdate
+        , next_day(sysdate,'금')
+        , next_day(sysdate,'월')
+    from dual;
+    -- 24/02/19	    24/02/23    24/02/26
+    
+    
+    -- 3-6. to_yminterval, to_dsinterval
+    /*
+     to_yminterval 은 년 과 월을 나타내어 연산자가 + 이면 날짜에서 더해주는 것이고,
+     to_dsinterval 은 일 시간 분 초를 나타내어 연산자가 + 이면 날짜에서 더해주는 것이다.
+     연산자가 - 를 쓰면 날짜를 빼주는 것이다.
+    */
+    -- 현재일로 부터 1년 2개월 3일 4시간 5분 6초 뒤를 나타내세요.
+    select to_char(sysdate, 'yyyy-mm-dd hh24:mi:ss') as 현재시각
+        , sysdate + to_yminterval('01-02') + to_dsinterval('003 04:05:06')
+        -- 1-2 도 가능하지만 01-02를 권장            3 4:5:6도 가능 하지만 003 04:05:06 을 권장
+        , to_char(sysdate + to_yminterval('01-02') + to_dsinterval('003 04:05:06'), 'yyyy-mm-dd hh24:mi:ss') as "1년 2개월 3일 4시간 5분 6초 뒤"
+    from dual;
+    
+    
+    
+    
+    
+    
+    
+    -------------------------- >> 4. 변환 함수 << -------------------------------
+     
+    -- 4.1  to_char(날짜, '형태')  ==> 날짜를 '형태' 모양으로 문자형태로 변환시켜주는 것이다.
+    --      to_char(숫자, '형태')  ==> 숫자를 '형태' 모양으로 문자형태로 변환시켜주는 것이다.
+    
+    --- 날짜를 문자형태로 변환하기 ---
+     select to_char(sysdate, 'yyyy') AS 년도
+          , to_char(sysdate, 'mm')   AS 월
+          , to_char(sysdate, 'dd')   AS 일
+          , to_char(sysdate, 'hh24') AS "24시간"
+          , to_char(sysdate, 'am hh') AS "12시간"
+          , to_char(sysdate, 'pm hh') AS "12시간"
+          , to_char(sysdate, 'mi')   AS 분
+          , to_char(sysdate, 'ss')   AS 초
+          , to_char(sysdate, 'q')    AS 분기       -- 1월~3월 => 1,   4월~6월 => 2,   7월~9월 => 3,    10월~12월 => 4 
+          , to_char(sysdate, 'day')  AS 요일명     -- 월요일(Windows) , Monday(Linux) 
+          , to_char(sysdate, 'dy')   AS 줄인요일명  -- 월(Windows) , Mon(Linux)
+     from dual;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    -------------------------- >> 5. 기타 함수 << -------------------------------
     
     -- 5-1. case when then else end ==> !!! 암기 !!!
     
@@ -1843,10 +2063,10 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
         end as 결과
     from dual;
     
-    select case 5-2 -- case 5-2 의 값이
+    select case
         when 4 > 5 then '4는 5보다 큽니다.'    -- when @ then : @ 인 경우
-        when 5 > 7 then '5는 7보다 큽니다,'
-        when 3 > 2 then '3는 2보다 큽니다,'
+        when 5 > 7 then '5는 7보다 큽니다.'
+        when 3 > 2 then '3는 2보다 큽니다.'
         else '나는 수학을 몰라요ㅜㅜ'
         end as 결과
     from dual;
