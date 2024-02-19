@@ -1656,3 +1656,199 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
     from dual;
     
     
+    
+    
+    
+    
+    -------------------------- >> 2. 숫자 함수 << -------------------------------
+    
+    -- 2-1 mod : 나머지를 구해주는 것이다.
+    select 5/2, mod(5,2), trunc(5/2)
+    from dual;
+    -- 2.5	1	2
+    
+    -- 2-2  round : 반올림을 해주는 것.
+  select 94.547
+       , round(94.547)         -- 95
+       , round(94.547, 0)      -- 95       0 은 정수 1자리까지만 나타내어준다.
+       , round(94.547, 1)      -- 94.5     1 은 소수 첫째자리까지만 나타내어준다.
+       , round(94.547, 2)      -- 94.55    2 은 소수 둘째자리까지만 나타내어준다.
+       , round(94.547, -1)     -- 90       -1 은 정수 10자리까지만 나타내어준다.
+       , round(94.547, -2)     -- 100      -2 은 정수 100자리까지만 나타내어준다.
+  from dual;
+  
+  -- 2-3  trunc : 절삭을 해주는 것. => 반올림X, 무조건 짜르기
+  select 94.547
+       , trunc(94.547)         -- 94
+       , trunc(94.547, 0)      -- 94       0 은 정수 1자리까지만 나타내어준다.
+       , trunc(94.547, 1)      -- 94.5     1 은 소수 첫째자리까지만 나타내어준다.
+       , trunc(94.547, 2)      -- 94.54    2 은 소수 둘째자리까지만 나타내어준다.
+       , trunc(94.547, -1)     -- 90       -1 은 정수 10자리까지만 나타내어준다.
+       , trunc(94.547, -2)     -- 0        -2 은 정수 100자리까지만 나타내어준다.
+  from dual;
+  
+    drop table tbl_sungjuk purge; -- 테이블 삭제하기
+    
+    -- *** [성적처리] *** --
+     create table tbl_sungjuk
+     (hakbun    varchar2(20)
+     ,name       Nvarchar2(10)
+     ,kor       number(3)
+     ,eng        number(3)
+     ,math      number(3)
+    );
+    -- Table TBL_SUNGJUK이(가) 생성되었습니다.
+    
+    select *
+    from tbl_sungjuk;
+    
+    --- *** 데이터 입력하기 *** ---
+  insert into tbl_sungjuk(hakbun, name, kor, eng, math) values('sist001','한석규',90,92,93);
+  insert into tbl_sungjuk(hakbun, name, kor, eng, math) values('sist002','두석규',100,100,100);
+  insert into tbl_sungjuk(hakbun, name, kor, eng, math) values('sist003','세석규',71,72,73);
+  insert into tbl_sungjuk(hakbun, name, kor, eng, math) values('sist004','네석규',89,87,81);
+  insert into tbl_sungjuk(hakbun, name, kor, eng, math) values('sist005','오석규',60,50,40);
+  insert into tbl_sungjuk(hakbun, name, kor, eng, math) values('sist006','육석규',80,81,87);
+ 
+  commit; 
+  
+  ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  학번    성명  국어  영어  수학  총점  평균(소수부 첫째자리까지 나타내되 반올림)  학점(평균이 90 이상이면 'A', 90 미만 80 이상이면 'B', 80 미만 70 이상이면 'C' .... 60 미만이면 'F')
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------  
+    
+    select *
+    from tbl_sungjuk;
+    
+    select hakbun as 학번
+        , name as 성명
+        , kor as 국어
+        , eng as 영어
+        , math as 수학
+        ,(kor + eng + math) as 총점
+        , round((kor + eng + math)/3,1) as 평균
+        
+        -- , trunc(round((kor + eng + math)/3,1) -1) 
+        
+        , case trunc(round((kor + eng + math)/3,1) -1)
+        when 100 then 'A'
+        when 90 then 'A'
+        when 80 then 'B'
+        when 70 then 'C'
+        when 60 then 'D'
+        else 'F'
+        end as 학점1
+        
+        , decode ( trunc ( round( (kor + eng + math)/ 3, 1), -1), 100, 'A'
+                                                            , 90, 'A'
+                                                            , 80, 'B'
+                                                            , 70, 'C'
+                                                            , 60, 'D'
+                                                                , 'F') as 학점2
+        
+    from tbl_sungjuk;
+    
+    
+    -- 2-4. power : 거듭제곱
+    select 2*2*2*2*2, power(2,5) -- 2의 5승 (2^5)
+    from dual;
+    
+    -- 2-5. sqrt : 제곱근
+    select sqrt(4), sqrt(16), sqrt(2), sqrt(3)
+    from dual;
+    
+    -- 2-6. sin, cos, tan, asin, acos, atan
+    select sin(90), cos(90), tan(90), asin(0.3), acos(0.3), atan(0.3)
+    from dual;
+    
+    -- 2-7. log
+    select log(10, 100) -- log_10 100
+    from dual;
+    -- 2
+    
+    -- 2-8. sign ==> 결과값이 양수이라면 1, 결과값이 0이라면 0, 결과값이 음수이라면 -1
+    select sign(5-2), sign(5-5), sign(3-5)
+    from dual;
+    -- 1    0   -1
+    
+    -- 2-9. ceil(실수) ==> 입력되어진 실수 보다 큰 최소의 정수를 나타내어준다.
+    --      ceil(정수) ==> 입력되어진 정수를 그대로 나타내어준다.
+    select ceil(10.1), ceil(-10.1), ceil(10), ceil(-10)
+    from dual;
+    --          11	    -10	            10	    -10
+    
+    -- 2-10. floor(실수) ==> 입력되어진 실수 보다 작은 최대의 정수를 나타내어준다.
+    --       floor(정수) ==> 입력되어진 정수를 그대로 나타내어준다.
+    select floor(10.1), floor(-10.1), floor(10), floor(-10)
+    from dual;
+    
+    -- 2-11  ascii, chr 
+    select ascii('A'), ascii('a'), ascii('0'), ascii(' ')
+    from dual;
+   --         65         97          48         32
+    
+    select chr(65), chr(97), chr(48), chr(32)
+    from dual;
+   --        A          a       0      ' '    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    -- 5-1. case when then else end ==> !!! 암기 !!!
+    
+    select case 5-2 -- case 5-2 의 값이
+        when 4  then '5-2=4 입니다.'    -- when @ then : @ 인 경우
+        when 1 then '5-2=1 입니다,'
+        when 3 then '5-2=3 입니다,'
+        else '나는 수학을 몰라요ㅜㅜ'
+        end as 결과
+    from dual;
+    
+    select case 5-2 -- case 5-2 의 값이
+        when 4 > 5 then '4는 5보다 큽니다.'    -- when @ then : @ 인 경우
+        when 5 > 7 then '5는 7보다 큽니다,'
+        when 3 > 2 then '3는 2보다 큽니다,'
+        else '나는 수학을 몰라요ㅜㅜ'
+        end as 결과
+    from dual;
+    
+    -- 5-2. decode ==> !!! 암기 !!!
+    
+    select case 5-2 -- case 5-2 의 값이
+        when 4  then '5-2=4 입니다.'    -- when @ then : @ 인 경우
+        when 1 then '5-2=1 입니다,'
+        when 3 then '5-2=3 입니다,'
+        else '나는 수학을 몰라요ㅜㅜ'
+        end as 결과1
+        
+        , 
+        
+        decode(5-2,4, '5-2=4 입니다.'
+                  ,1, '5-2=1 입니다.'
+                  ,3, ' 5-2=3 입니다.'
+                  , '나는 수학을 몰라요ㅜㅜ') as 결과2 -------------
+    from dual;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
