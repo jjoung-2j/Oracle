@@ -2553,7 +2553,10 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
     FROM
     (
     SELECT employee_id, fullname, jubun, gender, age, monthsal, hire_date           -- 사원번호, 사원명, 주민번호, 성별, 현재나이, 월급, 입사일자
-        , last_day(to_date(to_char(add_months(sysdate, (63-age)*12),'yyyy') ||
+        , last_day(to_date(to_char(add_months(sysdate, (63-age)*12),'yyyy') ||      
+            -- birthyear은 태어난년도임으로 만으로 나이가 지났는지아닌지 확인이 불가하여 (63-age)를 해야한다.
+            -- sysdate 에서 (63-age) = 남은 년도
+            -- add_months 는 개월 수를 더해주는 것으로 (63-age)* 12 를 해주어야 한다.
                     case when substr(jubun,3,2) between '03' and '08'then '-08-01'
                     else '-02-01'
                     end
