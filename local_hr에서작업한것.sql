@@ -2144,17 +2144,11 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
    from dual;
    -- ORA-01722: invalid number
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+ 
+ 
+ 
+ 
+ 
     
     -------------------------- >> 5. 기타 함수 << -------------------------------
     
@@ -2197,6 +2191,18 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
     
         ----- ***** !!!! 아주 중요중요중요중요중요중요중요중요중요중요중요중요중요 아주 !!!! ***** -----
         ----- VIEW(뷰)란? 테이블은 아니지만 select 되어진 결과물을 마치 테이블 처럼 보는것(간주하는 것)이다.
+        ----- VIEW(뷰)의 종류는 inline view 와 stored view 가 있다.
+   
+    --- >>> *** inline view 예제 *** <<< ---
+    select V.*
+    FROM
+    (    
+        select employee_id
+            , first_name || ' ' || last_name as FULLNAME
+            , nvl(salary + (salary * commission_pct), salary) as MONTHSAL
+        from employees
+    ) V;
+    
     select V.*
     FROM
     (    
@@ -2207,7 +2213,9 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
     ) V
     where V.MONTHSAL between 15000 and 20000;
     
-    select *    -- V. 은 생략 가능하다.
+    select employee_id as 사원번호              -- V. 은 생략 가능하다.
+        , fullname as 사원명                   -- 대소문자 구분 X
+        , to_char(monthsal,'$99,999') as 월급     
     FROM
     (    
         select employee_id
@@ -2218,21 +2226,118 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
     where V.MONTHSAL between 15000 and 20000;
     
     
-    select employee_id as "사원번호"
-    , first_name || ' ' || last_name "사원명"
-    , rpad(substr(jubun,1,7), length(jubun),'*') as "주민번호2"
-    , to_number(substr(jubun,1,2)) + decode(substr(jubun,7,1), '1', 1900, '2', 1900 , 2000) as "태어난년도"
+    -- 숫자가 아닌 날짜나 문자도 비교연산자 사용가능을 보여주기 위한 테스트
+    select '1이 2보다 큽니다.'
+    from dual
+    where 1>2;
     
-    , to_date(to_char(sysdate, 'yyyy') || substr(jubun,3,4 ), 'yyyymmdd') AS 올해생일
+    select '2는 1보다 큽니다.'
+    from dual
+    where 2>1;
     
-    , case
-      when to_date(to_char(sysdate, 'yyyy') || substr(jubun,3,4), 'yyyymmdd') - to_date(to_char(sysdate, 'yyyy-mm-dd'),'yyyy-mm-dd') > 0
-         then extract(year from sysdate) - (to_number( substr(jubun, 1, 2) ) + decode( substr(jubun, 7, 1), '1', 1900, '2', 1900, 2000 )) - 1
-         else extract(year from sysdate) - (to_number( substr(jubun, 1, 2) ) + decode( substr(jubun, 7, 1), '1', 1900, '2', 1900, 2000 ))
-        end as 만나이
+    select '2는 1보다 같거나 큽니다.'
+    from dual
+    where 2>=1;
     
+    select '2는 1보다 같거나 큽니다.'
+    from dual
+    where 2>=1;
+    
+    select '오늘은 어제보다 같거나 뒤에 있는 날짜입니다.'
+    from dual
+    where sysdate >= sysdate -1;
+    
+    select '어제는 오늘보다 같거나 뒤에 있는 날짜입니다.'
+    from dual
+    where sysdate -1 >= sysdate;
+    
+    select 'a가 b보다 뒤에 나온다.'
+    from dual
+    where 'a' >= 'b';
+    
+    select 'b가 a보다 뒤에 나온다.'
+    from dual
+    where 'b' >= 'a';
+    
+    select 'ab가 aaxyz보다 뒤에 나온다.'
+    from dual
+    where 'ab' >= 'aawxyz';
+    
+    select 'a가 A보다 뒤에 나온다.'
+    from dual
+    where 'a' >= 'A';
+    
+    
+    
+    ------------------------------------
+    사원번호    사원명     성별      만나이
+    ------------------------------------
+    >> 성별   ==> 주민번호 7번째에 나오는 글자 1개가 '1' 또는 '3' 이라면 남, '2' 또는 '4' 이라면 여
+                >> 주민번호는 jubun 컬럼이 있다.
+                
+    만나이 ==> 올해생일이 오늘날짜와 같거나 과거이라면 현재년도 - 태어난년도
+              올해생일이 오늘날짜보다 미래 이라면 현재년도 - 태어난년도 - 1
+              >> 올해생일이라는 컬럼이 employees 테이블에 없다. 그러므로 올해생일이라는 컬럼을 만들어야 한다.
+              >> 태어난년도이라는 컬럼이 employees 테이블에 없다. 그러므로 태어난년도이라는 컬럼을 만들어야 한다.
+    SELECT employee_id as 사원번호
+        , fullname as 사원명
+        , gender as 성별
+        
+        , case when current_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') -- 날짜 연산자도 비교연산자 가능
+        -- 시간이 계속 바뀌기 때문에 문자타입인 년월일 만 나타내는 것으로 바꾸어주고 다시 날짜타입로 바꾸어주기
+            then extract(year from sysdate) - birthyear - 1 -- extract(year from sysdate) : 날짜에서 년만 추출
+            else extract(year from sysdate) - birthyear
+            end as 만나이
+        
+        , trunc(case when current_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd')
+                    then extract(year from sysdate) - birthyear - 1 
+                    else extract(year from sysdate) - birthyear
+                    end, -1) as 연령대                         -- => trunc(만나이, -1) 만나이를 정수 10자리까지만 보여주기 
+                    
+    FROM    -- FROM()V => V 대신 아무글자 사용 가능 () 안을 하나의 테이블로 보겠다는 말이다.
+    (
+    select employee_id  -- 사원번호
+        , first_name || ' ' || last_name as FULLNAME    -- 사원명
+        , case when substr(jubun,7,1) in('1','3') then '남' else '여' end as GENDER   -- 성별
+        , to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4), 'yyyymmdd') as "CURRENT_YEAR_BIRTHDAY" -- 올해생일 
+        , case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2)  as BIRTHYEAR -- 태어난 년도 
     from employees
-    order by employee_id;
+    ) V;
+    
+    -- employess 테이블에서 연령대가 20대 여자와 40대 남자만 
+    -- 사원번호    사원명     성별      만나이  를 나타내세요.
+    SELECT employee_id as 사원번호
+        , fullname as 사원명
+        , gender as 성별
+        , age as 만나이
+    FROM
+        (
+        SELECT employee_id
+            , fullname
+            , gender
+            
+            , case when current_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') -- 날짜 연산자도 비교연산자 가능
+            -- 시간이 계속 바뀌기 때문에 문자타입인 년월일 만 나타내는 것으로 바꾸어주고 다시 날짜타입로 바꾸어주기
+                then extract(year from sysdate) - birthyear - 1 -- extract(year from sysdate) : 날짜에서 년만 추출
+                else extract(year from sysdate) - birthyear
+                end as age
+                        
+                FROM    -- FROM()V => V 대신 아무글자 사용 가능 () 안을 하나의 테이블로 보겠다는 말이다.
+                (
+                select employee_id  -- 사원번호
+                    , first_name || ' ' || last_name as FULLNAME    -- 사원명
+                    , case when substr(jubun,7,1) in('1','3') then '남' else '여' end as GENDER   -- 성별
+                    , to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4), 'yyyymmdd') as "CURRENT_YEAR_BIRTHDAY" -- 올해생일 
+                    , case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2)  as BIRTHYEAR -- 태어난 년도 
+                 from employees
+                ) V
+        ) T
+   WHERE (trunc(age,-1) = 20 and gender = '여') or
+        (trunc(age,-1) = 40 and gender = '남')
+    order by 3,4;
+
+    
+    
     
     -------------------------------------------------------------------------------------------------
     
