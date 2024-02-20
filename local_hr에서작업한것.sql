@@ -2193,6 +2193,9 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
         ----- VIEW(뷰)란? 테이블은 아니지만 select 되어진 결과물을 마치 테이블 처럼 보는것(간주하는 것)이다.
         ----- VIEW(뷰)의 종류는 inline view 와 stored view 가 있다.
    
+   
+   
+   
     --- >>> *** inline view 예제 *** <<< ---
     select V.*
     FROM
@@ -2202,7 +2205,8 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
             , nvl(salary + (salary * commission_pct), salary) as MONTHSAL
         from employees
     ) V;
-    
+    -- inline view 는 바로 위의 예제에 보이는 V 인 것이다. 즉, select 구문을 괄호( )를 쳐서 별칭(예 : V)을 부여한 것을 말한다.
+     
     select V.*
     FROM
     (    
@@ -2332,12 +2336,421 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
                  from employees
                 ) V
         ) T
-   WHERE (trunc(age,-1) = 20 and gender = '여') or
+   WHERE (trunc(age,-1) = 20 and gender = '여') or       -- T.gender 이지만 생략가능하다.
         (trunc(age,-1) = 40 and gender = '남')
-    order by 3,4;
+   ORDER BY 3,4;
 
+
+
+
+
+    -- stored view 는 복잡한 SQL(Structured Query Language == 정형화된 질의어)을 저장하여 select 문을 간단하게 사용하고자 할 때 쓰인다.
+    -- 그래서 inline view 는 1회성이고, stored view는 언제든지 불러내서 재사용이 가능하다.
     
+    
+    ---- **** Stored View (저장된 뷰) 생성하기 **** ----
+    
+    /*
+        create or replace view 뷰명   --> 뷰명으로 되어진 view 가 없으면 create(생성) 하고,
+                                    -- 만약에 뷰명으로 되어진 view 가 이미 존재한다라면 이전에 정의해둔 view 를 없애버리고 
+                                    -- select 문장 으로 replace(수정) 해라는 말이다.
+        as
+        select 문장
+    */
+    
+    
+    create or replace view view_emp_age
+    as
+    SELECT employee_id
+            , fullname
+            , gender
+            
+            , case when current_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') -- 날짜 연산자도 비교연산자 가능
+            -- 시간이 계속 바뀌기 때문에 문자타입인 년월일 만 나타내는 것으로 바꾸어주고 다시 날짜타입로 바꾸어주기
+                then extract(year from sysdate) - birthyear - 1 -- extract(year from sysdate) : 날짜에서 년만 추출
+                else extract(year from sysdate) - birthyear
+                end as age
+                        
+                FROM    -- FROM()V => V 대신 아무글자 사용 가능 () 안을 하나의 테이블로 보겠다는 말이다.
+                (
+                select employee_id  -- 사원번호
+                    , first_name || ' ' || last_name as FULLNAME    -- 사원명
+                    , case when substr(jubun,7,1) in('1','3') then '남' else '여' end as GENDER   -- 성별
+                    , to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4), 'yyyymmdd') as "CURRENT_YEAR_BIRTHDAY" -- 올해생일 
+                    , case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2)  as BIRTHYEAR -- 태어난 년도 
+                 from employees
+                ) V;
+    -- View VIEW_EMP_AGE이(가) 생성되었습니다.
+    
+    select *
+    from view_emp_age;
+    
+    
+    -- employess 테이블에서 연령대가 20대 여자와 40대 남자만 
+    -- 사원번호    사원명     성별      만나이  를 나타내세요.
+    
+    select *
+    from view_emp_age
+    where (trunc(age,-1) = 20 and gender = '여') or
+        (trunc(age,-1) = 40 and gender = '남')
+    order by gender, age;
+    
+    -- 현재 있는 테이블과 뷰 확인
+    select *
+    from tab;
+    -- 접두어로 쓰려고 하기!
+    -- TBL_~~, VIEW_~~
+    
+    -- 테이블 또는 뷰 에 존재하는 컬럼명, null, 유형 확인하기
+    desc view_emp_age;
+    
+    
+    
+    
+    
+    --- *** Stored View (저장된 뷰)의 원본소스(select문) 알아보기 *** ---
+    select *
+    from user_views;
+    
+    select text
+    from user_views
+    where view_name = 'VIEW_EMP_AGE';   -- ==> 메모장 등을 통해 확인 가능
+    
+    
+    
+    
+    
+    
+    --- *** view_emp_age 이라는 Stored View (저장된 뷰) 수정하기 *** ---   => 주민번호 추가
+    create or replace view view_emp_age
+    as
+    SELECT employee_id
+            , fullname
+            , jubun
+            , gender
+            
+            , case when current_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') -- 날짜 연산자도 비교연산자 가능
+            -- 시간이 계속 바뀌기 때문에 문자타입인 년월일 만 나타내는 것으로 바꾸어주고 다시 날짜타입로 바꾸어주기
+                then extract(year from sysdate) - birthyear - 1 -- extract(year from sysdate) : 날짜에서 년만 추출
+                else extract(year from sysdate) - birthyear
+                end as age
+                        
+                FROM    -- FROM()V => V 대신 아무글자 사용 가능 () 안을 하나의 테이블로 보겠다는 말이다.
+                (
+                select employee_id  -- 사원번호
+                    , first_name || ' ' || last_name as FULLNAME    -- 사원명
+                    , rpad(substr(jubun,1,7),length(jubun),'*') as JUBUN  -- 주민번호
+                    , case when substr(jubun,7,1) in('1','3') then '남' else '여' end as GENDER   -- 성별
+                    , to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4), 'yyyymmdd') as "CURRENT_YEAR_BIRTHDAY" -- 올해생일 
+                    , case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2)  as BIRTHYEAR -- 태어난 년도 
+                 from employees
+                ) V;
+    -- View VIEW_EMP_AGE이(가) 생성되었습니다.
+    
+    -- 바뀐 모습 확인하기
+    select *
+    from view_emp_age;
     
     
     -------------------------------------------------------------------------------------------------
+   
+    /*
+        --- [퀴즈] ---
+        employees 테이블에서 모든 사원들에 대해
+        사원번호, 사원명, 주민번호, 성별, 현재나이, 월급, 입사일자, 정년퇴직일, 정년까지근무개월수, 퇴직금 을 나타내세요.
+        
+        여기서 정년퇴직일이라 함은 
+        해당 사원의 생월이 3월에서 8월에 태어난 사람은 
+        해당사원의 나이가 63세가 되는 년도의 8월말일(8월 31일)로 하고,
+        해당사원의 생월이 9월에서 2월에 태어난 사람은 
+        해당사원의 나이가 63세가 되는 년도의 2월말일(2월 28일 또는 2월 29일)로 한다.
+        
+        퇴직금 : 월급 * 근무년수
+    */
+    
+    desc employees;
+--- ♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥
+    SELECT employee_id as 사원번호
+         , fullname as 사원명
+         , jubun as 주민번호
+         , gender as 성별
+         , age as 현재나이
+         , to_char(month_money,'99,999')  as 월급
+         , hire_date as 입사일자
+         , finish_day as 정년퇴직일
+         , trunc(months_between(finish_day, hire_date),0) || '개월' as 정년까지근무개월수    -- 정년까지근무개월수
+         , to_char(trunc(month_money * (trunc(months_between(finish_day, hire_date),0)/12),0) ,'9,999,999') as 퇴직금   -- 퇴직금
+         
+    FROM
+    (
+    SELECT employee_id      -- 사원번호
+            , fullname      -- 사원명
+            , jubun         -- 주민번호
+            , gender        -- 성별
+            , age           -- 현재나이
+            , month_money   -- 월급
+            , hire_date     -- 입사일자
+            , last_day(to_date(to_char(add_months(sysdate, (63-age)*12),'yyyy') ||
+                    case when substr(jubun,3,2) between '03' and '08'then '-08-01'
+                    else '-02-01'
+                    end
+                    ,'yyyy-mm-dd')) as finish_day   -- 정년퇴직일
+        FROM
+        (
+        SELECT employee_id, fullname, jubun, gender    -- 성별
+                
+                , case when current_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') -- 날짜 연산자도 비교연산자 가능
+                -- 시간이 계속 바뀌기 때문에 문자타입인 년월일 만 나타내는 것으로 바꾸어주고 다시 날짜타입로 바꾸어주기
+                    then extract(year from sysdate) - birthyear - 1 -- extract(year from sysdate) : 날짜에서 년만 추출
+                    else extract(year from sysdate) - birthyear
+                    end as age      -- 현재나이
+                , month_money    -- 월급
+                , hire_date     -- 입사일자
+                /*
+                , case when (substr(jubun,3,4) >= 0301 and substr(jubun,3,4) < 0901)
+                    then last_day(to_date(birthyear+63 || '0801','yyyymmdd'))-- '31'    
+                    else last_day(to_date(birthyear+63 || '0201','yyyymmdd'))-- '28'   
+                    end as finish_day        -- 정년퇴직일
+                */          
+                    FROM    -- FROM()V => V 대신 아무글자 사용 가능 () 안을 하나의 테이블로 보겠다는 말이다.
+                    (
+                    select employee_id  -- 사원번호
+                        , first_name || ' ' || last_name as FULLNAME    -- 사원명
+                        , rpad(substr(jubun,1,7),length(jubun),'*') as JUBUN  -- 주민번호
+                        , case when substr(jubun,7,1) in('1','3') then '남' else '여' end as GENDER   -- 성별
+                        , to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4), 'yyyymmdd') as "CURRENT_YEAR_BIRTHDAY" -- 올해생일 
+                        , case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2)  as BIRTHYEAR -- 태어난 년도 
+                        , NVL(salary + (salary * commission_pct), salary) as month_money  -- 월급
+                        , hire_date   -- 입사일자
+                        
+                     from employees
+                    ) V
+        ) T
+    ) A;
+ -- ♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥   
+    
+    -- 강사님 --
+    
+    -- >>> 만들어야 할 컬럼 : 성별, 현재나이, 정년퇴직일, 정년까지 근무개월 수, 퇴직금 <<< --
+    --      정년퇴직일
+    --      사원의 나이가 63세가 되는 해
+    --      62세 : 지금으로 부터 1년 뒤가 63세가 되는 해   ==> add_months(sysdate, 1*12)   ==> add_months(sysdate, (63-62)*12) 
+    -- ==> add_months(sysdate, (63-현재나이)*12)    ==> to_char(add_months(sysdate, (63-현재나이)*12),'yyyy')
+    --      37세 : 지금으로 부터 26년 뒤가 63세가 되는 해  ==> add_months(sysdate, 26*12)  ==> add_months(sysdate, (63-37)*12) 
+    -- ==> add_months(sysdate, (63-현재나이)*12)    ==> to_char(add_months(sysdate, (63-현재나이)*12),'yyyy')
+    
+    SELECT employee_id as 사원번호
+        , fullname as 사원명
+        , jubun as 주민번호
+        , gender as 성별
+        , age as 만나이
+        , to_char(monthsal,'99,999') as 월급
+        , to_char(hire_date,'yyyy-mm-dd') as 입사일자
+        , to_char(retire_day,'yyyy-mm-dd') as 정년퇴직일
+        , trunc(months_between(retire_day, hire_date),0) || '개월' as 정년까지근무개월수  -- 정년까지근무개월수
+        , to_char(trunc(monthsal * months_between(retire_day, hire_date)/ 12, 0),'9,999,999')  as 퇴직금                            -- 퇴직금
+    
+    FROM
+    (
+    SELECT employee_id, fullname, jubun, gender, age, monthsal, hire_date           -- 사원번호, 사원명, 주민번호, 성별, 현재나이, 월급, 입사일자
+        , last_day(to_date(to_char(add_months(sysdate, (63-age)*12),'yyyy') ||
+                    case when substr(jubun,3,2) between '03' and '08'then '-08-01'
+                    else '-02-01'
+                    end
+                    ,'yyyy-mm-dd')) as retire_day                                   -- 정년퇴직일
+    FROM
+    (
+        SELECT employee_id
+                , fullname
+                , jubun
+                , gender
+                , case when current_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') -- 날짜 연산자도 비교연산자 가능
+                -- 시간이 계속 바뀌기 때문에 문자타입인 년월일 만 나타내는 것으로 바꾸어주고 다시 날짜타입로 바꾸어주기
+                    then extract(year from sysdate) - birthyear - 1 -- extract(year from sysdate) : 날짜에서 년만 추출
+                    else extract(year from sysdate) - birthyear
+                    end as age  -- 현재나이
+                , monthsal
+                , hire_date
+                            
+        FROM   
+            (
+            select employee_id  -- 사원번호
+                , first_name || ' ' || last_name as FULLNAME    -- 사원명
+                , JUBUN  -- 주민번호
+                , case when substr(jubun,7,1) in('1','3') then '남' else '여' end as GENDER   -- 성별
+                , to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4), 'yyyymmdd') as "CURRENT_YEAR_BIRTHDAY" -- 올해생일 
+                , case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2)  as BIRTHYEAR -- 태어난 년도 
+                
+                , nvl(salary + (salary * commission_pct),salary) as monthsal    -- 월급
+                , hire_date -- 입사일자
+             from employees
+        ) V
+    ) T
+ ) A;   
+    
+    
+   ------------------------------------------------------------------------------------------------------------------------------------
+   
+    -- 5.3  greatest , least 
+    select greatest(10, 90, 100, 80)  -- 나열되어진것들 중에 제일큰값을 알려주는 것
+          , least(10, 90, 100, 80)    -- 나열되어진것들 중에 제일작은값을 알려주는 것
+    from dual;
+    -- 100    10
+     
+    select greatest('김유신','허준','고수','엄정화')  -- 나열되어진것들 중에 제일큰값을 알려주는 것
+          , least('김유신','허준','고수','엄정화')    -- 나열되어진것들 중에 제일작은값을 알려주는 것
+    from dual;
+    -- 허준    고수
+    
+    select greatest(to_date('2024-01-01','yyyy-mm-dd'), sysdate+5, sysdate)  -- 나열되어진것들 중에 제일큰값을 알려주는 것
+      , least(to_date('2024-01-01','yyyy-mm-dd'), sysdate+5, sysdate)        -- 나열되어진것들 중에 제일작은값을 알려주는 것
+    from dual;
+    
+    
+    
+    
+    
+    
+    --5-4. rank ==> 등수(석차)구하기   , dense_rank ==> 서열구하기
+    select employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , nvl(salary + (salary * commission_pct), salary) as 월급
+        , rank() over(order by nvl(salary + (salary * commission_pct), salary) desc) as 전체월급등수 -- 월급에 대한 내림차순한 값(공동등수가 있으면 밀림)
+        , dense_rank() over(order by nvl(salary + (salary * commission_pct), salary) desc) as 전체월급서열 -- 월급에 대한 서열 (공동등수가 있어도 밀리지 않음)
+    from employees;
+    
+    
+    select employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , nvl(salary + (salary * commission_pct), salary) as 월급
+        , department_id as 부서번호
+        
+        , rank() over(order by nvl(salary + (salary * commission_pct), salary) desc) as 전체월급등수 
+        , rank() over(partition by department_id order by nvl(salary + (salary * commission_pct), salary) desc) as "부서 내 월급등수"
+        
+        , dense_rank() over(order by nvl(salary + (salary * commission_pct), salary) desc) as 전체월급서열
+        , dense_rank() over(partition by department_id order by nvl(salary + (salary * commission_pct), salary) desc) as "부서 내 월급서열" 
+    from employees;
+    
+    
+    --- employees 테이블에서 월급의 등수가 1등 부터 10등 까지인 사원들만
+    --- 사원번호, 사원명, 월급, 월급등수를 나타내세요.
+    
+    select  employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , nvl(salary + (salary * commission_pct), salary) as 월급
+        , rank() over(order by nvl(salary + (salary * commission_pct), salary) desc) as 월급등수
+    from employees
+    where rank() over(order by nvl(salary + (salary * commission_pct), salary) desc) <= 10;
+    -- ORA-30483: 윈도우 함수를 여기에 사용할 수 없습니다
+    -- 오류이다.!! 왜냐하면 rank() 함수와 dense_rank() 함수는 where 절에 막바로 쓸수가 없습니다.
+    -- rank 함수는 where 절에서 사용할 수 없다.
+    
+    -- !!!! 이럴때 inline view 를 사용하여 구한다.!!!!!!!!
+    SELECT *
+    FROM
+    (
+    select  employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , to_char(nvl(salary + (salary * commission_pct), salary),'99,999') as 월급
+        , rank() over(order by nvl(salary + (salary * commission_pct), salary) desc) as 월급등수
+    from employees
+    ) V
+    WHERE 월급등수 <= 10;
+    
+    
+    --- [퀴즈] 각 부서번호별로 월급에 대한 등수가 1등인 사원들만 아래와 같이 나오도록 하세요.
+    ------------------------------------------------------------------------------
+    부서번호    사원번호    사원명             월급      부서내등수   전체등수    
+    10        200   Jennifer Whalen        4,400        1         61
+    20        201   Michael Hartstein     13,000        1         12
+    30        114   Den Raphaely          11,000        1         23
+    40        203   Susan Mavris           6,500        1         54
+    50        121   Adam Fripp             8,200        1         39
+    60        103   Alexander Hunold       9,000        1         32
+    70        204   Hermann Baer          10,000        1         29
+    80        145   John Russell          19,600        1          2
+    90        100   Steven King           24,000        1          1
+   100        108   Nancy Greenberg       12,008        1         17
+   110        205   Shelley Higgins       12,008        1         17
+   null       178   Kimberely Grant        8,050        1         41
+   
+    desc employees;
+   
+    select department_id as 부서번호
+        , employee_id as 사원번호
+        , full_name as 사원명
+        , month_money as 월급
+        , department_rank as 부서내등수
+        , total_rank as 전체등수
+        from
+        (
+        select department_id, employee_id       -- 부서번호, 사원번호
+            , first_name || ' ' || last_name as full_name   -- 사원명
+            , to_char(nvl(salary + (salary * commission_pct), salary),'99,999') as month_money  -- 월급
+            , rank() over(partition by department_id order by nvl(salary + (salary * commission_pct), salary) desc) as department_rank  -- 부서내등수
+            , rank() over(order by nvl(salary + (salary * commission_pct), salary) desc) as total_rank  -- 전체등수
+            
+        from employees
+        ) v
+    where department_rank = 1;
+    
+    
+    
+    select employee_id, department_id, salary
+    from employees;
+    
+    
+    
+    
+    
+    
+    
+    -- 5-5. lag, lead 함수 ==> 웹의 게시판 또는 상품보기 등등 에서 특정글(특정상품)을 조회할 때 많이 사용합니다.
+    create table tbl_board                                                                                                                      
+    (boardno       number                -- 글번호   -- number 는 22byte 를 차지하며, 38자리까지 표현 가능하다. 10의 -130승 ~ 10의 126승 까지 숫자를 저장할 수 있다. 
+    ,subject       varchar2(4000)        -- 글제목   varchar2 의 최대크기는 4000 이다. 4000 보다 크면 오류!!!
+    ,content       Nvarchar2(2000)       -- 글내용   Nvarchar2 의 최대크기는 2000 이다. 2000 보다 크면 오류!!!
+    ,userid        varchar2(40)          -- 글쓴이의 ID
+    ,registerday   date default sysdate  -- 작성일자   default sysdate 은 데이터 입력시 registerday 컬럼의 값을 생략하면 기본적으로 sysdate 가 입력된다는 말이다. 
+    ,readcount     number(10)            -- 조회수
+    );
+    -- Table TBL_BOARD이(가) 생성되었습니다.
+    
+    insert into tbl_board(boardno, subject, content, userid, registerday, readcount)
+    values(1,'안녕하세요','글쓰기 연습입니다','leess', sysdate, 0);
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    select *
+    from tbl_board;
+    
+    desc tbl_board;
+    
+    insert into tbl_board   -- 컬럼을 입력하지 않으면 초기 생성한 순서 따라간다.
+    values('반갑습니다',2,'모두 취업대박','eomjh', sysdate, 0);
+    /*
+    오류 보고 -
+    ORA-01722: 수치가 부적합합니다
+    */
+    
+    insert into tbl_board(subject, boardno, content, userid, readcount, registerday)    -- 컬럼명을 적어주는 것을 권장
+    values('반갑습니다',2,'모두 취업대박나십시요','eomjh', 0, sysdate);
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    insert into tbl_board(boardno, subject, content, userid, registerday, readcount)
+    values(3,'건강하세요','로또 1등을 기원합니다','youks', default, 0);   -- 설정해둔 default 값이 입력된다.
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    insert into tbl_board(boardno, subject, content, userid, readcount)
+    values(4,'기쁘고 감사함이 넘치는 좋은 하루되세요','늘 행복하세요','leess',0);
+    -- 1 행 이(가) 삽입되었습니다.
+    insert into tbl_board(boardno, subject, content, userid, readcount)
+    values(5,'오늘도 좋은 하루되세요','늘 감사합니다','hongkd',0);
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    select *
+    from tbl_board;
+    
+    commit;
+    -- 커밋 완료.
     
