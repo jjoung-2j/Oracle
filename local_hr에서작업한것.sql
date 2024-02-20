@@ -1727,14 +1727,14 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
         
         -- , trunc(round((kor + eng + math)/3,1) -1) 
         
-        , case trunc(round((kor + eng + math)/3,1) -1)
-        when 100 then 'A'
-        when 90 then 'A'
-        when 80 then 'B'
-        when 70 then 'C'
-        when 60 then 'D'
-        else 'F'
-        end as 학점1
+        , case trunc( round( (kor + eng + math)/3, 1), -1 ) 
+         when 100 then 'A'
+         when  90 then 'A'
+         when  80 then 'B'
+         when  70 then 'C'
+         when  60 then 'D'
+         else 'F'
+         end AS 학점1
         
         , decode ( trunc ( round( (kor + eng + math)/ 3, 1), -1), 100, 'A'
                                                             , 90, 'A'
@@ -2041,6 +2041,113 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
           , to_char(sysdate, 'dy')   AS 줄인요일명  -- 월(Windows) , Mon(Linux)
      from dual;
     
+    -- OS 가 무엇이든 상관없이 같은 결과가 나오게 하기
+    select to_char(sysdate,'d') -- sysdate의 주의 일요일 부터(지금은 2024년 2월 18일) sysdate(지금은 2024년 2월 20일) 까지 며칠째 인지를 알려주는 것이다.
+                                -- 1(일요일) 2(월요일) 3(화요일) 4(수요일) 5(목요일) 6(금요일) 7(토요일)
+    from dual;
+    
+    
+    select case to_char(sysdate,'d')
+            when '1' then '일'
+            when '2' then '월'
+            when '3' then '화'
+            when '4' then '수'
+            when '5' then '목'
+            when '6' then '금'
+            when '7' then '토'
+            end as "오늘의 요일명1"     -- else 가 나올 상황이 없으므로 생략
+            
+            , decode (to_char(sysdate,'d'),'1','일',
+                                        '2','월',
+                                        '3','화',
+                                        '4','수',
+                                        '5','목',
+                                        '6','금',
+                                        '7','토') as "오늘의 요일명2"
+    from dual;
+    
+    
+    select to_char(sysdate, 'dd')   -- sysdate 의 월 1일 부터(지금은 2024년 2월 1일) sysdate(지금은 2024년 2월 20일) 까지 며칠째 인지를 알려주는 것이다.
+    from dual;
+    
+    select to_char(sysdate, 'ddd')   -- sysdate 의 년도 1월 1일 부터(지금은 2024년 1월 1일) sysdate(지금은 2024년 2월 20일) 까지 며칠째 인지를 알려주는 것이다.
+    from dual;
+    
+    select to_char(sysdate, 'sssss')   -- sysdate 의 0시 0분 0초 부터 sysdate(guswork 2024년 2월 24일 오전 9시 18분 30초 이라면) 까지
+                                    -- 흘러간 초를 말한다.
+    from dual;
+    
+    
+    --->>> 숫자를 문자형태로 변환하기 <<<---
+    select 1234567890
+        , to_char(1234567890,'9,999,999,999')
+        , to_char(1234567890,'$9,999,999,999')
+        , to_char(1234567890,'L9,999,999,999')  -- L 은 그 나라의 화폐기호 이다.
+    from dual;
+    -- 1234567890	 1,234,567,890	 $1,234,567,890	        ￦1,234,567,890
+    
+    select 100, 95.7
+        ,to_char(100,'999.0')   -- 999.9 도 가능
+        ,to_char(95.7,'999.0')  -- 999.0 을 하여도 소수부가 있으면 숫자가 나온다.
+    from dual;
+    
+    
+    select hakbun as 학번
+        , name as 성명
+        , kor as 국어
+        , eng as 영어
+        , math as 수학
+        ,(kor + eng + math) as 총점
+        , to_char(round((kor + eng + math)/3,1),'999.0') as 평균
+        
+        , case trunc( round( (kor + eng + math)/3, 1), -1 ) 
+         when 100 then 'A'
+         when  90 then 'A'
+         when  80 then 'B'
+         when  70 then 'C'
+         when  60 then 'D'
+         else 'F'
+         end AS 학점1
+        
+    from tbl_sungjuk;
+    
+    
+    -- 4.2 to_date(문자,'형태') ==> 문자를 '형태' 모양으로 날짜형태로 변환시켜주는 것이다.
+    select '2024-02-20' +1
+    from dual;
+    -- ORA-01722: 수치가 부적합합니다    ==> 문자에 숫자를 더할 수 없다.
+    -- 01722. 00000 -  "invalid number"     
+    
+    select to_date('2024-02-20', 'yyyy-mm-dd') + 1
+            , to_date('2024/02/20', 'yyyy/mm/dd') + 1
+            , to_date('20240220', 'yyyymmdd') + 1
+    from dual;
+    -- 24/02/21	24/02/21	24/02/21
+    
+    select to_date('2023-02-29', 'yyyy-mm-dd') + 1 -- 2023-02-29 은 달력에 없으므로 오류!!
+    from dual;
+    -- ORA-01839: 지정된 월에 대한 날짜가 부적합합니다
+    
+    
+    -- 4.3  to_number(문자)  ==> 숫자모양을 가지는 문자를 숫자형태로 변환시켜주는 것이다.
+   select '12345', to_number('12345'),
+          '007'  , to_number('007')
+   from dual;
+     
+     
+   select to_number('50')+10
+        , '50'+10   -- 자동형변환이 되어짐.
+   from dual;
+     
+
+   select to_number('홍길동')
+   from dual;
+   -- ORA-01722: invalid number
+    
+    
+    
+    
+    
     
     
     
@@ -2086,12 +2193,46 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
                   , '나는 수학을 몰라요ㅜㅜ') as 결과2 -------------
     from dual;
     
+    ------------------------------------------------------------------------------------------------
+    
+        ----- ***** !!!! 아주 중요중요중요중요중요중요중요중요중요중요중요중요중요 아주 !!!! ***** -----
+        ----- VIEW(뷰)란? 테이블은 아니지만 select 되어진 결과물을 마치 테이블 처럼 보는것(간주하는 것)이다.
+    select V.*
+    FROM
+    (    
+        select employee_id
+            , first_name || ' ' || last_name as FULLNAME
+            , nvl(salary + (salary * commission_pct), salary) as MONTHSAL
+        from employees
+    ) V
+    where V.MONTHSAL between 15000 and 20000;
+    
+    select *    -- V. 은 생략 가능하다.
+    FROM
+    (    
+        select employee_id
+            , first_name || ' ' || last_name as FULLNAME
+            , nvl(salary + (salary * commission_pct), salary) as MONTHSAL
+        from employees
+    ) V
+    where V.MONTHSAL between 15000 and 20000;
     
     
+    select employee_id as "사원번호"
+    , first_name || ' ' || last_name "사원명"
+    , rpad(substr(jubun,1,7), length(jubun),'*') as "주민번호2"
+    , to_number(substr(jubun,1,2)) + decode(substr(jubun,7,1), '1', 1900, '2', 1900 , 2000) as "태어난년도"
     
+    , to_date(to_char(sysdate, 'yyyy') || substr(jubun,3,4 ), 'yyyymmdd') AS 올해생일
     
+    , case
+      when to_date(to_char(sysdate, 'yyyy') || substr(jubun,3,4), 'yyyymmdd') - to_date(to_char(sysdate, 'yyyy-mm-dd'),'yyyy-mm-dd') > 0
+         then extract(year from sysdate) - (to_number( substr(jubun, 1, 2) ) + decode( substr(jubun, 7, 1), '1', 1900, '2', 1900, 2000 )) - 1
+         else extract(year from sysdate) - (to_number( substr(jubun, 1, 2) ) + decode( substr(jubun, 7, 1), '1', 1900, '2', 1900, 2000 ))
+        end as 만나이
     
+    from employees
+    order by employee_id;
     
-    
-    
+    -------------------------------------------------------------------------------------------------
     
