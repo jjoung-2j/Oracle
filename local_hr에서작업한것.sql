@@ -2757,3 +2757,320 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
     commit;
     -- 커밋 완료.
     
+    
+    
+    
+    
+    
+    /*
+      ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        이전글번호      이전글제목                           글번호    글제목                                글내용                 다음글번호    다음글제목
+      ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- 
+         NULL          NULL                                 5      오늘도 좋은 하루되세요                 늘 감사합니다               4       기쁘고 감사함이 넘치는 좋은 하루되세요 
+         5              오늘도 좋은 하루되세요                 4      기쁘고 감사함이 넘치는 좋은 하루되세요    늘 행복하세요               3       건강하세요
+         4              기쁘고 감사함이 넘치는 좋은 하루되세요   3      건강하세요                           로또 1등을 기원합니다         2        반갑습니다
+         3              건강하세요                           2      반갑습니다                           모두 취업대박 나십시오         1       안녕하세요
+         2              반갑습니다                           1      안녕하세요                           글쓰기 연습입니다            NULL      NULL 
+      ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    
+                    1 2 3 4 5 6 7 8 9 10 다음
+         이전(최근)  11 12 13 14 15 16 17 18 19 20 다음(과거)
+    */ 
+    
+    select lag(boardno,1) over(order by boardno desc) as 이전글번호
+        -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 1칸 올라간 행에서 boardno 컬럼의 값을 가져온다.
+        , lag(subject,1) over(order by boardno desc) as 이전글제목
+        -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 1칸 올라간 행에서 subject 컬럼의 값을 가져온다.
+        , boardno as 글번호
+        , subject as 글제목
+        , content as 글내용
+        , lead(boardno,1) over(order by boardno desc) as 다음글번호
+          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 1칸 올라간 행에서 boardno 컬럼의 값을 가져온다.
+        , lead(subject,1) over(order by boardno desc) as 다음글제목
+          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 1칸 올라간 행에서 subject 컬럼의 값을 가져온다.
+    from tbl_board;
+    
+    
+    select lag(boardno,2) over(order by boardno desc) as 이전글번호
+        -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 2칸 올라간 행에서 boardno 컬럼의 값을 가져온다.
+        , lag(subject,2) over(order by boardno desc) as 이전글제목
+        -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 2칸 올라간 행에서 subject 컬럼의 값을 가져온다.
+        , boardno as 글번호
+        , subject as 글제목
+        , content as 글내용
+        , lead(boardno,2) over(order by boardno desc) as 다음글번호
+          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 2칸 올라간 행에서 boardno 컬럼의 값을 가져온다.
+        , lead(subject,2) over(order by boardno desc) as 다음글제목
+          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 2칸 올라간 행에서 subject 컬럼의 값을 가져온다.
+    from tbl_board;
+    
+    -- 숫자가 없으면 1칸을 뜻한다.
+    select lag(boardno) over(order by boardno desc) as 이전글번호
+        -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 1칸 올라간 행에서 boardno 컬럼의 값을 가져온다.
+        , lag(subject) over(order by boardno desc) as 이전글제목
+        -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 1칸 올라간 행에서 subject 컬럼의 값을 가져온다.
+        , boardno as 글번호
+        , subject as 글제목
+        , content as 글내용
+        , lead(boardno) over(order by boardno desc) as 다음글번호
+          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 1칸 올라간 행에서 boardno 컬럼의 값을 가져온다.
+        , lead(subject) over(order by boardno desc) as 다음글제목
+          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 1칸 올라간 행에서 subject 컬럼의 값을 가져온다.
+    from tbl_board;
+    
+    
+    -- subject 컬럼의 값의 길이가 16 보다 크면 subject 컬럼의 값 중 16글자만 보여주고 뒤에 ... 을 붙여서 나타내세요.
+     /*
+      ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        이전글번호      이전글제목                           글번호    글제목                                글내용                 다음글번호    다음글제목
+      ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- 
+         NULL          NULL                                 5      오늘도 좋은 하루되세요                 늘 감사합니다               4       기쁘고 감사함이 넘치는 좋은 하루되세요 
+         5              오늘도 좋은 하루되세요                 4      기쁘고 감사함이 넘치는 좋은 하루되세요    늘 행복하세요               3       건강하세요
+         4              기쁘고 감사함이 넘치는 좋은 ...        3      건강하세요                           로또 1등을 기원합니다         2        반갑습니다
+         3              건강하세요                           2      반갑습니다                           모두 취업대박 나십시오         1       안녕하세요
+         2              반갑습니다                           1      안녕하세요                           글쓰기 연습입니다            NULL      NULL 
+      ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    
+         이전(최근)  11 12 13 14 15 16 17 18 19 20 다음(과거)
+    */   
+    
+    
+    select lag(boardno) over(order by boardno desc) as 이전글번호
+        , lag(case when length(subject) > 19 then substr(subject,1,16) || '...' else subject end)
+         over(order by boardno desc) as 이전글제목
+        , boardno as 글번호
+        , case when length(subject) > 19 then substr(subject,1,16) || '...' else subject end as 글제목
+        , content as 글내용
+        , lead(boardno) over(order by boardno desc) as 다음글번호
+        , lead(case when length(subject) > 19 then substr(subject,1,16) || '...' else subject end)
+         over(order by boardno desc)as 다음글제목
+    from tbl_board;
+    
+    -- 또는
+    SELECT lag(boardno) over(order by boardno desc) as 이전글번호
+        , lag(subject) over(order by boardno desc) as 이전글제목
+        , boardno as 글번호
+        , subject as 글제목
+        , content as 글내용
+        , lead(boardno) over(order by boardno desc) as 다음글번호
+        , lead(subject) over(order by boardno desc) as 다음글제목
+    FROM
+    (
+    select boardno
+        ,case when length(subject) > 19 then substr(subject,1,16) || '...' else subject end as subject
+        , content
+    from tbl_board
+    ) V;
+    --> lag와 lead 를 바꾸고 desc 가아니라 asc 를 하면
+    -- 글번호 순서가 맨위가 제일 과거가 뜸으로 바꾸어 사용하면 안된다.
+    -- 최신글이 맨위로 가려면 order by 를 통해 잡아주고 lag와 lead 를 위치시키면 된다.
+    
+    
+    
+    -- [퀴즈] 아래와 같이 나오도록 하세요.
+     ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        이전글번호      이전글제목                           글번호    글제목                                글내용                 다음글번호    다음글제목
+      ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- 
+         4              기쁘고 감사함이 넘치는 좋은 ...        3      건강하세요                           로또 1등을 기원합니다         2        반갑습니다
+      ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    --- 내가 한 풀이 ---
+    SELECT fu_boardno as 이전글번호
+        , fu_subject as 이전글제목
+        , boardno as 글번호
+        , subject as 글제목
+        , content as 글내용
+        , la_boardno as 다음글번호
+        , la_subject as 다음글제목
+    FROM
+    (  
+    select lag(boardno) over(order by boardno desc) as fu_boardno
+        , lag(case when length(subject) > 19 then substr(subject,1,16) || '...' else subject end)
+         over(order by boardno desc) as fu_subject
+        , boardno
+        , case when length(subject) > 19 then substr(subject,1,16) || '...' else subject end as subject
+        , content
+        , lead(boardno) over(order by boardno desc) as la_boardno
+        , lead(case when length(subject) > 19 then substr(subject,1,16) || '...' else subject end)
+         over(order by boardno desc)as la_subject
+    from tbl_board
+    ) V
+    where boardno = 3;
+    
+    --- 틀린 풀이 ---
+    select lag(boardno) over(order by boardno desc) as 이전글번호
+        , lag(case when length(subject) > 19 then substr(subject,1,16) || '...' else subject end)
+         over(order by boardno desc) as 이전글제목
+        , boardno as 글번호
+        , case when length(subject) > 19 then substr(subject,1,16) || '...' else subject end as 글제목
+        , content as 글내용
+        , lead(boardno) over(order by boardno desc) as 다음글번호
+        , lead(case when length(subject) > 19 then substr(subject,1,16) || '...' else subject end)
+         over(order by boardno desc)as 다음글제목
+    from tbl_board
+    where boardno = 3;
+    
+    --- *** 아래가 올바른 풀이이다.
+    SELECT BEFORE_BOARDNO as 이전글번호
+        , BEFORE_BOARDNO as 이전글제목
+        , BOARDNO as 글번호
+        , SUBJECT as 글제목
+        , CONTENT as 글내용
+        , After_Boardno as 다음글번호
+        , AFTER_SUBJECT as 다음글제목
+    FROM
+    (
+    select lag(boardno) over(order by boardno desc) as BEFORE_BOARDNO
+        , lag(case when length(subject) > 19 then substr(subject,1,16) || '...' else subject end)
+         over(order by boardno desc) as BEFORE_BOARDNO
+        , BOARDNO
+        , case when length(subject) > 19 then substr(subject,1,16) || '...' else subject end as SUBJECT
+        , CONTENT
+        , lead(boardno) over(order by boardno desc) as After_Boardno
+        , lead(case when length(subject) > 19 then substr(subject,1,16) || '...' else subject end)
+         over(order by boardno desc)as AFTER_SUBJECT
+    from tbl_board
+    ) V
+    WHERE V.BOARDNO = 3;
+    
+    
+    
+    
+    
+    
+    
+    
+    ------------------------------------------------------------------------------------------------------
+    
+    
+             ------ >> 그룹함수(집계함수) << ------
+    
+    
+/*
+        1. sum       -- 합계
+        2. avg       -- 평균
+        3. max       -- 최대값
+        4. min       -- 최소값
+        5. median    -- 중앙값
+        6. count     -- select 되어서 나온 결과물의 행의 개수 
+        7. variance  -- 분산
+        8. stddev    -- 표준편차
+        
+        분산 : 분산의 제곱근이 표준편차     (평균에서 떨어진 정도)
+        표준편차 : 표준편차의 제곱승이 분산  (평균과의 차액)
+    
+    
+    
+    
+    
+    <<연봉>>
+    'A'부서
+    1000   1200   1100   1300   1100   6200 
+    
+    select 1000 +  1200 +  1100 +  1300 + 1100 +  6200 
+    from dual;  --> 11900
+    
+    select (1000 +  1200 +  1100 +  1300 + 1100 +  6200) / 6
+    from dual;  -- 1983.333333333333333333333333333333333333
+    
+    'B'부서
+    1800   2200   2100   1700   2100   2000 
+    
+    select 1800 +  2200 +  2100 +  1700 + 2100 +  2000 
+    from dual;  --> 11900
+       
+    select (1800 +  2200 +  2100 +  1700 + 2100 +  2000) / 6 
+    from dual;  --> 1983.333333333333333333333333333333333333
+    
+    
+    
+    
+    >>> 주식투자 <<<
+    50  60  40  50  55  45  52  48   평균 50    편차가 적음   -- 안정투자
+    10  90  20  80  30  70  90  10   평균 50    편차가 큼     -- 투기성투자(위험을 안고서 투자함) 
+    
+    분산과 표준편차는 어떤 의사결정시 도움이 되는 지표이다.
+
+*/
+    
+    select sum(salary)
+    from employees;
+    -- 그룹함수(집계함수)는 결과값이 1개행만 나온다.
+    
+    select substr(jubun,7,1)
+    from employees;
+    -- 단일행함수는 결과값이 메모리에 로드되어진 행의 개수만큼 동일한 개수로 나온다.
+    
+    
+    ----- **** !!!!!!! ★★ 중요중요중요중요중요중요 ★★ !!!!!! **** -----
+    -- 그룹함수(집계함수)에서는 null 이 있으면 무조건 null 은 제외시킨 후 연산을 한다.!!!
+    
+    select 20 + 57 + 178 + 48 + null + 109
+    from dual;  -- null
+    
+    select 20 + 57 + 178 + 48 + null + 109
+    from dual;  -- 407
+    
+    select sum(salary * commission_pct)
+    from employees; -- 73690
+    
+    select salary * commission_pct
+    from employees
+    where commission_pct is not null;   -- 73690
+    
+    select salary
+    from employees;
+    
+    select sum(salary), avg(salary), max(salary), min(salary), median(salary), variance(salary), stddev(salary)
+    from employees;
+    -- 691416	6461.831775700934579439252336448598130841	24000	2100	6200	15284813.66954681713983424440134015164874	3909.579730552481921059198878167256201202
+    
+    desc employees;
+    -- EMPLOYEE_ID    NOT NULL
+    -- SALARY
+    -- COMMISSION_PCT
+    -- DEPARTMENT_ID
+    
+    select employee_id
+    from employees;
+    
+    select commission_pct
+    from employees;
+    
+    select department_id
+    from employees;
+    
+    select count(employee_id) as "사원번호"
+        , count(department_id) as "부서번호가 NULL 이 아닌 사원 수"
+        , count(commission_pct) as "Commission_pct 가 NULL 이 아닌 사원 수"
+    from employees;
+    
+    --- employees 테이블에 입력되어진 행의 개수(즉, 사원수)는 어떻게 구할까요?
+    select count(employee_id), count(*)
+    from employees;
+    
+    -- 권장방법 -- 
+    select count(*)
+    from employees;
+    
+    
+    -- tbl_board 테이블에 입력되어진 행의 개수(즉, 사원수)는 어떻게 구할까요?
+    desc tbl_board;
+    
+    select count(boardno), count(*) -- 모든 컬럼이 null 이 있는 경우는 없으니 count(*) 방법을 시행한다.
+    from tbl_board;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
