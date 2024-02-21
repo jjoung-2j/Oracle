@@ -3057,20 +3057,272 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
     desc tbl_board;
     
     select count(boardno), count(*) -- 모든 컬럼이 null 이 있는 경우는 없으니 count(*) 방법을 시행한다.
-    from tbl_board;
+    from tbl_board; -- 5
+    
+    
+    
+    ---- **** avg(평균)을 구하실때는 주의를 요합니다. **** ----
+    
+    -- employees 테이블에서 기본급여(salary)의 평균치를 구하세요.
+    
+    select sum(salary), count(salary)   -- 691416   107
+        , sum(salary) / count(salary)   -- 691416 / 107 = 6461.831775700934579439252336448598130841
+        , avg(salary)                   -- 6461.831775700934579439252336448598130841
+    from employees;
+    
+    -- employees 테이블에서 수당급여(salary * commission_pct)의 평균치를 구하세요.
+    select sum(salary * commission_pct), count(salary * commission_pct) -- 73690	35
+        , sum(salary * commission_pct) / count(salary * commission_pct) -- 73690 / 35 = 2105.428571428571428571428571428571428571
+        , avg(salary * commission_pct)  -- 2105.428571428571428571428571428571428571
+        -- 모든 사원이 아닌 수당급여를 받는 사원들의 평균치이다.
+        -- NULL 값을 빼기 때문에 NULL 이 아닌 사원 == 수당급여를 받는 사원
+    from employees;
+    
+    select avg(salary * commission_pct) -- 2105.428571428571428571428571428571428571
+    from employees; --> 이것은 수당금액을 받는 사원들(35명)만의 수당금액의 평균값을 구하는 것이다.
+    
+    select salary * commission_pct,nvl(salary * commission_pct,0)
+    from employees;
+    
+    select avg(salary * commission_pct),avg(nvl(salary * commission_pct,0))
+    from employees;
+    -- 2105.428571428571428571428571428571428571    688.691588785046728971962616822429906542
+    -- avg(salary * commission_pct) 은 수당금액을 받는 사원들(35명)만의 수당금액의 평균값이고,
+    -- avg(nvl(salary * commission_pct,0)) 은 수당금액이 NULL 인 사원들은 수당금액을 0 으로 계산하여 모든 사원들(107명)의 수당금액의 평균값이다.
     
     
     
     
     
+    ---- *** 그룹함수(집계함수)와 함께 사용되어지는 group by 절에 대해서 알아봅니다. *** ----
+    
+    --- employees 테이블에서 부서번호별로 인원수를 나타내세요.
+    
+    select count(*)
+    from employees
+    where department_id = 30;   -- 6
+    
+    select count(*)
+    from employees
+    where department_id = 50;   -- 45
+    
+    /*
+        ------------------
+        부서번호    인원수
+        ------------------
+          10        1
+          20        2
+          30        6
+          40        1
+          50       45
+          60        5
+          70        1
+          80       34
+          90        3
+         100        6
+         110        2
+        (NULL)      1
+    */
+    
+    select department_id as 부서번호
+         , count(*) as 인원수
+    from employees
+    group by department_id  -- department_id 컬럼의 값이 같은것끼리 그룹을 짓는다.
+    order by 1;
+    -- 그룹을 가지는 조건 : Ex) 부서번호별로 ~~ => 부서번호가 같은 것 끼리
     
     
+    --- employees 테이블에서 성별로 인원수를 나타내세요. ---
+    
+    ------------------
+     성별      인원수
+    ------------------
+     남         56
+     여         51
     
     
+    SELECT gender as 성별, count(*) as 인원수
+    FROM
+    (
+        select case when substr(jubun,7,1) in('1','3')
+            then '남'
+            else '여'
+            end as gender
+        from employees
+    ) V
+    GROUP BY gender;    -- gender 컬럼의 값이 같은것 끼리 그룹을 짓는다.
     
+    --- [퀴즈] employees 테이블에서 연령대별로 인원수를 나타내세요. ---
+/*
+    ------------------
+      연령대   인원수
+    ------------------
+       10      16
+       20      18
+       30      21
+       40      20
+       50      17
+       60      15
+*/
+
+
+/*
+ 나이 : 올해 생일이 미래이면, 현재년도 - 태어난년도 - 1 
+      OR 올해 생일이 오늘이거나 과거이면, 현재년도 - 태어난년도
+
+    현재년도 ==> extract(year from sysdate)
     
+    태어난년도 ==> case when substr(jubun,7,1) in ('1','2')
+                    then '19' || substr(jubun,1,2)
+                    else '20' || substr(jubun,1,2)
+                    end
+                    
+    올해생일 ==> to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4), 'yyyymmdd')
+
+*/
+
+SELECT trunc(age,-1) as 연령대, count(*) as 인원수
+FROM
+    ( 
+    SELECT case when current_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') 
+                then extract(year from sysdate) - birthyear - 1 -- extract(year from sysdate) : 날짜에서 년만 추출
+                else extract(year from sysdate) - birthyear
+                end as age  -- 현재나이
+    FROM
+    (
+        select to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4), 'yyyymmdd') as "CURRENT_YEAR_BIRTHDAY" -- 올해생일 
+               , case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2)  as BIRTHYEAR -- 태어난 년도 
+        from employees
+    ) V
+) T
+GROUP BY trunc(age,-1)
+ORDER BY 1;
+
+-- 또는
+
+SELECT T.AGE_LINE AS 연령대
+    , COUNT(*) AS 인원수
+FROM
+(
+    SELECT 
+        trunc(case when current_year_birthday > to_date(to_char(sysdate, 'yyyymmdd'),'yyyymmdd')
+        then extract(year from sysdate) - birthday_year - 1
+        else extract(year from sysdate) - birthday_year
+        end, -1) as age_line
+        FROM
+        (
+            select to_number( CASE WHEN substr(jubun,7,1) in('1','2') THEN '19' ELSE '20' END || substr(jubun,1,2) ) as birthday_year
+                , to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4),'yyyymmdd') as current_year_birthday
+            from employees
+        ) V
+) T
+GROUP BY T.AGE_LINE
+ORDER BY 1;
+
+
+
+
+
+
+
+--------- **** 1차 그룹, 2차 그룹 짓기 **** -----------------
+
+
+---- employees 테이블에서 부서번호별, 성별인원수를 나타내세요. ----
+/*
+    -----------------------------
+    부서번호    성별      인원수
+    -----------------------------
+     ....     ....       ....
+     50         남
+     50         여
+     60         남
+     60         여
+     ....
+*/
+
+SELECT DEPARTMENT_ID AS 부서번호
+    , GENDER AS 성별
+    , COUNT(*) AS 인원수
+FROM
+    (
+    select department_id
+        ,case when substr(jubun,7,1) in('1','3') then '남' else '여' end as gender  
+        from employees
+    ) V
+GROUP BY DEPARTMENT_ID, GENDER
+--          1차그룹    , 2차그룹
+ORDER BY 1;
+
+
+
+
+--- [퀴즈] employees 테이블에서 연령대별, 성별 인원수를 나타내세요. ---
+/*
+    -------------------------------------
+     연령대    성별    인원수   퍼센티지(%)
+    -------------------------------------
+      10      남
+      10      여
+      20      남
+      20      여
+      30      남
+      30      여
+      ...    ...
+*/
+Select ageline as 연령대
+    , gender as 성별
+    , count(*) as 인원수
+    , round(count(*)/(select count(*) from employees)*100,1) as "퍼센티지(%)"
+FROM
+(
+    select case when to_char(sysdate,'yyyymmdd') < current_year_birthday 
+                -- 생일이 미래면 이번년도 - 태어난년도 -1
+                then trunc(extract(year from sysdate) - birthyear - 1, -1)
+                else trunc(extract(year from sysdate) - birthyear ,-1)
+                end as ageline
+        , gender
+    from
+    (
+        select case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2) as birthyear    -- 태어난년도
+            , to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4), 'yyyymmdd') as current_year_birthday -- 올해생일
+            , case when substr(jubun,7,1) in('1','3') then '남' else '여' end as gender
+        from employees
+    ) V
+) T
+GROUP BY ageline, gender
+ORDER BY ageline;
+
+-- 또는
+-- 강사님
+SELECT AGE_LINE AS 연령대
+     , GENDER AS 성별 
+     , COUNT(*) AS 인원수
+     , round( COUNT(*)/( select count(*) from employees )*100, 1) AS "퍼센티지(%)"
+FROM 
+(
+
+    SELECT 
+           trunc( CASE WHEN current_year_birthday > to_date( to_char(sysdate, 'yyyymmdd'), 'yyyymmdd')
+                  THEN extract(year from sysdate) - birthday_year - 1
+                  ELSE extract(year from sysdate) - birthday_year
+                  END, -1)
+           AS AGE_LINE
+        ,  GENDER   
+    FROM 
+    (
+      select  to_number( CASE WHEN substr(jubun,7,1) in('1','2') THEN '19' ELSE '20' END || substr(jubun,1,2) )
+              AS BIRTHDAY_YEAR
+          ,   to_date( to_char(sysdate, 'yyyy') || substr(jubun,3,4), 'yyyymmdd') 
+              AS CURRENT_YEAR_BIRTHDAY
+          ,   CASE WHEN substr(jubun, 7, 1) in('1','3') THEN '남' ELSE '여' END AS GENDER     
+      from employees
+    ) V
     
-    
-    
-    
-    
+) T
+GROUP BY AGE_LINE, GENDER 
+ORDER BY 1;
+
+
+
+
