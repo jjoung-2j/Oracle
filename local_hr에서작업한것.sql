@@ -3324,5 +3324,121 @@ GROUP BY AGE_LINE, GENDER
 ORDER BY 1;
 
 
+-- 또는
+---- ====>>> with 절을 사용한 inline view 만ㄷ르기 <<<==== ----
+
+WITH
+V AS
+(
+    select to_number( CASE WHEN substr(jubun,7,1) in('1','2') THEN '19' ELSE '20' END || substr(jubun,1,2) ) AS BIRTHDAY_YEAR
+        , to_date( to_char(sysdate, 'yyyy') || substr(jubun,3,4), 'yyyymmdd') AS CURRENT_YEAR_BIRTHDAY
+        , CASE WHEN substr(jubun, 7, 1) in('1','3') THEN '남' ELSE '여' END AS GENDER     
+    from employees
+)
+SELECT trunc(case when current_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') 
+        then extract(year from sysdate) - V.birthday_year - 1
+        else extract(year from sysdate) - V.birthday_year
+        end, -1) as 연령대
+        , gender as 성별
+        , count(*) as 인원수
+        , round(count(*)/(select count(*) from employees) * 100, 2) as "퍼센티지(%)"
+FROM V
+GROUP BY trunc(case when current_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') 
+        then extract(year from sysdate) - V.birthday_year - 1
+        else extract(year from sysdate) - V.birthday_year
+        end, -1), gender
+ORDER BY 1;
 
 
+
+
+
+
+------------------------------------------------------------------------------------------------------------
+
+----- **** 요약값을 보여주는 rollup, cube, grouping sets, grouping 에 대해서 알아봅니다. **** ------
+
+
+--- employees 테이블에서 부서번호별로 인원수를 나타내면서 동시에 전체 인원수도 나타내세요. ---
+
+select department_id as 부서번호
+    , grouping(department_id)   -- grouping(department_id) 은 결과값이 오로지 2개만 나온다.
+                                -- 0 또는 1 인데,
+                                -- 0 이라함은 department_id 컬럼의 값으로 그룹을 지었다는 말이고,
+                                -- 1 이라함은 그룹을 안지었다는 말이다.
+    , count(*) as 인원수
+from employees
+group by rollup(department_id);
+--> 부서번호가 null 인지 그룹으로 합쳐진 것에 대한 null 인지 구분하기 어렵다!!
+
+
+select decode (grouping(department_id), 0, nvl(to_char(department_id),'부서없음'), '전체' ) as 부서번호
+    -- grouping(department_id)
+    , count(*) as 인원수
+    , to_char(round(count(*)/(select count(*) from employees) * 100 , 1),'990.0') as "퍼센티지(%)"  -- 9 는 숫자가 없으면 넣지않고, 0 은 숫자가 없으면 0
+from employees
+group by rollup(department_id);
+
+
+
+
+
+---- employees 테이블에서 성별로 인원수 와 퍼센티지(%)를 나타내면서 전체인원수로 나타내세요. ----
+
+with
+V as
+(
+    select case when substr(jubun, 7, 1) in('1','3') then '남' else '여' end as gender
+    from employees
+)
+SELECT nvl(gender,'전체(남,녀)') as 성별
+    , count(*) as "인원수"
+    , to_char(round( COUNT(*)/( select count(*) from employees )*100, 1),'990.0') as "퍼센티지(%)"
+FROM V
+GROUP BY rollup(GENDER);
+
+-- 또는
+
+with
+V as
+(
+    select case when substr(jubun, 7, 1) in('1','3') then '남' else '여' end as gender
+    from employees
+)
+SELECT decode(grouping(gender), 0, gender, '전체') as 성별
+    -- , grouping(gender) => 그룹핑 유무 판별 0과 1
+    , count(*) as "인원수"
+    , to_char(round( COUNT(*)/( select count(*) from employees )*100, 1),'990.0') as "퍼센티지(%)"
+FROM V
+GROUP BY rollup(GENDER);
+
+-- 또는
+
+SELECT decode(grouping(gender), 0, gender, '전체') as 성별
+    -- , grouping(gender) => 그룹핑 유무 판별 0과 1
+    , count(*) as "인원수"
+    , to_char(round( COUNT(*)/( select count(*) from employees )*100, 1),'990.0') as "퍼센티지(%)"
+FROM
+(
+    select case when substr(jubun, 7, 1) in('1','3') then '남' else '여' end as gender
+    from employees
+) V
+GROUP BY rollup(GENDER);
+
+
+
+
+---- employees 테이블에서 부서번호별로, 성별로 인원수 와 퍼센티지(%)를 나타내면서 전체인원수로 나타내세요. ----
+
+SELECT decode (grouping(department_id), 0, nvl(to_char(department_id),'부서없음'), '전체' ) as 부서번호
+    , decode (grouping(gender),0,gender,'전체') as 성별
+    , count(*) as 인원수
+    , to_char(round( COUNT(*)/( select count(*) from employees )*100, 1),'990.0') as "퍼센티지(%)"
+FROM
+(
+    select department_id
+        , case when substr(jubun,7,1) in('1','3') then '남' else '여' end as gender
+    from employees
+) V
+GROUP BY rollup(department_id, gender)
+ORDER BY department_id;
