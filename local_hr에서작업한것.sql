@@ -3615,5 +3615,135 @@ group by department_id;
    */ 
    
    
-   
-   
+    create table tbl_panmae
+ (panmaedate  date
+ ,jepumname   varchar2(20)
+ ,panmaesu    number
+ ); 
+ -- Table TBL_PANMAE이(가) 생성되었습니다.
+ 
+ -- delete from tbl_panmae;
+ 
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( add_months(sysdate,-2), '새우깡', 10);    -- 2달 전 10 개를 팜
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( add_months(sysdate,-2)+1, '새우깡', 15);  -- 2달 전 하루 뒤 15개 팜
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( add_months(sysdate,-2)+2, '감자깡', 20);
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( add_months(sysdate,-2)+3, '새우깡', 10);
+ 
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( add_months(sysdate,-2)+3, '새우깡', 3);
+ 
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( add_months(sysdate,-1), '고구마깡', 7);
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( add_months(sysdate,-1)+1, '새우깡', 8); 
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( add_months(sysdate,-1)+2, '감자깡', 10);
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( add_months(sysdate,-1)+3, '감자깡', 5);
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( sysdate - 4, '허니버터칩', 30);
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( sysdate - 3, '고구마깡', 15);
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( sysdate - 2, '고구마깡', 10);
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( sysdate - 1, '허니버터칩', 20);
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( sysdate, '새우깡', 10);
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( sysdate, '새우깡', 10);
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( sysdate, '감자깡', 5);
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( sysdate, '허니버터칩', 15);
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( sysdate, '고구마깡', 20);
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( sysdate, '감자깡', 10); 
+
+ insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+ values( sysdate, '새우깡', 10);
+
+ commit;  
+ 
+ select *
+ from tbl_panmae;
+ 
+ --- *** tbl_panmae 테이블에서 '새우깡'에 대한 일별판매량과 일별누적판매량을 나타내세요. *** ---
+ 
+ select *
+ from tbl_panmae
+ where jepumname = '새우깡';
+ 
+ ---------------------------------
+ 판매일자   일별판매량   일별누적판매량
+ ---------------------------------
+ 2023-12-22   10         10
+ 2023-12-23   15         25
+ 2023-12-25   13         38
+ 2024-01-23   8          46
+ 2024-02-22   30         76
+ ---------------------------------
+    select to_char(panmaedate,'yyyy-mm-dd') as 판매일자
+        , sum(panmaesu) as 일별판매량
+        -- sum(누적되어야할 컬럼명) over(order by 누적되어질 기준이 되는 컬럼명 asc[desc] )
+        , sum(sum(panmaesu)) over(order by to_char(panmaedate,'yyyy-mm-dd') asc ) as 일별누적판매량
+    from tbl_panmae
+    where jepumname = '새우깡'
+    group by to_char(panmaedate,'yyyy-mm-dd')
+    order by 1;
+    
+    select to_char(panmaedate,'yyyy-mm-dd') as 판매일자
+        , sum(panmaesu) as 일별판매량
+        , sum(sum(panmaesu)) over(order by to_char(panmaedate,'yyyy-mm-dd') asc ) as 일별누적판매량
+        , round(sum(sum(panmaesu)) over(order by to_char(panmaedate,'yyyy-mm-dd') asc ) 
+                / (select sum(panmaesu)from tbl_panmae where jepumname = '새우깡') * 100,1) || '%' as "일별누적퍼센티지(%)"
+    from tbl_panmae
+    where jepumname = '새우깡'
+    group by to_char(panmaedate,'yyyy-mm-dd')
+    order by 1;
+    
+    
+    
+    --- *** tbl_panmae 테이블에서 모든 제품에 대한 일별판매량과 일별누적판매량을 나타내세요. *** ---
+    
+    select jepumname as 제품명
+        , to_char(panmaedate,'yyyy-mm-dd') as 판매일자
+        , sum(panmaesu) as 일별판매량
+        -- sum(누적되어야할 컬럼명) over(partition by 그룹화 되어질 컬럼명 order by 누적되어질 기준이 되는 컬럼명 asc[desc] )
+        , sum(sum(panmaesu)) over(partition by jepumname order by to_char(panmaedate,'yyyy-mm-dd') asc) as 일별누적판매량
+    from tbl_panmae
+    group by jepumname, to_char(panmaedate,'yyyy-mm-dd')
+    order by 1;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
