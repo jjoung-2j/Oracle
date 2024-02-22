@@ -3458,7 +3458,8 @@ FROM
     from employees
 ) V
 GROUP BY cube(department_id, gender)
-ORDER BY department_id,1,2;
+ORDER BY department_id,1,2; -- department_id 숫자~null 정렬, 1은 null 끼리의 정렬, 2 는 gender 정렬 // 문자는 ㄱ~ㅎ 정렬
+-- department_id 는 부서번호(숫자)정렬, 1은 grouping(department_id)의 값을 정렬 0과 1(null 값 정렬가능), gender 정렬
 
 
 
@@ -3486,13 +3487,13 @@ FROM
         , case when substr(jubun,7,1) in('1','3') then '남' else '여' end as gender
     from employees
 ) V
--- GROUP BY grouping sets((department_id, gender), (department_id), () ) --> rollup 과 동일
+GROUP BY grouping sets((department_id, gender), (department_id), () ) --> rollup 과 동일
 -- GROUP BY grouping sets((department_id, gender), (gender), () )
 -- GROUP BY grouping sets((department_id), (gender), () )
-GROUP BY grouping sets((department_id), (gender))
+-- GROUP BY grouping sets((department_id), (gender))
 -- ORDER BY department_id;
 -- ORDER BY gender;
-ORDER BY department_id, gender;
+ORDER BY department_id, 1, gender;  -- department_id 는 부서번호(숫자)정렬, 1은 grouping(department_id)의 값을 정렬 0과 1(null 값 정렬가능), gender 정렬
 
 
 
@@ -3509,9 +3510,110 @@ select department_id as 부서번호
     , listagg(first_name || ' ' || last_name, ',') within group(order by nvl(salary + (salary * commission_pct),salary) desc)-- 월급이 가장 많은사람 먼저
     as "급여가 많은 순서대로 사원명 출력"
 from employees
-group by department_id
+group by department_id;
 
 
 
 
 
+
+         ----- ===== ***   having 그룹함수조건절   *** ====== ------
+   /*
+       group by 절을 사용하여 그룹함수의 값을 나타내었을때
+       그룹함수의 값이 특정 조건에 해당하는 것만 추출하고자 할 때는 where 절을 사용하는 것이 아니라
+       having 그룹함수조건절 을 사용해야 한다.
+   */ 
+   
+   -- employees 테이블에서 사원이 10명 이상 근무하는 부서번호와 그 인원수를 나타내세요.
+   
+   select department_id, count(*)
+   from employees
+   -- where count(*) >= 10     -- 오류!! count(*) 이 무엇인지 알 수 없다!
+   group by department_id;  
+   
+   select department_id as 부서번호 , count(*) as 사원수
+   from employees
+   group by department_id
+   having count(*) >= 10
+   order by 2;  -- 인원수가 적은 것이 먼저나오게 함(asc)
+   
+   
+   --- employees 테이블에서 부서번호별로 벌어들이는 salary 의 합계가 50000 이상인 부서에 대해서만
+   --- 부서번호, 기본급여의합계 를 나타내세요.
+   
+   select department_id as 부서번호
+        , to_char(sum(salary),'999,999') as 기본급여의합계
+   from employees
+   group by department_id
+   having sum(salary) >= 50000
+   order by 2;
+   
+   
+   --- [퀴즈1] employees 테이블에서 부서번호별로 벌어들이는 월급 합계가 40000 이상인 부서에 대해서만
+   --- 부서번호, 월급의합계 를 나타내세요.
+   
+   select department_id as 부서번호
+        , to_char(sum(nvl(salary + (salary * commission_pct),salary)),'999,999') as 월급의합계
+   from employees
+   group by department_id
+   having sum(nvl(salary + (salary * commission_pct),salary)) >= 40000
+   order by 1;
+   
+   desc employees;
+   
+   --- [퀴즈2] employees 테이블에서 부서번호별 월급의 합계와 함께 월급합계의 등수(석차)도 나타내세요. --- 
+   select to_char(sum(nvl(salary + (salary * commission_pct),salary)),'999,999') as "월급의 합계"
+        , rank() over(order by sum(nvl(salary + (salary * commission_pct),salary)) desc) as 등수
+   from employees
+   group by department_id;
+   
+   --- [퀴즈3] employees 테이블에서 부서번호별 인원수와 월급의 평균과 함께 월급평균의 등수(석차)도 나타내세요. --- 
+   select department_id as 부서번호, count(*) as 인원수
+        , to_char(round(avg(nvl(salary + (salary * commission_pct),salary)),0),'99,999') as "월급의 평균"
+        , rank() over(order by avg(nvl(salary + (salary * commission_pct),salary)) desc) as 등수
+   from employees
+   group by department_id
+   order by department_id;
+   
+   --- [퀴즈4] employees 테이블에서 모든 사원들이 벌어들이는 월급의 합계를 100% 로 보았을때 
+   ---       각 부서번호별로 벌어들이는 월급의 합계를 % 로 나타내어보자.
+
+    select decode(grouping(department_id), 0,to_char(nvl(department_id,9999)), '전체') as 부서번호
+        , round(sum(nvl(salary + (salary * commission_pct),salary)) 
+            / (select sum(nvl(salary + (salary * commission_pct),salary)) from employees) * 100, 1) as "부서별로 총 월급 / 전체월급"
+    from employees
+    group by rollup(department_id) -- rollup 실시 시 전체도 확인 가능
+    order by 1;
+    
+
+    -- [퀴즈5] employees 테이블에서 모든 사원들이 벌어들이는 월급의 합계를 100% 로 보았을때 
+   ---       각 부서번호별로 벌어들이는 월급합계의 퍼센티지가 5% 이상인 부서만 
+   --        부서번호 월급의합계 퍼센티지를 나타내어 보세요.
+   
+   select department_id as 부서번호
+        , to_char(sum(nvl(salary + (salary * commission_pct),salary)),'999,999') as 월급의합계
+        , round(sum(nvl(salary + (salary * commission_pct),salary)) 
+            / (select sum(nvl(salary + (salary * commission_pct),salary)) from employees) * 100, 1)
+        as "월급합계의 퍼센티지"
+   from employees
+   group by department_id
+   having sum(nvl(salary + (salary * commission_pct),salary)) 
+        > (select sum(nvl(salary + (salary * commission_pct),salary)) from employees) * 0.05
+  order by 1;
+   
+   
+   
+   
+   
+   
+    ------- **** !!! 누적(누계)에 대해서 알아봅니다. !!! **** ---------
+   /*
+        sum(누적되어야할 컬럼명) over(order by 누적되어질 기준이 되는 컬럼명 asc[desc] )
+        
+        sum(누적되어야할 컬럼명) over(partition by 그룹화 되어질 컬럼명 
+                                   order by 누적되어질 기준이 되는 컬럼명 asc[desc] )
+   */ 
+   
+   
+   
+   
