@@ -3442,3 +3442,76 @@ FROM
 ) V
 GROUP BY rollup(department_id, gender)
 ORDER BY department_id;
+
+
+
+SELECT decode (grouping(department_id), 0, nvl(to_char(department_id),'부서없음'), '전체' ) as 부서번호
+    -- , case grouping(department_id) when 0 then nvl(to_char(department_id),'부서없음') else '전체' end as 부서번호2
+    , decode (grouping(gender),0,gender,'전체') as 성별
+    -- , case grouping(gender) when 0 then gender else '전체' end as 성별2
+    , count(*) as 인원수
+    , to_char(round( COUNT(*)/( select count(*) from employees )*100, 1),'990.0') as "퍼센티지(%)"
+FROM
+(
+    select department_id
+        , case when substr(jubun,7,1) in('1','3') then '남' else '여' end as gender
+    from employees
+) V
+GROUP BY cube(department_id, gender)
+ORDER BY department_id,1,2;
+
+
+
+  ----- >>>>> 요약값(rollup, cube, grouping sets) <<<<< ------
+  /*
+      1. rollup(a,b,c) 은 grouping sets( (a,b,c),(a,b),(a),() ) 와 같다.
+    
+         group by rollup(department_id, gender) 은
+         group by grouping sets( (department_id, gender), (department_id), () ) 와 같다.
+  
+      2. cube(a,b,c) 은 grouping sets( (a,b,c),(a,b),(b,c),(a,c),(a),(b),(c),() ) 와 같다.
+ 
+         group by cube(department_id, gender) 은
+         group by grouping sets( (department_id, gender), (department_id), (gender), () ) 와 같다.
+  */
+
+
+SELECT decode (grouping(department_id), 0, nvl(to_char(department_id),'부서없음'), '전체' ) as 부서번호
+    , decode (grouping(gender),0,gender,'전체') as 성별
+    , count(*) as 인원수
+    , to_char(round( COUNT(*)/( select count(*) from employees )*100, 1),'990.0') as "퍼센티지(%)"
+FROM
+(
+    select department_id
+        , case when substr(jubun,7,1) in('1','3') then '남' else '여' end as gender
+    from employees
+) V
+-- GROUP BY grouping sets((department_id, gender), (department_id), () ) --> rollup 과 동일
+-- GROUP BY grouping sets((department_id, gender), (gender), () )
+-- GROUP BY grouping sets((department_id), (gender), () )
+GROUP BY grouping sets((department_id), (gender))
+-- ORDER BY department_id;
+-- ORDER BY gender;
+ORDER BY department_id, gender;
+
+
+
+
+
+----- **** group by 절에서 사용하는 listagg 함수 대해서 알아봅니다. **** ------
+/* 
+    listagg(보여줄컬럼명, '구분자') within group(order by 보여줄 컬럼명의 정렬기준 컬럼명)
+    ==> 그룹화 데이터를 하나의 열에 가로로 나열하여 출력하는데 사용됨. 
+*/
+
+
+select department_id as 부서번호
+    , listagg(first_name || ' ' || last_name, ',') within group(order by nvl(salary + (salary * commission_pct),salary) desc)-- 월급이 가장 많은사람 먼저
+    as "급여가 많은 순서대로 사원명 출력"
+from employees
+group by department_id
+
+
+
+
+
