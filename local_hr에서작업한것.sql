@@ -3632,7 +3632,7 @@ group by department_id;
 
  insert into tbl_panmae(panmaedate, jepumname, panmaesu)
  values( add_months(sysdate,-2)+2, '감자깡', 20);
-
+    
  insert into tbl_panmae(panmaedate, jepumname, panmaesu)
  values( add_months(sysdate,-2)+3, '새우깡', 10);
  
@@ -3721,6 +3721,7 @@ group by department_id;
     from tbl_panmae
     where jepumname = '새우깡'
     group by to_char(panmaedate,'yyyy-mm-dd')
+    -- 판매일의 시간이 모두 다르므로 시간으 00:00:00 으로 맞춰준다.
     order by 1;
     
     
@@ -3732,13 +3733,34 @@ group by department_id;
         , sum(panmaesu) as 일별판매량
         -- sum(누적되어야할 컬럼명) over(partition by 그룹화 되어질 컬럼명 order by 누적되어질 기준이 되는 컬럼명 asc[desc] )
         , sum(sum(panmaesu)) over(partition by jepumname order by to_char(panmaedate,'yyyy-mm-dd') asc) as 일별누적판매량
-    from tbl_panmae
+        , to_char(round(sum(sum(panmaesu)) over(partition by jepumname order by to_char(panmaedate,'yyyy-mm-dd') asc)
+            / (select sum(panmaesu) from tbl_panmae where jepumname = P.jepumname) * 100,1),'990.0') as "일별누적판매량퍼센티지(%)"
+            -- tbl_panmae 에서의 jepumname 과 tbl_panmae P 에서 그룹핑해서 선택된 jepumname 과 같은 경우
+            -- 일별누적판매량 / 해당제품에서의 일별누적판매량
+    from tbl_panmae P   -- 별칭 P (as 생략 가능)
     group by jepumname, to_char(panmaedate,'yyyy-mm-dd')
     order by 1;
+
+    -- 또는
     
-    
-    
-    
+    WITH
+    V AS
+    (
+    select jepumname    -- 제품명
+        , to_char(panmaedate,'yyyy-mm-dd') as PANMAEDATE    -- 판매일자
+        , sum(panmaesu) as DAY_SUM_PANMAESU -- 일별판매량
+        , sum(sum(panmaesu)) over(partition by jepumname order by to_char(panmaedate,'yyyy-mm-dd') asc) as DAY_NUGAE_PANMAESU -- 일별누적판매량
+    from tbl_panmae P 
+    group by jepumname, to_char(panmaedate,'yyyy-mm-dd')
+    )
+    SELECT jepumname as 제품명
+        , panmaedate as 판매일자
+        , day_sum_panmaesu as 일별판매량
+        , day_nugae_panmaesu as 일별누적판매량
+        , to_char(round(day_nugae_panmaesu 
+            / (select sum(panmaesu) from tbl_panmae where jepumname = V.jepumname) * 100,1),'990.0') as "일별누적판매량퍼센티지(%)"
+    FROM V
+    order by 1;
     
     
     
