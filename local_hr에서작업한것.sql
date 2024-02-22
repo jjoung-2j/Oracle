@@ -3855,6 +3855,30 @@ group by department_id;
         , count(decode(age_line, 60,1)) as "60대"
     FROM V;
     
+    -- 또는
+    
+    WITH
+    V AS
+    (
+        SELECT trunc(case when current_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd')
+                        then extract(year from sysdate) - birthyear - 1 
+                        else extract(year from sysdate) - birthyear
+                        end, -1) as AGE_LINE
+        FROM
+        (
+        select to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4), 'yyyymmdd') as "CURRENT_YEAR_BIRTHDAY" -- 올해생일 
+            , case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2)  as BIRTHYEAR -- 태어난 년도 
+        from employees
+        )
+    )
+    SELECT count(age_line) as 전체사원수
+        , sum(decode(age_line, 10,1)) as "10대"  -- count,sum 모두 가능sum 은 그룹함수이므로 null 값을 더하지 않는다.
+        , sum(decode(age_line, 20,1,0)) as "20대"    -- null 값을 0으로 바꾸고 싶을 경우, 반드시 sum 을 사용해야 한다. =>(count X)
+        , sum(decode(age_line, 30,1)) as "30대"
+        , sum(decode(age_line, 40,1)) as "40대"
+        , sum(decode(age_line, 50,1)) as "50대"
+        , sum(decode(age_line, 60,1)) as "60대"
+    FROM V;
     
     
     
@@ -3862,8 +3886,239 @@ group by department_id;
     
     
     
+    -------- ==== *** [퀴즈] 아래처럼 나오도록 하세요 *** ==== ---------
+    
+    select employee_id, first_name, job_id , salary
+    from employees;
+    /*
+    --------------------------------------------------------------------------------------------------------------------------------------
+     직종ID          남자기본급여평균    여자기본급여평균     기본급여평균    평균과남자평균차액                     평균과여자평균차액 
+                                                                     (남자기본급여평균 - 기본급여평균)        (여자기본급여평균 - 기본급여평균)
+   --------------------------------------------------------------------------------------------------------------------------------------
+     ........           ....              ....             ....             ...                                 ...     
+     FI_ACCOUNT         7900              7950             7920             -20                                  30 
+     IT_PROG            5700              6000             5760             -60                                 240 
+     ........           ....              ....             ....             ...                                 ...   
+   --------------------------------------------------------------------------------------------------------------------------------------
+   */
+   
+   SELECT job_id as "직종ID"
+        , lpad(nvl(to_char(round(avg(decode(gender,'남',salary)),0),'999,999'), ' '),9,' ') as "남자기본급여평균"
+        -- round(avg(decode(gender,'남',salary)),0)
+        , lpad(nvl(to_char(round(avg(decode(gender,'여',salary)),0),'999,999'), ' '),9,' ') as "여자기본급여평균"
+        , to_char(avg(salary),'99,999') as "기본급여평균"
+        , lpad(nvl(to_char(round(avg(decode(gender,'남',salary)) - avg(salary),0)), ' '),10, ' ') as "평균과남자평균차액"
+        , lpad(nvl(to_char(round(avg(decode(gender,'여',salary)) - avg(salary),0)), ' '),10, ' ') as "평균과여자평균차액"
+   FROM
+   (
+       select job_id, salary
+            , case when substr(jubun,7,1) in('1','3') then '남' else '여' end as gender
+       from employees
+   ) V
+   GROUP BY job_id
+   ORDER BY job_id;
+    
+    
+   -- 강사님
+   /*
+    select salary
+        , case when substr(jubun,7,1) in('1','3') then salary end as 남자
+        , case when substr(jubun,7,1) in('2','4') then salary end as 여자
+    from employees
+    
+    select avg(salary) as 남녀모두평균
+        , avg(case when substr(jubun,7,1) in ('1','3') then salary end) as 남자평균
+        , avg(case when substr(jubun,7,1) in ('2','4') then salary end) as 여자평균
+    from employees
+    */
+    WITH
+    V AS
+    (
+    select job_id as 직종ID
+        , trunc(avg(case when substr(jubun,7,1) in ('1','3') then salary end),0) as 남자기본급여평균
+        , trunc(avg(case when substr(jubun,7,1) in ('2','4') then salary end),0) as 여자기본급여평균
+        , avg(salary) as 기본급여평균
+    from employees
+    group by job_id
+    )
+    SELECT 직종ID
+        , nvl(to_char(남자기본급여평균,'99,999'),' ') as 남자기본급여평균
+        , nvl(to_char(여자기본급여평균,'99,999'), ' ') as 여자기본급여평균
+        , to_char(기본급여평균,'99,999') as 기본급여평균
+        , nvl(to_char(남자기본급여평균 - 기본급여평균), ' ') AS 평균과남자평균차액
+        , nvl(to_char(여자기본급여평균 - 기본급여평균), ' ') AS 평균과여자평균차액
+    FROM V
+    ORDER BY 1;
     
     
     
     
     
+    ---- >>>>>> *** PIVOT, UNPIVOT 함수 *** <<<<<< -----------
+    -- PIVOT   함수는 기존 테이블 행을 열로  바꾸어서 출력해 주는 것이고,
+    -- UNPIVOT 함수는 기존 테이블 열을 행으로 바꾸어서 출력해 주는 것이다.
+    
+    /*
+    -------------------------------------------------------------
+       직종 ID   10  20  30  40  50  60  70  80  90  100 110 NULL
+    -------------------------------------------------------------
+    AC_ACCOUNT  0   0   0   0   0   0   0   0   0   0   1   0
+    AC_MGR      0   0   0   0   0   0   0   0   0   0   1   0
+    AD_ASST     1   0   0   0   0   0   0   0   0   0   0   0
+    ........    .............................................
+    FI_ACCOUNT  0   0   0   0   0   0   0   0   0   5   0   0
+    ........    .............................................
+    */
+    
+    select job_id as 직종ID
+        , sum(decode(department_id,10,1,0)) as "10"
+        , sum(decode(department_id,20,1,0)) as "20"
+        , sum(decode(department_id,30,1,0)) as "30"
+        , sum(decode(department_id,40,1,0)) as "40"
+        , sum(decode(department_id,50,1,0)) as "50"
+        , sum(decode(department_id,60,1,0)) as "60"
+        , sum(decode(department_id,70,1,0)) as "70"
+        , sum(decode(department_id,80,1,0)) as "80"
+        , sum(decode(department_id,90,1,0)) as "90"
+        , sum(decode(department_id,100,1,0)) as "100"
+        , sum(decode(department_id,110,1,0)) as "110"
+        --, sum(decode(nvl(to_char(department_id),null),null,1,0)) as 없음
+         ,sum(decode(nvl(department_id,-9999),-9999,1,0)) as "없음"
+    from employees
+    group by job_id
+    order by 1;
+    
+    
+    
+    -- 부서번호, 직종ID, 인원수
+    select department_id, job_id, count(employee_id) as cnt
+    from employees
+    group by department_id, job_id
+    order by 1,2;
+    
+    -- >>> PIVOT 함수를 사용하여 직종ID별, 부서번호별 인원수를 나타내기 <<< --
+    SELECT *
+    FROM
+    (
+    select job_id, nvl(department_id, -9999) as department_id, employee_id
+    from employees
+    ) V
+    PIVOT(  count(employee_id)  -- 실제 출력할 데이터 표기
+            for department_id in(10,20,30,40,50,60,70,80,90,100,110,-9999)  -- 가로줄로 표기할 열을 FOR 로 명시한 후에 IN 안에 출력하려는 열 데이터를 지정한다.
+        )
+    ORDER BY job_id;
+    
+    
+    
+    
+    
+    
+    
+    ------------------------------------------------------------------------------------------------------------
+    
+    ------------------- ====== ***** Sub Query (서브쿼리) ***** ====== -------------------
+    
+    
+    
+    ------ **** 데이터베이스 링크(database link) 만들기 **** ------
+    
+    select first_name, last_name
+    from employees
+    where employee_id = 100;
+    -- Steven	King
+    
+    
+    update employees set first_name = '혜정', last_name = '양'
+    where employee_id = 100;
+    -- 1 행 이(가) 업데이트되었습니다.
+    commit;
+    -- 커밋 완료.
+    
+    1. DB클라이언트 컴퓨터의 탐색기에서  C:\OracleXE18C\product\18.0.0\dbhomeXE\network\admin 에 간다.
+    
+    2. tnsnames.ora 파일을 메모장으로 연다.
+    
+    3.
+    TEACHER =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.220)(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = XE)
+    )
+  )
+    을 추가한다.
+    HOST = 192.168.0.220 이 연결하고자 하는 원격지 오라클서버의 IP 주소이다.
+    그런데 전제조건은 원격지 오라클서버(192.168.0.220)의 방화벽에서 포트번호 1521 을 허용으로 만들어주어야 한다.
+    
+    그리고 TEACHER 를 'Net Service Name 네트서비스네임(넷서비스명)' 이라고 부른다.   
+    
+    4. 명령프롬프트를 열어서 원격지 오라클서버(192.168.0.220)에 연결이 가능한지 테스트를 한다. 
+      C:\Users\user>tnsping TEACHER 5
+    
+    별칭 분석을 위해 TNSNAMES 어댑터 사용
+    (DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.220)(PORT = 1521)) (CONNECT_DATA = (SERVER = DEDICATED) (SERVICE_NAME = XE)))에 접속하려고 시도하는 중
+    확인(0밀리초)
+    확인(20밀리초)
+    확인(10밀리초)
+    확인(20밀리초)
+    확인(20밀리초)
+    
+    5.  데이터베이스 링크(database link) 만들기    
+  
+    create database link teacher_oracle_server
+    connect to hr identified by gclass -- 이때 hr 과 암호 gclass 는 연결하고자 하는 원격지 오라클서버(192.168.0.220)의 계정명과 암호이다.  
+    using 'TEACHER';  -- TEACHER 은 Net Service Name 네트서비스네임(넷서비스명) 이다. 
+    -- Database link TEACHER_ORACLE_SERVER이(가) 생성되었습니다.
+    
+    SELECT *
+    FROM employees@teacher_oracle_server    -- 원격지 오라클 서버(192.168.0.220)
+    ORDER BY employee_id asc;
+    
+    SELECT *
+    FROM employees@XE   -- 로컬서버
+    ORDER BY employee_id asc;
+    
+    SELECT *
+    FROM employees   -- 로컬서버    => 기본값
+    ORDER BY employee_id asc;
+    
+    drop database link teacher_oracle_server;   -- 삭제가 됨
+    
+    
+    -------------------------------------------------------
+    
+    -- IP 주소 연결하기
+    DH =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.190)(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = XE)
+    )
+  )
+  
+  WS =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.191)(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = XE)
+    )
+  )
+  -- 데이터베이스 링크 만들기
+    create database link dh_oracle_server
+    connect to hr identified by gclass -- 이때 hr 과 암호 gclass 는 연결하고자 하는 원격지 오라클서버(192.168.0.220)의 계정명과 암호이다.  
+    using 'DH';
+    
+    create database link ws_oracle_server
+    connect to hr identified by gclass -- 이때 hr 과 암호 gclass 는 연결하고자 하는 원격지 오라클서버(192.168.0.220)의 계정명과 암호이다.  
+    using 'WS';
+    
+    SELECT *
+    FROM employees@dh_oracle_server    -- 원격지 오라클 서버(192.168.0.190)
+    ORDER BY employee_id asc;
+    
+    SELECT *
+    FROM employees@ws_oracle_server    -- 원격지 오라클 서버(192.168.0.191)
+    ORDER BY employee_id asc;
