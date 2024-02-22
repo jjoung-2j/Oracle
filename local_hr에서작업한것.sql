@@ -3763,6 +3763,104 @@ group by department_id;
     order by 1;
     
     
+    --- [퀴즈] tbl_panmae 테이블에서 판매일자가 1개월전의  '01'일 (즉, 현재가 2024년 2월 22일 이므로 2024년 1월 1일 부터) 현재까지 판매된
+    --- 감자깡과 새우깡에 대해 일별판매량과 일별누적판매량 및 일별누적판매량 퍼센티지 (%) 을 나타내세요.
+    WITH
+    V AS
+    (
+    select jepumname    -- 제품명
+        , to_char(panmaedate,'yyyy-mm-dd') as PANMAEDATE    -- 판매일자
+        , sum(panmaesu) as DAY_SUM_PANMAESU -- 일별판매량
+        , sum(sum(panmaesu)) over(partition by jepumname order by to_char(panmaedate,'yyyy-mm-dd') asc) as DAY_NUGAE_PANMAESU -- 일별누적판매량
+    from tbl_panmae P 
+    group by jepumname, to_char(panmaedate,'yyyy-mm-dd')
+    )
+    SELECT jepumname as 제품명
+        , panmaedate as 판매일자
+        , day_sum_panmaesu as 일별판매량
+        , day_nugae_panmaesu as 일별누적판매량
+        , to_char(round(day_nugae_panmaesu 
+            / (select sum(panmaesu) from tbl_panmae where jepumname = V.jepumname) * 100,1),'990.0') as "일별누적판매량퍼센티지(%)"
+    FROM V
+    where jepumname in('감자깡','새우깡') 
+        and panmaedate >= to_date(to_char(sysdate - 1*extract(day from sysdate),'yyyy-mm') || '01','yyyy-mm-dd')
+    -- 강사님 방법
+    -- where jepumname in('감자깡','새우깡')
+    --    and panmaedate >= to_char(last_day(add_months(sysdate,-2)) + 1, 'yyyy-mm-dd')
+    -- add_months(날짜,숫자) : 숫자만큼 날짜를 더한 개월
+    order by 1;
+    
+    
+    
+    
+    
+    ------- ====== ***** 아래처럼 나오도록 하세요 ***** ===== -------
+    
+    --------------------------------------------------------------
+    전체사원수   10대     20대     30대     40대     50대     60대
+    --------------------------------------------------------------
+        107     16      18       21       20       17       15
+        
+    SELECT trunc(case when current_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd')
+                    then extract(year from sysdate) - birthyear - 1 
+                    else extract(year from sysdate) - birthyear
+                    end, -1) as AGE_LINE
+    FROM
+    (
+        select to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4), 'yyyymmdd') as "CURRENT_YEAR_BIRTHDAY" -- 올해생일 
+            , case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2)  as BIRTHYEAR -- 태어난 년도 
+        from employees
+    ) V;
+    
+    -- WITH 로 사용하기
+    WITH
+    V AS
+    (
+        SELECT trunc(case when current_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd')
+                        then extract(year from sysdate) - birthyear - 1 
+                        else extract(year from sysdate) - birthyear
+                        end, -1) as AGE_LINE
+        FROM
+        (
+        select to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4), 'yyyymmdd') as "CURRENT_YEAR_BIRTHDAY" -- 올해생일 
+            , case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2)  as BIRTHYEAR -- 태어난 년도 
+        from employees
+        )
+    )
+    SELECT age_line, decode(age_line, 10,1) as "10대", decode(age_line, 20,1) as "20대", decode(age_line, 30,1) as "30대"
+        , decode(age_line, 40,1) as "40대", decode(age_line, 50,1) as "50대", decode(age_line, 60,1) as "60대"
+    FROM V;
+    
+    -- count 붙여서 인원수 파악하기
+    WITH
+    V AS
+    (
+        SELECT trunc(case when current_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd')
+                        then extract(year from sysdate) - birthyear - 1 
+                        else extract(year from sysdate) - birthyear
+                        end, -1) as AGE_LINE
+        FROM
+        (
+        select to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4), 'yyyymmdd') as "CURRENT_YEAR_BIRTHDAY" -- 올해생일 
+            , case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2)  as BIRTHYEAR -- 태어난 년도 
+        from employees
+        )
+    )
+    SELECT count(age_line) as 전체사원수
+        , count(decode(age_line, 10,1)) as "10대"
+        , count(decode(age_line, 20,1)) as "20대"
+        , count(decode(age_line, 30,1)) as "30대"
+        , count(decode(age_line, 40,1)) as "40대"
+        , count(decode(age_line, 50,1)) as "50대"
+        , count(decode(age_line, 60,1)) as "60대"
+    FROM V;
+    
+    
+    
+    
+    
+    
+    
     
     
     
