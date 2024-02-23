@@ -4921,13 +4921,108 @@ group by department_id;
   from employees;
     
     select *
-    from employees , departments
-    where nvl(employees.department_id,-9999) = nvl(departments.department_id,-9999)
+    from employees , departments    -- SQL 1992 CODE 방식
+    where employees.department_id = departments.department_id   -- 부서번호가 null 인 Kimberely Grant 가 나오지 않는 틀린풀이이다.
+    order by employee_id;
+    -- 이때 where 절을 JOIN 조건절 이라고 부른다.
+    
+    select *
+    from employees E, departments D -- SQL 1992 CODE 방식
+    where E.department_id = D.department_id(+) -- 부서번호가 null 인 Kimberely Grant 가 나오는 올바른 풀이이다.
+    order by employee_id;
+    /*
+     조인 조건절에서 (+)가 안 붙은 테이블인 E(employees) 테이블의 모든 행을 출력해주고 나서   ==> 우선 모든 행 출력
+     이어서 where E.department_id = D.department_id 조건에 만족하는 행들을 보여준다.      ==> CROSS JOIN 
+     그러므로 E.department_id 값이 null 인 킴밸리그랜트는 출력되어진다.
+    */
+    
+    select *
+    from employees E, departments D -- SQL 1992 CODE 방식
+    where E.department_id(+) = D.department_id
+    order by employee_id;
+    /*
+     조인 조건절에서 (+)가 안 붙은 테이블인 D(departments) 테이블의 모든 행을 출력해주고 나서   ==> 우선 모든 행 출력
+     이어서 where E.department_id = D.department_id 조건에 만족하는 행들을 보여준다.      ==> CROSS JOIN 
+     그러므로 departments 의 부서번호가 120번 부터 270번 부서까지 출력되어진다.
+    */
+    
+    select *
+    from employees E, departments D -- SQL 1992 CODE 방식
+    where E.department_id(+) = D.department_id(+)   --- 오류!!!!
     order by employee_id;
     
+    /*
+        [참고]
+        microsoft 사 제품인 MS-SQL 서버에서는 아래와 같이 한다.
+        select *
+        from employees E, departments D
+        where E.department_id *= D.department_id    -- '=' 중심으로 *이 가까운 곳이 (+) 와 같은 역할
+        order by employee_id;
+    */
     
+    ---- **** INNER JOIN(== 내부조인) (SQL 1999 CODE 방식, ANSI) **** ----
+    /*
+     [INNER JOIN 예]
+     
+     부서번호   부서명   사원번호   사원명   기본급여
+     이 나오도록 하세요..
+    */
+
+    select *
+    from employees E INNER JOIN departments D  -- SQL 1999 CODE 방식
+    ON E.department_id = D.department_id
+    order by employee_id;
+    -- 이때 ON 절을 JOIN 조건절 이라고 부른다.
     
+    select *
+    from employees E JOIN departments D  -- INNER 는 생략가능하다.
+    ON E.department_id = D.department_id
+    order by employee_id;
+    -- 이때 ON 절을 JOIN 조건절 이라고 부른다.
+
+
+    ---- **** OUTER JOIN(== 외부조인) (SQL 1999 CODE 방식, ANSI) **** ----
+    /*
+     [OUTER JOIN 예]
+     
+     부서번호   부서명   사원번호   사원명   기본급여
+     이 나오도록 하세요..
+    */
+
+    select *
+    from employees E LEFT OUTER JOIN departments D  -- SQL 1999 CODE 방식 // OUTER JOIN 을 중심으로 왼쪽에 있는 테이블을 보여주고 CROSS JOIN
+    ON E.department_id = D.department_id
+    order by employee_id;
+    -- 이때 ON 절을 JOIN 조건절 이라고 부른다.
+
+    select *
+    from employees E FULL OUTER JOIN departments D  -- SQL 1999 CODE 방식 // OUTER JOIN 을 중심으로 양쪽에 있는 테이블을 보여주고 CROSS JOIN
+    ON E.department_id = D.department_id
+    order by employee_id;
+    -- 이때 ON 절을 JOIN 조건절 이라고 부른다.
     
+    select *
+    from employees E FULL JOIN departments D  -- OUTER 는 생략가능하다.
+    ON E.department_id = D.department_id
+    order by employee_id;
+    -- 이때 ON 절을 JOIN 조건절 이라고 부른다.
     
+    select *
+    from employees E CROSS JOIN departments D;  -- 모든 경우의 수. Catersian Product  // 107*27 = 2889 행
     
+    select *
+    from employees E JOIN departments D     -- 106개행(E 에 있는 행)
+    ON E.department_id = D.department_id;   -- INNER 조인
+    
+    select *
+    from employees E LEFT JOIN departments D    -- 107개행(NULL 포함 E 에 있는 행 나열 후 E와 D 가 department_id가 겹치는 행 넣기)
+    ON E.department_id = D.department_id;    -- OUTER 조인
+    
+    select *
+    from employees E RIGHT JOIN departments D   -- 122개행(D의 행 나열 후 D와 E가 department_id가 겹치는 행 넣기)
+    ON E.department_id = D.department_id;    -- OUTER 조인
+    
+    select *
+    from employees E FULL JOIN departments D    -- 123개행(E와 D의 겹치는 행 + E 만 가지고 있는 행 + D 만 가지고 있는 행)
+    ON E.department_id = D.department_id;    -- OUTER 조인
     
