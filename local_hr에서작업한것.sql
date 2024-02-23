@@ -5194,6 +5194,27 @@ group by department_id;
     group by D.department_name
     order by 1;
     
+    -- 우석 오빠 방법 中 [SQL 1999 CODE] --
+    -- => 부서번호 순서대로 나열이 가능하다.
+    WITH
+    E AS
+    (
+    select department_id  , count(*) as cnt
+    from employees
+    group by department_id
+    )
+    ,
+    D AS
+    (
+    select department_id , department_name
+    from departments
+    )
+    select department_name as 부서명
+         , cnt as 인원수
+    from E LEFT JOIN D  -- SQL 1999 CODE
+    on E.department_id = D.department_id
+    order by E.department_id; 
+
 
     
     
