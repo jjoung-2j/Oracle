@@ -4755,4 +4755,179 @@ group by department_id;
       사원번호    사원명    부서번호    기본급여    모든사원들의기본급여평균    기본급여평균과의차액    
       이 나오도록 하세요.
   */  
+    /*
+    -------------------------------------   ------------------------
+    사원번호    사원명    부서번호    기본급여     모든사원들의기본급여평균
+    -------------------------------------   ------------------------
+        107개행                                   1개행
+    */
+    
+    select employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , department_id as 부서번호
+        , salary as 기본급여
+        , avg(salary) as 모든사원들의기본급여평균 -- 오류!!!! -> 107개행이 아닌 1행이기 때문
+    from employees;
+    
+    -- CROSS JOIN 이용하여 표현하기
+    SELECT 사원번호, 사원명, 부서번호
+        , to_char(기본급여,'99,999') as 기본급여
+        , to_char(모든사원들의기본급여평균,'9,999') as 모든사원들의기본급여평균
+        , to_char(기본급여 - 모든사원들의기본급여평균,'99,999') as 기본급여평균과의차액
+        , trunc(기본급여/모든사원들의기본급여평균,1) as 평균대비기본급여퍼센티지
+    FROM
+    (
+        select employee_id as 사원번호
+            , first_name || ' ' || last_name as 사원명
+            , department_id as 부서번호
+            , salary as 기본급여
+        from employees
+    ) A -- 107개행
+    CROSS JOIN  -- SQL 1999 CODE (ANSI) 표준
+    (
+        select trunc(avg(salary),0) 모든사원들의기본급여평균
+        from employees
+    ) B -- 1개행
+    ORDER BY 1; 
+    
+    -- 또는
+    
+    -- SQL 1992 CODE 방식(콤마(,)) 이용하여 표현하기
+    SELECT 사원번호, 사원명, 부서번호
+        , to_char(기본급여,'99,999') as 기본급여
+        , to_char(모든사원들의기본급여평균,'9,999') as 모든사원들의기본급여평균
+        , to_char(기본급여 - 모든사원들의기본급여평균,'99,999') as 기본급여평균과의차액
+        , trunc(기본급여/모든사원들의기본급여평균,1) as 평균대비기본급여퍼센티지
+    FROM
+    (
+        select employee_id as 사원번호
+            , first_name || ' ' || last_name as 사원명
+            , department_id as 부서번호
+            , salary as 기본급여
+        from employees
+    ) A -- 107개행
+    ,   -- SQL 1992 CODE
+    (
+        select trunc(avg(salary),0) 모든사원들의기본급여평균
+        from employees
+    ) B -- 1개행
+    ORDER BY 1;
+    
+    -- 또는
+    -- WITH 절 이용하여 표현하기
+    WITH
+    A AS
+    (
+        select employee_id as 사원번호
+            , first_name || ' ' || last_name as 사원명
+            , department_id as 부서번호
+            , salary as 기본급여
+        from employees
+    ) -- 107개행
+    ,
+    B AS
+    (
+        select trunc(avg(salary),0) 모든사원들의기본급여평균
+        from employees
+    ) -- 1개행
+    SELECT 사원번호, 사원명, 부서번호
+        , to_char(기본급여,'99,999') as 기본급여
+        , to_char(모든사원들의기본급여평균,'9,999') as 모든사원들의기본급여평균
+        , to_char(기본급여 - 모든사원들의기본급여평균,'99,999') as 기본급여평균과의차액
+        , trunc(기본급여/모든사원들의기본급여평균,1) as 평균대비기본급여퍼센티지
+    FROM A CROSS JOIN B    -- SQL 1999 CODE
+    ORDER BY 1;
+    
+    
+    -- 또는
+    
+    WITH
+    A AS
+    (
+        select employee_id as 사원번호
+            , first_name || ' ' || last_name as 사원명
+            , department_id as 부서번호
+            , salary as 기본급여
+        from employees
+    ) -- 107개행
+    ,
+    B AS
+    (
+        select trunc(avg(salary),0) 모든사원들의기본급여평균
+        from employees
+    ) -- 1개행
+    SELECT 사원번호, 사원명, 부서번호
+        , to_char(기본급여,'99,999') as 기본급여
+        , to_char(모든사원들의기본급여평균,'9,999') as 모든사원들의기본급여평균
+        , to_char(기본급여 - 모든사원들의기본급여평균,'99,999') as 기본급여평균과의차액
+        , trunc(기본급여/모든사원들의기본급여평균,1) as 평균대비기본급여퍼센티지
+    FROM A , B -- SQL 1992 CODE
+    -- 여기서 , 은 JOIN 이다.
+    ORDER BY 1;
+    
+    /*
+    기본급여 : 기본급여평균 = x : 1
+    ==> 기본급여 * 1 = 기본급여평균 * x
+    ==> x = (기본급여 * 1)/기본급여평균
+    ==> x = (기본급여)/기본급여평균
+    */
+    
+    SELECT 사원번호, 사원명, 부서번호
+        , to_char(기본급여,'99,999') as 기본급여
+        , to_char(모든사원들의기본급여평균,'9,999') as 모든사원들의기본급여평균
+        , to_char(기본급여 - 모든사원들의기본급여평균,'99,999') as 기본급여평균과의차액
+        , trunc(기본급여/모든사원들의기본급여평균,1) as 평균대비기본급여퍼센티지
+    FROM
+    (
+        select employee_id as 사원번호
+            , first_name || ' ' || last_name as 사원명
+            , department_id as 부서번호
+            , salary as 기본급여
+        from employees
+    ) A 
+    CROSS JOIN 
+    (
+        select trunc(avg(salary),0) 모든사원들의기본급여평균
+        from employees
+    ) B
+    ORDER BY 1;
+    
+    
+    
+    
+    
+    
+    
+    
+      ---- **** EQUI JOIN (SQL 1992 CODE 방식) **** ----
+  /*
+     [EQUI JOIN 예]
+     
+     부서번호   부서명   사원번호   사원명   기본급여
+     이 나오도록 하세요..
+  */
+
+  /*
+      부서번호                        부서명          사원번호   사원명   기본급여
+     --------                       -------        -------------------------
+     departments.department_id      departments             employees 
+     employees.department_id
+  */
+
+  select *
+  from departments;
+  
+  select *
+  from employees;
+    
+    select *
+    from employees , departments
+    where nvl(employees.department_id,-9999) = nvl(departments.department_id,-9999)
+    order by employee_id;
+    
+    
+    
+    
+    
+    
     
