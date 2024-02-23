@@ -4115,6 +4115,7 @@ group by department_id;
     connect to hr identified by gclass -- 이때 hr 과 암호 gclass 는 연결하고자 하는 원격지 오라클서버(192.168.0.220)의 계정명과 암호이다.  
     using 'WS';
     
+ -- 데이터베이스 링크 만든거 연결
     SELECT *
     FROM employees@dh_oracle_server    -- 원격지 오라클 서버(192.168.0.190)
     ORDER BY employee_id asc;
@@ -4122,3 +4123,211 @@ group by department_id;
     SELECT *
     FROM employees@ws_oracle_server    -- 원격지 오라클 서버(192.168.0.191)
     ORDER BY employee_id asc;
+    
+    
+    
+    
+    /*
+       -- Sub Query (서브쿼리)란?
+       select 문속에 또 다른 select 문이 포함되어져 있을 때 포함되어진 select 문을 Sub Query (서브쿼리)라고 부른다.
+       
+       
+       select ...
+       from .....  ==> Main Query(메인쿼리 == 외부쿼리)
+       where ... in (select ... 
+                     from .....) ==> Sub Query (서브쿼리 == 내부쿼리)
+                     
+       select ...
+            , (select ... from .... ) ==> Sub Query (서브쿼리 == 내부쿼리)
+       from .... ==> Main Query(메인쿼리 == 외부쿼리) 
+       
+   */
+   
+   
+   /*
+     employees 테이블에서
+     기본급여가 제일 많은 사원과 기본급여가 제일적은 사원의 정보를 
+     사원번호, 사원명, 기본급여로 나타내세요..
+  */
+  
+  
+    select employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , salary as 기본급여
+    from employees
+    where salary = (select max(salary) from employees) or
+         salary = (select min(salary) from employees);
+/*
+    사원번호    사원명     기본급여
+     100	  혜정 양	 24000
+     132	 TJ Olson	 2100
+*/
+  
+  
+/*
+    [퀴즈]
+    employees 테이블에서 부서번호가 60, 80번 부서에 근무하는 사원들중에
+    월급이 50번 부서 직원들의 '평균월급' 보다 많은 사원들만 
+    부서번호, 사원번호, 사원명, 월급을 나타내세요....
+*/  
+  
+    -- 틀 잡기
+    from employees
+    where department_id in(60,80)
+        and nvl(salary + (salary * commission_pct), salary) > (50번 부서 직원들의 '평균월급')
+  
+  
+    -- 50번 부서 직원들의 '평균월급'
+    select avg(nvl(salary + (salary * commission_pct), salary))
+    from employees
+    where department_id = 50;
+    -- 3475.555555555555555555555555555555555556
+  
+    -- 또는
+    select avg( case department_id when 50 then (nvl(salary + (salary * commission_pct), salary)) end)
+    from employees;
+    -- 3475.555555555555555555555555555555555556
+
+    -- 최종
+    select department_id as 부서번호
+        , employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , nvl(salary + (salary * commission_pct), salary) as 월급
+    from employees
+    where department_id in(60,80) 
+        and (nvl(salary + (salary * commission_pct), salary)) > (select avg(nvl(salary + (salary * commission_pct), salary))
+                                                                from employees
+                                                                where department_id = 50)
+    order by 1,4;
+  
+    -- 또는
+    select department_id AS 부서번호
+         , employee_id AS 사원번호
+         , first_name || ' ' || last_name AS 사원명
+         , nvl(salary + (salary * commission_pct), salary) AS 월급
+    from employees
+    where department_id in(60, 80) AND
+         nvl(salary + (salary * commission_pct), salary) > ( select AVG( case department_id when 50 then nvl(salary + (salary * commission_pct), salary) end )
+                                                             from employees )
+    order by 1, 4 desc;
+    
+    
+    
+    
+    
+    
+    
+    create table tbl_authorbook
+   (bookname       varchar2(100)
+   ,authorname     varchar2(20)
+   ,loyalty        number(5)
+   );
+   -- Table TBL_AUTHORBOOK이(가) 생성되었습니다.
+   
+   insert into tbl_authorbook(bookname, authorname, loyalty)
+   values('자바프로그래밍','이순신',1000);
+   
+   insert into tbl_authorbook(bookname, authorname, loyalty)
+   values('로빈슨크루소','한석규',800);
+   
+   insert into tbl_authorbook(bookname, authorname, loyalty)
+   values('로빈슨크루소','이순신',500);
+   
+   insert into tbl_authorbook(bookname, authorname, loyalty)
+   values('조선왕조실록','엄정화',2500);
+   
+   insert into tbl_authorbook(bookname, authorname, loyalty)
+   values('그리스로마신화','유관순',1200);
+   
+   insert into tbl_authorbook(bookname, authorname, loyalty)
+   values('그리스로마신화','이혜리',1300);
+   
+   insert into tbl_authorbook(bookname, authorname, loyalty)
+   values('그리스로마신화','서강준',1700);
+
+   insert into tbl_authorbook(bookname, authorname, loyalty)
+   values('어린왕자','김유신',1800);
+   
+   commit;
+   
+   
+   select * 
+   from tbl_authorbook;
+   
+   ---  tbl_authorbook 테이블에서 공저(도서명은 동일하지만 작가명이 다른 도서)로 지어진 도서정보를 나타내세요... ---
+   
+   /*
+       ---------------------------------
+         도서명         작가명    로얄티
+       ---------------------------------  
+         로빈슨크루소    한석규        800
+         로빈슨크루소    이순신        500
+         그리스로마신화  유관순       1200
+         그리스로마신화  이혜리       1300
+         그리스로마신화  서강준       1700
+       ---------------------------------  
+   */ 
+    
+    select *
+    from tbl_authorbook
+    where bookname in('로빈슨크루소','그리스로마신화');
+    
+    -- 틀 잡기
+    select *
+    from tbl_authorbook
+    where bookname in(tbl_authorbook 테이블에서 bookname 컬럼의 값이 동일한 것이 2개 이상 나오는 행의 bookname 컬럼값);
+    
+    -- tbl_authorbook 테이블에서 bookname 컬럼의 값이 동일한 것이 2개 이상 나오는 행의 bookname 컬럼값
+    select bookname
+    from tbl_authorbook 
+    group by bookname
+    having count(*) > 1;
+    
+    -- 최종
+    select *
+    from tbl_authorbook
+    where bookname in(select bookname
+                    from tbl_authorbook 
+                    group by bookname
+                    having count(*) > 1);
+    
+    
+    
+    
+    
+     ----- ===== **** Pairwise(쌍) Sub Query **** ===== -----
+  /*
+      employees 테이블에서
+      부서번호별로 salary 가 최대인 사원과
+      부서번호별로 salary 가 최소인 사원의 정보를
+      부서번호, 사원번호, 사원명, 기본급여를 나타내세요.. 
+  */
+  
+    select department_id as 부서번호
+        , employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , salary as 기본급여
+    from employees
+    where department_id = 30    -- 이것을 빼면 오류! 30번의 최대치가 다른곳의 부서인사람과 같을 수 있기 때문 
+        and salary = (select max(salary) from employees where department_id = 30);
+  
+    ---------------
+    select department_id as 부서번호
+        , employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , salary as 기본급여
+    from employees
+    where department_id = (select department_id 30 
+        and salary = (select max(salary) from employees where department_id = 30);
+  
+    select department_id as 부서번호
+        , employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , salary as 기본급여
+    from employees
+    where department_id = 30    
+        and salary = (select min(salary) from employees where department_id = 30);
+    
+    
+    
+    
