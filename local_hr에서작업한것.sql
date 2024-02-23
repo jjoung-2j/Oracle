@@ -4900,25 +4900,12 @@ group by department_id;
     
     
       ---- **** EQUI JOIN (SQL 1992 CODE 방식) **** ----
-  /*
-     [EQUI JOIN 예]
-     
-     부서번호   부서명   사원번호   사원명   기본급여
-     이 나오도록 하세요..
-  */
 
-  /*
-      부서번호                        부서명          사원번호   사원명   기본급여
-     --------                       -------        -------------------------
-     departments.department_id      departments             employees 
-     employees.department_id
-  */
-
-  select *
-  from departments;
-  
-  select *
-  from employees;
+    select *
+    from departments;
+      
+    select *
+    from employees;
     
     select *
     from employees , departments    -- SQL 1992 CODE 방식
@@ -4961,12 +4948,6 @@ group by department_id;
     */
     
     ---- **** INNER JOIN(== 내부조인) (SQL 1999 CODE 방식, ANSI) **** ----
-    /*
-     [INNER JOIN 예]
-     
-     부서번호   부서명   사원번호   사원명   기본급여
-     이 나오도록 하세요..
-    */
 
     select *
     from employees E INNER JOIN departments D  -- SQL 1999 CODE 방식
@@ -4982,12 +4963,6 @@ group by department_id;
 
 
     ---- **** OUTER JOIN(== 외부조인) (SQL 1999 CODE 방식, ANSI) **** ----
-    /*
-     [OUTER JOIN 예]
-     
-     부서번호   부서명   사원번호   사원명   기본급여
-     이 나오도록 하세요..
-    */
 
     select *
     from employees E LEFT OUTER JOIN departments D  -- SQL 1999 CODE 방식 // OUTER JOIN 을 중심으로 왼쪽에 있는 테이블을 보여주고 CROSS JOIN
@@ -5025,4 +5000,207 @@ group by department_id;
     select *
     from employees E FULL JOIN departments D    -- 123개행(E와 D의 겹치는 행 + E 만 가지고 있는 행 + D 만 가지고 있는 행)
     ON E.department_id = D.department_id;    -- OUTER 조인
+    
+
+    /*
+    부서번호   부서명   사원번호   사원명   기본급여
+     이 나오도록 하세요.
+    
+      부서번호                        부서명          사원번호   사원명   기본급여
+     --------                       -------        -------------------------
+     departments.department_id      departments             employees 
+     employees.department_id
+    */
+    
+    -- ◆ [SQL 1992 CODE] ◆
+    select E.department_id as 부서번호
+        , D.department_name as 부서명
+        , E.employee_id as 사원번호
+        , E.first_name || ' ' || E.last_name as 사원명
+        , E.salary as 기본급여
+    from employees E, departments D -- SQL 1992 CODE
+    where E.department_id = D.department_id(+);
+    -- department_id as 부서번호 일 경우, 오류!! ==> ORA-00918: 열의 정의가 애매합니다
+    -- department_id 가 E와 D 모두 가지고 있으므로 E.department_id 나 D.department_id 를 적어주어야 한다.
+    -- department_id 를 제외한 다른 컬럼은 중복이 아니므로, E. 이나 D. 을 적을 필요는 없다. 하지만 department_id 는 반드시 적어야 한다!!!
+    -- (+) 가 안 붙은 행 먼저 나열
+    
+    -- ◆ [SQL 1999 CODE] ◆
+    select E.department_id as 부서번호
+        , D.department_name as 부서명
+        , E.employee_id as 사원번호
+        , E.first_name || ' ' || E.last_name as 사원명
+        , E.salary as 기본급여
+    from employees E JOIN departments D -- SQL 1999 CODE
+    ON E.department_id = D.department_id;
+    -- INNER 은 생략 가능
+    -- INNER JOIN 의 조건절은 where 이 아니라 ON 을 사용한다.
+    
+    select E.department_id as 부서번호
+        , D.department_name as 부서명
+        , E.employee_id as 사원번호
+        , E.first_name || ' ' || E.last_name as 사원명
+        , E.salary as 기본급여
+    from employees E LEFT JOIN departments D -- SQL 1999 CODE
+    ON E.department_id = D.department_id;
+    -- OUTER JOIN 중 하나로 왼쪽을 먼저 나열할 경우 LEFT, 오른쪽을 먼저 나열할 경우 RIGHT 을 입력 -> LEFT/RIGHT OUTER JOIN
+    -- OUTER 은 생략 가능
+    -- OUTER JOIN 의 조건절은 where 이 아니라 ON 을 사용한다.
+    
+    /*
+        30번, 60번 부서에 근무하는 사원들만
+        부서번호   부서명   사원번호   사원명   기본급여
+        이 나오도록 하세요.
+     */
+     
+     -- ◆ [SQL 1992 CODE] ◆
+    select E.department_id as 부서번호
+        , D.department_name as 부서명
+        , E.employee_id as 사원번호
+        , E.first_name || ' ' || E.last_name as 사원명
+        , E.salary as 기본급여
+    from employees E, departments D -- SQL 1992 CODE
+    where E.department_id = D.department_id
+        and E.department_id in (30,60);
+     
+    -- ◆ [SQL 1999 CODE] ◆
+    select E.department_id as 부서번호
+        , D.department_name as 부서명
+        , E.employee_id as 사원번호
+        , E.first_name || ' ' || E.last_name as 사원명
+        , E.salary as 기본급여
+    from employees E JOIN departments D -- SQL 1999 CODE
+    ON E.department_id = D.department_id
+    where E.department_id in (30,60); 
+     
+------------------------------------------------------------
+     -- ◆ 권장 -> [SQL 1992 CODE] ◆
+     select E.department_id as 부서번호
+        , department_name as 부서명
+        , employee_id as 사원번호
+        , fullname as 사원명
+        , salary as 기본급여
+    from
+    (
+        select department_id, employee_id, first_name || ' ' || last_name as fullname, salary
+        from employees 
+        where department_id in(30,60)
+    )E
+    ,   -- SQL 1992 CODE
+    (
+        select department_id, department_name
+        from departments 
+        where department_id in(30,60)
+    )D 
+    where E.department_id = D.department_id;    -- join 조건절
+     
+    -- ◆ 권장 -> [SQL 1999 CODE] ◆
+    select E.department_id as 부서번호
+        , department_name as 부서명
+        , employee_id as 사원번호
+        , fullname as 사원명
+        , salary as 기본급여
+    from 
+    (
+        select department_id, employee_id, first_name || ' ' || last_name as fullname, salary
+        from employees 
+        where department_id in(30,60)
+    ) E
+    JOIN    -- SQL 1999 CODE
+    (
+        select department_id, department_name
+        from departments 
+        where department_id in(30,60)
+    ) D 
+    ON E.department_id = D.department_id; 
+     
+     
+     --- WITH 절
+     WITH
+     E AS
+     (
+        select department_id, employee_id, first_name || ' ' || last_name as fullname, salary
+        from employees 
+        where department_id in(30,60)
+     )
+     ,
+     D AS
+     (
+        select department_id, department_name
+        from departments 
+        where department_id in(30,60)
+     )
+    SELECT E.department_id as 부서번호
+        , department_name as 부서명
+        , employee_id as 사원번호
+        , fullname as 사원명
+        , salary as 기본급여
+    FROM E JOIN D
+    ON E.department_id = D.department_id;
+    
+    
+    
+    -------------------------------------------------------------------------
+    
+    select department_id as 부서번호
+        , count(*) as 인원수
+    from employees
+    group by department_id
+    order by 1;
+    /*
+    -- 아래와 같이 나오도록 하세요.
+    ----------------------
+        부서명     인원수
+    ----------------------
+    */
+    
+    SELECT department_name as 부서명
+        , cnt as 인원수
+    FROM
+    (
+        select department_id 
+            , count(*) as cnt
+        from employees
+        group by department_id
+        order by 1
+    ) E
+    LEFT JOIN departments D
+    ON E.department_id = D.department_id
+    order by 1;
+    
+    -- 또는
+    WITH
+    V AS
+    (
+        select department_name
+        from employees E LEFT JOIN departments D
+        ON E.department_id = D.department_id
+    )
+    SELECT department_name as 부서명, count(*) as 인원수
+    FROM V
+    GROUP BY department_name
+    ORDER BY 1;
+    
+    -- 내방법 --
+    select department_name, count(*)
+    from 
+    employees E
+    LEFT JOIN
+    (
+        select department_id, department_name 
+        from departments
+    ) D
+    ON E.department_id = D.department_id
+    group by D.department_name
+    order by 1;
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
     
