@@ -4017,116 +4017,7 @@ group by department_id;
     ------------------------------------------------------------------------------------------------------------
     
     ------------------- ====== ***** Sub Query (서브쿼리) ***** ====== -------------------
-    
-    
-    
-    ------ **** 데이터베이스 링크(database link) 만들기 **** ------
-    
-    select first_name, last_name
-    from employees
-    where employee_id = 100;
-    -- Steven	King
-    
-    
-    update employees set first_name = '혜정', last_name = '양'
-    where employee_id = 100;
-    -- 1 행 이(가) 업데이트되었습니다.
-    commit;
-    -- 커밋 완료.
-    
-    1. DB클라이언트 컴퓨터의 탐색기에서  C:\OracleXE18C\product\18.0.0\dbhomeXE\network\admin 에 간다.
-    
-    2. tnsnames.ora 파일을 메모장으로 연다.
-    
-    3.
-    TEACHER =
-  (DESCRIPTION =
-    (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.220)(PORT = 1521))
-    (CONNECT_DATA =
-      (SERVER = DEDICATED)
-      (SERVICE_NAME = XE)
-    )
-  )
-    을 추가한다.
-    HOST = 192.168.0.220 이 연결하고자 하는 원격지 오라클서버의 IP 주소이다.
-    그런데 전제조건은 원격지 오라클서버(192.168.0.220)의 방화벽에서 포트번호 1521 을 허용으로 만들어주어야 한다.
-    
-    그리고 TEACHER 를 'Net Service Name 네트서비스네임(넷서비스명)' 이라고 부른다.   
-    
-    4. 명령프롬프트를 열어서 원격지 오라클서버(192.168.0.220)에 연결이 가능한지 테스트를 한다. 
-      C:\Users\user>tnsping TEACHER 5
-    
-    별칭 분석을 위해 TNSNAMES 어댑터 사용
-    (DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.220)(PORT = 1521)) (CONNECT_DATA = (SERVER = DEDICATED) (SERVICE_NAME = XE)))에 접속하려고 시도하는 중
-    확인(0밀리초)
-    확인(20밀리초)
-    확인(10밀리초)
-    확인(20밀리초)
-    확인(20밀리초)
-    
-    5.  데이터베이스 링크(database link) 만들기    
-  
-    create database link teacher_oracle_server
-    connect to hr identified by gclass -- 이때 hr 과 암호 gclass 는 연결하고자 하는 원격지 오라클서버(192.168.0.220)의 계정명과 암호이다.  
-    using 'TEACHER';  -- TEACHER 은 Net Service Name 네트서비스네임(넷서비스명) 이다. 
-    -- Database link TEACHER_ORACLE_SERVER이(가) 생성되었습니다.
-    
-    SELECT *
-    FROM employees@teacher_oracle_server    -- 원격지 오라클 서버(192.168.0.220)
-    ORDER BY employee_id asc;
-    
-    SELECT *
-    FROM employees@XE   -- 로컬서버
-    ORDER BY employee_id asc;
-    
-    SELECT *
-    FROM employees   -- 로컬서버    => 기본값
-    ORDER BY employee_id asc;
-    
-    drop database link teacher_oracle_server;   -- 삭제가 됨
-    
-    
-    -------------------------------------------------------
-    
-    -- IP 주소 연결하기
-    DH =
-  (DESCRIPTION =
-    (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.190)(PORT = 1521))
-    (CONNECT_DATA =
-      (SERVER = DEDICATED)
-      (SERVICE_NAME = XE)
-    )
-  )
-  
-  WS =
-  (DESCRIPTION =
-    (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.191)(PORT = 1521))
-    (CONNECT_DATA =
-      (SERVER = DEDICATED)
-      (SERVICE_NAME = XE)
-    )
-  )
-  -- 데이터베이스 링크 만들기
-    create database link dh_oracle_server
-    connect to hr identified by gclass -- 이때 hr 과 암호 gclass 는 연결하고자 하는 원격지 오라클서버(192.168.0.220)의 계정명과 암호이다.  
-    using 'DH';
-    
-    create database link ws_oracle_server
-    connect to hr identified by gclass -- 이때 hr 과 암호 gclass 는 연결하고자 하는 원격지 오라클서버(192.168.0.220)의 계정명과 암호이다.  
-    using 'WS';
-    
- -- 데이터베이스 링크 만든거 연결
-    SELECT *
-    FROM employees@dh_oracle_server    -- 원격지 오라클 서버(192.168.0.190)
-    ORDER BY employee_id asc;
-    
-    SELECT *
-    FROM employees@ws_oracle_server    -- 원격지 오라클 서버(192.168.0.191)
-    ORDER BY employee_id asc;
-    
-    
-    
-    
+     
     /*
        -- Sub Query (서브쿼리)란?
        select 문속에 또 다른 select 문이 포함되어져 있을 때 포함되어진 select 문을 Sub Query (서브쿼리)라고 부른다.
@@ -4300,9 +4191,10 @@ group by department_id;
       employees 테이블에서
       부서번호별로 salary 가 최대인 사원과
       부서번호별로 salary 가 최소인 사원의 정보를
-      부서번호, 사원번호, 사원명, 기본급여를 나타내세요.. 
+      부서번호, 사원번호, 사원명, 기본급여를 나타내세요.
   */
-  
+
+    --- 부서번호 30번에 근무하는 사람들 중에 기본급여가 최대인 사원들
     select department_id as 부서번호
         , employee_id as 사원번호
         , first_name || ' ' || last_name as 사원명
@@ -4311,15 +4203,7 @@ group by department_id;
     where department_id = 30    -- 이것을 빼면 오류! 30번의 최대치가 다른곳의 부서인사람과 같을 수 있기 때문 
         and salary = (select max(salary) from employees where department_id = 30);
   
-    ---------------
-    select department_id as 부서번호
-        , employee_id as 사원번호
-        , first_name || ' ' || last_name as 사원명
-        , salary as 기본급여
-    from employees
-    where department_id = (select department_id 30 
-        and salary = (select max(salary) from employees where department_id = 30);
-  
+    --- 부서번호 30번에 근무하는 사람들 중에 기본급여가 최소인 사원들
     select department_id as 부서번호
         , employee_id as 사원번호
         , first_name || ' ' || last_name as 사원명
@@ -4328,6 +4212,547 @@ group by department_id;
     where department_id = 30    
         and salary = (select min(salary) from employees where department_id = 30);
     
+   --- 부서번호별 기본급여의 최대값과 최솟값을 알아보고자 한다.
+   select department_id, max(salary), min(salary)
+   from employees
+   group by department_id;
+   
+   -- ================================================================================= --
+   --- 30번 부서의 최대기본급여가 80번 부서 사원들과 같다. 이중, 30번 부서의 사람만 나오도록 하기( 확인용 )
+   
+   -- Ex) 30번 부서의 기본급여 최대값인 11000 인 사원들
+   select department_id , first_name, salary
+   from employees
+   where salary = 11000;
+   /*
+   ------------------------------------
+   부서번호     사원명        기본급여
+    30	       Den	        11000
+    80	      Gerald	    11000
+    80	      Ellen	        11000
+    -----------------------------------
+   */
+   
+   -- 부서번호 30번에 근무하는 사원들 중 기본급여가 11000 인 사원들
+   select department_id , first_name, salary
+   from employees
+   where department_id = 30 and salary = 11000;
+   
+   -- ==================================================================== --
+   
+   --- 최종
+   select department_id as 부서번호
+        , employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , salary as 기본급여
+   from employees
+   where (nvl(department_id,-9999), salary) in(select nvl(department_id,-9999), max(salary)   
+                                               from employees               
+                                               group by department_id)             
+        -- (nvl(department_id,-9999), salary) 에서 () 을 빼면 오류
+        -- null 처리를 양쪽 모두 해주어야 null 값이 나온다.
+        -- 각 부서가 같고 최대기본급여와 기본급여가 같은 사원들
+        or (nvl(department_id,-9999), salary) in(select nvl(department_id,-9999), min(salary)   
+                                               from employees
+                                               group by department_id)
+        -- 각 부서가 같고 최소기본급여와 기본급여가 같은 사원들
+    order by 1,4;
+   
+   
+   
+   
+   
+
+   
+   ---  부서번호별로 salary 가 최대인 사원과 최소인 사원들을 모으고 그 안에서의 등수를 보여주기
+   select department_id as 부서번호
+        , employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , salary as 기본급여
+        , rank() over (order by salary desc) as 등수
+   from employees
+   where (nvl(department_id,-9999), salary) in(select nvl(department_id,-9999), max(salary)   
+                                               from employees               
+                                               group by department_id)             
+        or (nvl(department_id,-9999), salary) in(select nvl(department_id,-9999), min(salary)   
+                                               from employees
+                                               group by department_id)
+    order by 5,1,4;
+   
+   
+    /*
+      employees 테이블에서
+      부서번호별로 salary 가 최대인 사원과
+      부서번호별로 salary 가 최소인 사원의 정보를
+      부서번호, 사원번호, 사원명, 기본급여, 부서내등수, 전체등수를 나타내세요.
+    */
+   
+    WITH
+    V AS
+    (
+    select department_id
+        , employee_id 
+        , first_name || ' ' || last_name as fullname
+        , salary
+        , rank() over(partition by department_id order by salary desc) as dept_rank -- 부서내등수
+        , rank() over(order by salary desc) as total_rank   -- 전체등수
+    from employees
+   )
+   SELECT department_id as 부서번호
+        , employee_id as 사원번호
+        , fullname as 사원명
+        , to_char(salary,'99,999') as 기본급여
+        , dept_rank as 부서내등수
+        , total_rank as 전체등수
+   FROM V
+   WHERE (nvl(department_id,-9999), salary) in(select nvl(department_id,-9999), max(V.salary)   
+                                               from V               
+                                               group by department_id)             
+        or (nvl(department_id,-9999), salary) in(select nvl(department_id,-9999), min(V.salary)   
+                                               from V
+                                               group by department_id)
+    -- ORDER BY 6,1;    -- 전체등수별로 보기 쉬움
+   ORDER BY 1,4;    -- 각 부서별로 최소기본급여의 등수와 최대기본급여의 등수를 보기 쉬움
+   
+   
+   
+   
+   
+   
+    --------- ===== **** 상관서브쿼리(== 서브상관쿼리) ****  ===== ---------    
+   /*
+      상관서브쿼리 이라함은 Main Query(== 외부쿼리)에서 사용된 테이블(뷰)에 존재하는 컬럼이
+      Sub Query(== 내부쿼리)의 조건절(where절, having절)에 사용되어질때를 
+      상관서브쿼리(== 서브상관쿼리)라고 부른다.
+   */
+   
+   
+   -- employees 테이블에서 기본급여에 대해 전체등수 및 부서내등수를 구하세요.
+   -- 첫번째 방법은 rank() 함수를 사용하여 구해본다.
+   select department_id AS 부서번호
+        , employee_id AS 사원번호 
+        , salary AS 기본급여
+        , rank() over(order by salary desc) AS 전체등수 
+        , rank() over(partition by department_id order by salary desc) AS 부서내등수 
+   from employees
+   order by 1, 3 desc;
+   
+   
+   -- employees 테이블에서 기본급여에 대해 전체등수 및 부서내등수를 구하세요.
+   -- 두번째 방법은 count(*) 을 이용하여 상관서브쿼리를 사용하여 구해본다.
+   
+   select salary
+   from employees;
+   
+   -- 자신의 기본급여가 12008 이라면 등수가 몇등?
+   select count(salary)+1 as 등수 -- 급여가 높은사람들 + 1
+   from employees
+   where salary > 12008;    -- 자신의 기본급여가 12008
+   
+   
+   SELECT department_id AS 부서번호
+        , employee_id AS 사원번호 
+        , to_char(salary,'99,999') AS 기본급여
+        
+        , (select count(salary) + 1
+            from employees
+            where salary > E.salary )AS 전체등수 
+        
+        , (select count(salary) + 1
+            from employees
+            where department_id = E.department_id
+                and salary > E.salary )AS 부서내등수
+            
+   FROM employees E
+   ORDER BY 1,3 desc;
+   
+   
+   
+   --- ==== *** Sub Query 를 사용하여 테이블을 생성할 수 있습니다. *** ==== ---
+   create table tbl_employees_3060
+   as
+   select department_id
+        , employee_id
+        , first_name || ' ' || last_name AS ENAME
+        , nvl(salary + (salary * commission_pct), salary) AS MONTHSAL
+        , case when substr(jubun, 7, 1) in('1','3') then '남' else '여' end AS GENDER
+        , jubun
+   from employees
+   where department_id in (30, 60);
+   -- Table TBL_EMPLOYEES_3060이(가) 생성되었습니다.
+   
+   
+    select *
+    from tbl_employees_3060;
+   
+    select * from tab;
+
+
+    ---- *** employees 테이블을 가지고 데이터없이 employees 테이블의 구조만 동일한 tbl_employees_sub 이라는 테이블을 생성하겠습니다. *** ---
+   select * 
+   from employees
+   where 1=1;
+   
+   select * 
+   from employees
+   where 1=2;
+  
+   create table tbl_employees_sub
+   as 
+   select * 
+   from employees
+   where 1=2;
+   -- Table TBL_EMPLOYEES_SUB이(가) 생성되었습니다.
     
     
+    select *
+    from tbl_employees_sub;
+    
+    desc employees;
+    desc tbl_employees_sub;
+    
+    
+    ----- ****** !!!! 필수로 꼭 알아두시길 바랍니다. !!!! ****** ------
+    --    =====  상관서브쿼리(== 서브상관쿼리)를 사용한 UPDATE 처리하기 ===== 
+    /*
+       회사에 입사하셔서 delete 또는 update 를 할 때 먼저 반드시 해당 테이블을 백업해두시고 하시길 바랍니다.
+       실수하면 복구하기 위한 것이다.
+   */
+    --- 원본
+    select *
+    from employees;
+    
+    -- 백업
+    create table tbl_employees_backup_20240223_1135
+    as
+    select *
+    from employees;
+    -- Table TBL_EMPLOYEES_BACKUP_20240223_1135이(가) 생성되었습니다.
+    
+    select *
+    from tbl_employees_backup_20240223_1135;
+    
+    update employees set first_name = '순신', last_name = '이';
+    -- 107개 행 이(가) 업데이트되었습니다.
+    commit;
+    -- 커밋 완료.
+    select *
+    from employees;
+    
+    -- ==== 상관서브쿼리(==서브상관쿼리)를 사용한 UPDATE 처리하기 ==== --(복구)
+    update employees E set first_name = (select first_name
+                                        from tbl_employees_backup_20240223_1135
+                                        where employee_id = E.employee_id)    -- 백업본에 있는 employeee_id = 원본에 있는 employee_id
+                        , last_name = (select last_name
+                                        from tbl_employees_backup_20240223_1135
+                                        where employee_id = E.employee_id);
+    -- 107개 행 이(가) 업데이트되었습니다.
+    commit;
+    -- 커밋 완료.
+    
+    
+    
+    
+
+    
+    ------ **** 데이터베이스 링크(database link) 만들기 **** ------
+    
+    select first_name, last_name
+    from employees
+    where employee_id = 100;
+    -- Steven	King
+    
+    
+    update employees set first_name = '혜정', last_name = '양'
+    where employee_id = 100;
+    -- 1 행 이(가) 업데이트되었습니다.
+    commit;
+    -- 커밋 완료.
+    
+    1. DB클라이언트 컴퓨터의 탐색기에서  C:\OracleXE18C\product\18.0.0\dbhomeXE\network\admin 에 간다.
+    
+    2. tnsnames.ora 파일을 메모장으로 연다.
+    
+    3.
+    TEACHER =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.220)(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = XE)
+    )
+  )
+    을 추가한다.
+    HOST = 192.168.0.220 이 연결하고자 하는 원격지 오라클서버의 IP 주소이다.
+    그런데 전제조건은 원격지 오라클서버(192.168.0.220)의 방화벽에서 포트번호 1521 을 허용으로 만들어주어야 한다.
+    
+    그리고 TEACHER 를 'Net Service Name 네트서비스네임(넷서비스명)' 이라고 부른다.   
+    
+    4. 명령프롬프트를 열어서 원격지 오라클서버(192.168.0.220)에 연결이 가능한지 테스트를 한다. 
+      C:\Users\user>tnsping TEACHER 5
+    
+    별칭 분석을 위해 TNSNAMES 어댑터 사용
+    (DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.220)(PORT = 1521)) (CONNECT_DATA = (SERVER = DEDICATED) (SERVICE_NAME = XE)))에 접속하려고 시도하는 중
+    확인(0밀리초)
+    확인(20밀리초)
+    확인(10밀리초)
+    확인(20밀리초)
+    확인(20밀리초)
+    
+    5.  데이터베이스 링크(database link) 만들기    
+  
+    create database link teacher_oracle_server
+    connect to hr identified by gclass -- 이때 hr 과 암호 gclass 는 연결하고자 하는 원격지 오라클서버(192.168.0.220)의 계정명과 암호이다.  
+    using 'TEACHER';  -- TEACHER 은 Net Service Name 네트서비스네임(넷서비스명) 이다. 
+    -- Database link TEACHER_ORACLE_SERVER이(가) 생성되었습니다.
+    
+    SELECT *
+    FROM employees@teacher_oracle_server    -- 원격지 오라클 서버(192.168.0.220)
+    ORDER BY employee_id asc;
+    
+    SELECT *
+    FROM employees@XE   -- 로컬서버
+    ORDER BY employee_id asc;
+    
+    SELECT *
+    FROM employees   -- 로컬서버    => 기본값
+    ORDER BY employee_id asc;
+    
+    drop database link teacher_oracle_server;   -- 삭제가 됨
+    
+    
+    -------------------------------------------------------
+ -- ====★★★★★★★======================================================================================= --   
+    -- IP 주소 연결하기
+    DH =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.190)(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = XE)
+    )
+  )
+  
+  WS =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.191)(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = XE)
+    )
+  )
+  -- 데이터베이스 링크 만들기
+    create database link dh_oracle_server
+    connect to hr identified by gclass -- 이때 hr 과 암호 gclass 는 연결하고자 하는 원격지 오라클서버(192.168.0.220)의 계정명과 암호이다.  
+    using 'DH';
+    
+    create database link ws_oracle_server
+    connect to hr identified by gclass -- 이때 hr 과 암호 gclass 는 연결하고자 하는 원격지 오라클서버(192.168.0.220)의 계정명과 암호이다.  
+    using 'WS';
+    
+ -- 데이터베이스 링크 만든거 연결
+    SELECT *
+    FROM employees@dh_oracle_server    -- 원격지 오라클 서버(192.168.0.190)
+    ORDER BY employee_id asc;
+    
+    SELECT *
+    FROM employees@ws_oracle_server    -- 원격지 오라클 서버(192.168.0.191)
+    ORDER BY employee_id asc; 
+    
+ --=========================================================================================================== --   
+    
+    SELECT *
+    FROM employees@teacher_oracle_server    -- 원격지 오라클 서버(192.168.0.220)
+    ORDER BY employee_id asc;
+    
+    
+    update employees set first_name = '냥냥', last_name = '고양이', salary = 12345;
+    -- 107개 행 이(가) 업데이트되었습니다.
+    commit;
+    -- 커밋 완료.
+    
+    update employees E set first_name = (select first_name
+                                        from employees@teacher_oracle_server
+                                        where employee_id = E.employee_id)    -- 백업본에 있는 employeee_id = 원본에 있는 employee_id
+                        , last_name = (select last_name
+                                        from employees@teacher_oracle_server
+                                        where employee_id = E.employee_id)
+                        , salary = (select salary
+                                        from employees@teacher_oracle_server
+                                        where employee_id = E.employee_id);
+    -- 107개 행 이(가) 업데이트되었습니다.
+    commit;
+    -- 커밋 완료.
+    select *
+    from employees  -- 로컬서버
+    order by employee_id asc;
+    -- => 내 파일에서도 강사님 이름이 뜬다.(사원번호 : 100번)
+    
+    -- 원상복구
+    update employees set first_name = 'Steven', last_name = 'King'
+    where employee_id = 100;
+    -- 1 행 이(가) 업데이트되었습니다.
+    commit;
+    -- 커밋 완료.
+    
+    
+    ----- *** Sub Query 절을 사용하여 데이터를 입력(insert)할 수 있다. *** -----
+  
+    select *
+    from tbl_employees_3060;
+      
+    desc tbl_employees_3060;
+  
+    insert into tbl_employees_3060
+    select department_id
+        , employee_id
+        , first_name || ' ' || last_name
+        , nvl(salary + (salary * commission_pct), salary)
+        , case when substr(jubun, 7, 1) in('1','3') then '남' else '여' end
+        , jubun
+    from employees
+    where department_id = 40;
+  -- 1 행 이(가) 삽입되었습니다.
+  
+    select *
+    from tbl_employees_3060;
+   
+    insert into tbl_employees_3060(ENAME, DEPARTMENT_ID, EMPLOYEE_ID, MONTHSAL, GENDER, JUBUN) -- 컬럼명에 맞춰서 입력해주어야 한다. 
+    select first_name || ' ' || last_name                                                      -- 사원번호가 먼저 나옴
+        , department_id
+        , employee_id
+        , nvl(salary + (salary * commission_pct), salary)
+        , case when substr(jubun, 7, 1) in('1','3') then '남' else '여' end
+        , jubun
+    from employees
+    where department_id = 50;
+  -- 45개 행 이(가) 삽입되었습니다.
+    commit;
+    -- 커밋 완료.
+    select *
+    from tbl_employees_3060;
+    -- => select 되어진 테이블을 넣을 수 있다!!
+    
+    
+    
+    
+    
+    
+    ----- *** Sub Query 절을 사용하여 데이터를 수정(update)할 수 있다. *** -----
+  
+  -- tbl_employees_3060 테이블에서 부서번호 60번에 해당하는 사원들의 monthsal 값을 
+  -- employees 테이블에 있는 부서번호 30번에 해당하는 사원들의 월급평균 값으로 변경하세요. 
+  
+    update tbl_employees_3060 set monthsal = ( select avg( nvl(salary+(salary*commission_pct), salary) ) 
+                                             from employees 
+                                             where department_id = 30 )
+    where department_id = 60; 
+    -- 5개 행 이(가) 업데이트되었습니다.
+    commit;
+    -- 커밋 완료.
+    
+    select * 
+    from tbl_employees_3060;
+    
+    
+    
+    
+    
+    
+    
+    ----- *** Sub Query 절을 사용하여 데이터를 삭제(delete)할 수 있다. *** -----
+  
+  --- *** tbl_employees_3060 테이블에서 monthsal 이 평균 monthsal 보다 작은 행들만 삭제하세요. *** ---
+    delete from tbl_employees_3060
+    where monthsal < ( tbl_employees_3060 테이블의 monthsal 컬럼의 평균 );
+  
+    -- tbl_employees_3060 테이블의 monthsal 컬럼의 평균
+    select avg(monthsal)
+    from tbl_employees_3060;
+    -- 3658.771929824561403508771929824561403509
+  
+    delete from tbl_employees_3060
+    where monthsal < ( select avg(monthsal) from tbl_employees_3060 );
+    -- 40개 행 이(가) 삭제되었습니다.
+  
+    select * 
+    from tbl_employees_3060;
+  
+    commit;
+    
+    
+    
+    
+    
+    
+   -----------------------------------------------------------------------------------------
+           --  !!!! 중요    JOIN 은 면접에 가시면 무조건 물어봅니다.      중요 !!!! --
+   -----------------------------------------------------------------------------------------
+   
+           ------- ====== **** JOIN **** ====== --------
+   /*
+       JOIN(조인)은 테이블(뷰)과 테이블(뷰)을 합치는 것을 말하는데 
+       행(ROW) 과 행(ROW)을 합치는 것이 아니라, 컬럼(COLUMN) 과 컬럼(COLUMN)을 합치는 것을 말한다.
+       위에서 말한 행(ROW) 과 행(ROW)을 합치는 것은 UNION 연산자를 사용하는 것이다.
+   
+       -- 면접질문 : INNER JOIN(내부조인) 과 OUTER JOIN(외부조인)의 차이점에 대해 말해보세요.
+       -- 면접질문 : JOIN 과 UNION 의 차이점에 대해서 말해보세요.
+       
+       
+       A = {1, 2, 3}    원소가 3개
+       B = {a, b}       원소가 2개
+       
+       A ⊙ B = { (1,a), (1,b)
+                 ,(2,a), (2,b)
+                 ,(3,a), (3,b) }
+                 
+       데카르트곱(수학)  ==> 원소의 곱 :   3 * 2 = 6개(모든 경우의 수)
+       --> 수학에서 말하는 데카르트곱을 데이터베이스에서는 Catersian Product 라고 부른다.
+       
+       
+       JOIN  =>  SQL 1992 CODE 방식  -->  테이블(뷰) 과 테이블(뷰) 사이에 콤마(,)를 찍어주는 것.  
+                                         콤마(,)를 찍어주는 것을 제외한 나머지 문법은 데이터베이스 밴더(회사) 제품마다 조금씩 다르다.   
+       
+       JOIN  =>  SQL 1999 CODE 방식(ANSI) --> 테이블(뷰) 과 테이블(뷰) 사이에 JOIN 이라는 단어를 넣어주는 것.
+                                             ANSI(표준화) SQL
+   */  
+   
+   
+   
+   select * 
+   from employees;
+   
+   select count(*) 
+   from employees;  -- 107 개행
+   
+   select * 
+   from departments;
+  
+   select count(*) 
+   from departments; -- 27 개행 
+   
+   select * 
+   from employees , departments --> SQL 1992 CODE 방식, Catersian Product // 경우의 수 : 107*27 = 2889
+   order by employee_id;                               
+  
+   select * 
+   from employees CROSS JOIN departments    --> SQL 1999 CODE 방식, Catersian Product  // cross join 은 ,(콤마) 와 같다.
+   order by employee_id; 
+   
+   select count(*) 
+   from employees CROSS JOIN departments; --> SQL 1999 CODE 방식  //  2889 개행
+
+                                          
+/*
+      1. CROSS JOIN 은 프로야구를 예로 들면 10개팀이 있는데 
+         각 1팀당 경기를 몇번해야 하는지 구할때 쓰인다. 1팀당 모든 팀과 경기를 펼쳐야 한다. 
+         
+      2. CROSS JOIN 은 그룹함수로 나온 1개의 행을 가지고 어떤 데이터 값을 얻으려고 할때 사용된다. 
+*/
+   
+    -- [ CROSS JOIN 사용 예 ]
+  /*
+      사원번호    사원명    부서번호    기본급여    모든사원들의기본급여평균    기본급여평균과의차액    
+      이 나오도록 하세요.
+  */  
     
