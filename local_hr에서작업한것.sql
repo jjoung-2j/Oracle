@@ -5214,13 +5214,195 @@ group by department_id;
     from E LEFT JOIN D  -- SQL 1999 CODE
     on E.department_id = D.department_id
     order by E.department_id; 
+    
+    
+    
+    
+    
+    
+        ---- **** JOIN 을 사용한 응용문제 **** ----
+    /*
+        아래와 같이 나오도록 하세요.
+        
+        -----------------------------------------------------------------------
+         부서번호   사원번호   사원명   기본급여   부서평균기본급여    부서평균과의차액
+        -----------------------------------------------------------------------
+        
+        
+        ---------------------------       --------------------------------------------
+          부서번호   부서평균기본급여          부서번호   사원번호   사원명    기본급여
+        ---------------------------       --------------------------------------------
+            10          3500                 10        1001     홍길동    3700
+            20          4000                 10        1002     이순신    2500
+            30          2800                 20        2001     엄정화    3500
+            ..          ....                 20        2002     유관순    4500
+            110         3200                 ..        ....     .....    .....
+         --------------------------       ---------------------------------------------
+    */
+    
+    SELECT V1.department_id as 부서번호
+        , employee_id as 사원번호
+        , fullname as 사원명
+        , to_char(salary,'99,999') as 기본급여
+        , to_char(dept_avg_sal,'99,999') as 부서평균기본급여
+        , to_char(salary - dept_avg_sal,'99,999') as 부서평균과의차액
+    FROM
+    (
+        select department_id, trunc(avg(salary)) as dept_avg_sal
+        from employees
+        group by department_id
+    ) V1
+    RIGHT JOIN
+    (
+        select department_id
+            , employee_id
+            , first_name || ' ' || last_name as fullname
+            , salary
+        from employees
+    ) V2
+    ON V1.department_id = V2.department_id  -- RIGHT JOIN 이 아닌 INNER JOIN 사용시, 조건절에서 NVL 을 해주면 된다.
+    ORDER BY 1,4;
+    
+    
+    
+    
+    /*
+        아래와 같이 나오도록 하세요.
+        
+        ----------------------------------------------------------------------------------------------------------
+         부서번호   사원번호   사원명   기본급여   부서평균기본급여    부서평균과의차액    부서내기본급여등수   전체기본급여등수
+        ----------------------------------------------------------------------------------------------------------
+        
+        
+    */
+    
+    SELECT V1.department_id as 부서번호
+        , employee_id as 사원번호
+        , fullname as 사원명
+        , to_char(salary,'99,999') as 기본급여
+        , to_char(dept_avg_sal,'99,999') as 부서평균기본급여
+        , to_char(salary - dept_avg_sal,'99,999') as 부서평균과의차액
+        , rank() over(partition by V1.department_id order by salary desc) as 부서내기본급여등수 
+        , rank() over(order by salary desc) as 전체기본급여등수
+    FROM
+    (
+        select department_id, trunc(avg(salary)) as dept_avg_sal
+        from employees
+        group by department_id
+    ) V1
+    RIGHT JOIN
+    (
+        select department_id
+            , employee_id
+            , first_name || ' ' || last_name as fullname
+            , salary
+        from employees
+    ) V2
+    ON V1.department_id = V2.department_id  -- RIGHT JOIN 이 아닌 INNER JOIN 사용시, 조건절에서 NVL 을 해주면 된다.
+    ORDER BY 1,4 desc;
+    
+    
 
 
     
+    /*
+        부서번호가 10, 30, 50번 부서에 근무하는 사원들만 아래와 같이 나오도록 하세요.
+        
+        ----------------------------------------------------------------------------------------------------------
+         부서번호   사원번호   사원명   기본급여   부서평균기본급여    부서평균과의차액    부서내기본급여등수   전체기본급여등수
+        ----------------------------------------------------------------------------------------------------------
+        
+        
+    */
     
     
+    -- 아래의 풀이에서 "전체기본급여등수"는 부서번호 10, 30, 50번 내에서 전체등수를 가리키는 것이다.
+    SELECT V1.department_id as 부서번호
+        , employee_id as 사원번호
+        , fullname as 사원명
+        , to_char(salary,'99,999') as 기본급여
+        , to_char(dept_avg_sal,'99,999') as 부서평균기본급여
+        , to_char(salary - dept_avg_sal,'99,999') as 부서평균과의차액
+        , rank() over(partition by V1.department_id order by salary desc) as 부서내기본급여등수 
+        , rank() over(order by salary desc) as 전체기본급여등수
+    FROM
+    (
+        select department_id, trunc(avg(salary)) as dept_avg_sal
+        from employees
+        where department_id in(10, 30, 50)
+        group by department_id
+    ) V1
+    RIGHT JOIN
+    (
+        select department_id
+            , employee_id
+            , first_name || ' ' || last_name as fullname
+            , salary
+        from employees
+        where department_id in(10, 30, 50)
+    ) V2
+    ON V1.department_id = V2.department_id  -- RIGHT JOIN 이 아닌 INNER JOIN 사용시, 조건절에서 NVL 을 해주면 된다.
+    ORDER BY 1,4 desc;
     
     
+    -- 아래의 풀이가 올바른 것이다.
+    
+    SELECT V1.department_id as 부서번호
+        , employee_id as 사원번호
+        , fullname as 사원명
+        , to_char(salary,'99,999') as 기본급여
+        , to_char(dept_avg_sal,'99,999') as 부서평균기본급여
+        , to_char(salary - dept_avg_sal,'99,999') as 부서평균과의차액
+        , rank() over(partition by V1.department_id order by salary desc) as 부서내기본급여등수 
+        , rank() over(order by salary desc) as 전체기본급여등수
+    FROM
+    (
+        select department_id, trunc(avg(salary)) as dept_avg_sal
+        from employees
+        where department_id in(10, 30, 50)
+        group by department_id
+    ) V1
+    RIGHT JOIN
+    (
+        select department_id
+            , employee_id
+            , first_name || ' ' || last_name as fullname
+            , salary
+        from employees
+        -- where department_id in(10, 30, 50)
+    ) V2
+    ON V1.department_id = V2.department_id  -- RIGHT JOIN 이 아닌 INNER JOIN 사용시, 조건절에서 NVL 을 해주면 된다.
+    ORDER BY 1,4 desc;
+    
+    
+    -- 강사님 방법 -- 
+    SELECT V1.department_id as 부서번호
+        , employee_id as 사원번호
+        , fullname as 사원명
+        , to_char(salary,'99,999') as 기본급여
+        , to_char(dept_avg_sal,'99,999') as 부서평균기본급여
+        , to_char(salary - dept_avg_sal,'99,999') as 부서평균과의차액
+        , dept_rank_sal as 부서내기본급여등수 
+        , total_rank_sal as 전체기본급여등수
+    FROM
+    (
+        select department_id, trunc(avg(salary)) as dept_avg_sal
+        from employees
+        where department_id in(10, 30, 50)
+        group by department_id
+    ) V1
+    RIGHT JOIN
+    (
+        select department_id
+            , employee_id
+            , first_name || ' ' || last_name as fullname
+            , salary
+            , rank() over(partition by department_id order by salary desc) as dept_rank_sal
+            , rank() over(order by salary desc) as total_rank_sal
+        from employees
+    ) V2
+    ON V1.department_id = V2.department_id  -- RIGHT JOIN 이 아닌 INNER JOIN 사용시, 조건절에서 NVL 을 해주면 된다.
+    ORDER BY 1,4 desc;
     
     
     
