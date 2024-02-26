@@ -5574,14 +5574,156 @@ group by department_id;
        ---------------------------------  
    */
    
-   select  A1.bookname as 도서명
-        , A1.authorname as 작가명
-        , A1.loyalty as 로얄티
-   from tbl_authorbook A1 JOIN tbl_authorbook A2
-   ON A1.bookname = A2.bookname and A1.authorname != A2.authorname;
+
+    select B1.*
+    from tbl_authorbook B1, tbl_authorbook B2   --- SQL 1992 CODE
+    where B1.bookname = B2.bookname and
+        B1.authorname != B2.authorname;
+    ---- !!!! select 되어져 나온 결과물에서 행전체가 동일하게(중복하게) 나오는 경우 중복된 행을 1개만 보이게 하려면 select 바로 다음에 distinct 를 쓰면 된다. !!!! 
+    select distinct B1.*
+    from tbl_authorbook B1, tbl_authorbook B2   --- SQL 1992 CODE
+    where B1.bookname = B2.bookname and
+        B1.authorname != B2.authorname;
+        
+    select distinct B1.*
+    from tbl_authorbook B1 JOIN tbl_authorbook B2   --- SQL 1999 CODE
+    ON B1.bookname = B2.bookname and
+        B1.authorname != B2.authorname;
     
     
     
+    
+    
+    
+        ----- ===== **** Multi Table JOIN (다중 테이블 조인) **** ===== -----
+    
+    --> 3개 이상의 테이블(뷰)을 가지고 조인 시켜주는 것이다.
+    
+   /*
+       
+      --------------------------------------------------------------------------------------------------------------------------
+         대륙명        국가명                        부서주소                    부서번호    부서명       사원번호  사원명       기본급여
+      --------------------------------------------------------------------------------------------------------------------------   
+         Americas     United States of America     Seattle 2004 Charade Rd      90      Executive   100    Steven King   24000
+   
+   
+         대륙명   ==>  regions.region_name                                    regions.region_id 
+         국가명   ==>  countries.country_name                                 countries.region_id       countries.country_id
+         부서주소  ==> locations.city || ' ' || locations.street_address      locations.country_id      locations.location_id
+         부서명   ==> departments.department_name                             departments.location_id   departments.department_id 
+         사원명   ==> employees.first_name || ' ' || employees.last_name      employees.department_id
+   */    
+    
+   select * from tab;
+   
+   select *
+   from regions;
+   
+   select *
+   from countries;
+    
+   select * 
+   from locations; 
+    
+   select * 
+   from departments; 
+    
+   select * 
+   from employees;
+    
+    
+    
+    
+    
+    -- !!!!! 부서번호가 NULL 인 킴밸리 그랜트가 나오도록 하세요..!!!!! (입사시 자주 물어봄!!)
+    select R.region_name as 대륙명
+        , country_name as 국가명
+        , L.state_province || ' ' || L.city || ' ' || L.street_address as 부서주소
+        , D.department_id as 부서번호
+        , department_name as 부서명
+        , employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , to_char(salary,'99,999') as 기본급여
+    from regions R
+    JOIN countries C
+    ON R.region_id = C.region_id
+    JOIN locations L
+    ON C.country_id = L.country_id
+    JOIN departments D
+    ON L.location_id = D.location_id
+    RIGHT JOIN employees E              -- 부서번호가 null 인 킴밸리 그랜트도 나타내기 
+    ON D.department_id = E.department_id
+    order by 사원번호; -- 107개행
+    
+    
+    -- 대륙명이 'Americas' 인 것만 추출하세요..
+    
+    select R.region_name as 대륙명
+        , country_name as 국가명
+        , L.state_province || ' ' || L.city || ' ' || L.street_address as 부서주소
+        , D.department_id as 부서번호
+        , department_name as 부서명
+        , employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , to_char(salary,'99,999') as 기본급여
+    from regions R
+    JOIN countries C
+    ON R.region_name = 'Americas' and R.region_id = C.region_id
+    JOIN locations L
+    ON C.country_id = L.country_id
+    JOIN departments D
+    ON L.location_id = D.location_id
+    JOIN employees E              
+    ON D.department_id = E.department_id
+    order by 사원번호; -- 70명
+    
+    --- 강사님 ---
+    WITH
+    V AS
+    (
+        select R.region_name as 대륙명
+            , country_name as 국가명
+            , L.state_province || ' ' || L.city || ' ' || L.street_address as 부서주소
+            , D.department_id as 부서번호
+            , department_name as 부서명
+            , employee_id as 사원번호
+            , first_name || ' ' || last_name as 사원명
+            , to_char(salary,'99,999') as 기본급여
+        from regions R
+        JOIN countries C
+        ON R.region_id = C.region_id
+        JOIN locations L
+        ON C.country_id = L.country_id
+        JOIN departments D
+        ON L.location_id = D.location_id
+        RIGHT JOIN employees E            
+        ON D.department_id = E.department_id
+    )
+    SELECT *
+    FROM V
+    WHERE 대륙명 = 'Americas'
+    ORDER BY 사원번호;  -- 70명
+    
+    
+    -- 또는
+    select R.region_name as 대륙명
+        , country_name as 국가명
+        , L.state_province || ' ' || L.city || ' ' || L.street_address as 부서주소
+        , D.department_id as 부서번호
+        , department_name as 부서명
+        , employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , to_char(salary,'99,999') as 기본급여
+    from (select * from regions where region_name = 'Americas') R
+    JOIN countries C
+    ON R.region_id = C.region_id
+    JOIN locations L
+    ON C.country_id = L.country_id
+    JOIN departments D
+    ON L.location_id = D.location_id
+    JOIN employees E              
+    ON D.department_id = E.department_id
+    order by 사원번호; -- 70명
     
     
     
