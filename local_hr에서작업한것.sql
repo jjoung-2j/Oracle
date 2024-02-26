@@ -5371,7 +5371,7 @@ group by department_id;
         from employees
         -- where department_id in(10, 30, 50)
     ) V2
-    ON V1.department_id = V2.department_id  -- RIGHT JOIN 이 아닌 INNER JOIN 사용시, 조건절에서 NVL 을 해주면 된다.
+    ON V1.department_id = V2.department_id
     ORDER BY 1,4 desc;
     
     
@@ -5391,7 +5391,7 @@ group by department_id;
         where department_id in(10, 30, 50)
         group by department_id
     ) V1
-    RIGHT JOIN
+    JOIN
     (
         select department_id
             , employee_id
@@ -5401,8 +5401,188 @@ group by department_id;
             , rank() over(order by salary desc) as total_rank_sal
         from employees
     ) V2
-    ON V1.department_id = V2.department_id  -- RIGHT JOIN 이 아닌 INNER JOIN 사용시, 조건절에서 NVL 을 해주면 된다.
+    ON V1.department_id = V2.department_id  
     ORDER BY 1,4 desc;
+    
+    
+    
+    -- 또는 WITH 절을 사용한 inline view JOIN
+    WITH
+    V1 AS
+    (
+        select department_id, trunc(avg(salary)) as dept_avg_sal
+        from employees
+        where department_id in(10, 30, 50)
+        group by department_id
+    )
+    ,
+    V2 AS
+    (
+        select department_id
+            , employee_id
+            , first_name || ' ' || last_name as fullname
+            , salary
+            , rank() over(partition by department_id order by salary desc) as dept_rank_sal
+            , rank() over(order by salary desc) as total_rank_sal
+        from employees
+    )
+    SELECT V1.department_id as 부서번호
+        , employee_id as 사원번호
+        , fullname as 사원명
+        , to_char(salary,'99,999') as 기본급여
+        , to_char(dept_avg_sal,'99,999') as 부서평균기본급여
+        , to_char(salary - dept_avg_sal,'99,999') as 부서평균과의차액
+        , dept_rank_sal as 부서내기본급여등수 
+        , total_rank_sal as 전체기본급여등수
+    FROM V1 JOIN V2
+    ON V1.department_id = V2.department_id  
+    ORDER BY 1,4 desc;
+    
+    
+    
+    
+    
+    
+    
+    
+     ---- =========== *** NON-EQUI JOIN *** ============= ----
+  /*
+      조인조건절에 사용되는 컬럼의 값이 특정한 범위에 속할 때 사용하는 것이 NON-EQUI JOIN 이다. 
+      NON-EQUI JOIN 에서는 조인조건절에 = 을 사용하는 것이 아니라 between A and B 를 사용하는 것이다. 
+  */
+  
+  -- 소득세율 지표 관련 테이블을 생성한다. 
+  create table tbl_taxindex
+  (lowerincome   number       -- 연봉의 최저
+  ,highincome    number       -- 연봉의 최대
+  ,taxpercent    number(2,2)  -- 세율  -0.99 ~ 0.99 
+  );
+  -- Table TBL_TAXINDEX이(가) 생성되었습니다.
+    
+  insert into tbl_taxindex(lowerincome,highincome,taxpercent)
+  values(1, 99999, 0.02);
+
+  insert into tbl_taxindex(lowerincome,highincome,taxpercent)
+  values(100000, 149999, 0.05);
+
+  insert into tbl_taxindex(lowerincome,highincome,taxpercent)
+  values(150000, 199999, 0.08);
+
+  insert into tbl_taxindex(lowerincome,highincome,taxpercent)
+  values(200000, 10000000000000000, 0.1);
+
+  commit;
+  
+  select * 
+  from tbl_taxindex;
+  /*
+  ------------------------------------------------------
+   사원번호     사원명     연봉     세율      소득세액
+  ------------------------------------------------------
+    1001       홍길동    50000    0.02      50000 *  0.02
+    1002       엄정화   170000    0.08     170000 *  0.08
+    ....       ......  ......    .....     .............
+    
+ */
+
+    --- SQL 1992 CODE
+    select employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , to_char(nvl(salary + (salary * commission_pct), salary) * 12,'999,999') as 연봉
+        , taxpercent as 세율
+        , to_char(trunc(nvl(salary + (salary * commission_pct), salary) * 12 * taxpercent,0),'99,999') as 소득세액
+    from employees E, tbl_taxindex T
+    where nvl(salary + (salary * commission_pct), salary) * 12 between T.lowerincome and T.highincome
+    order by 3;
+    
+    --- SQL 1999 CODE
+    select employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , to_char(nvl(salary + (salary * commission_pct), salary) * 12,'999,999') as 연봉
+        , taxpercent as 세율
+        , to_char(trunc(nvl(salary + (salary * commission_pct), salary) * 12 * taxpercent,0),'99,999') as 소득세액
+    from employees E JOIN tbl_taxindex T
+    ON nvl(salary + (salary * commission_pct), salary) * 12 between T.lowerincome and T.highincome
+    order by 3;
+    
+    
+    
+    
+    
+       ------------------ ===== **** SELF JOIN(자기조인) **** ===== ------------------ 
+   /*
+       자기자신의 테이블(뷰)을 자기자신의 테이블(뷰)과 JOIN 시키는 것을 말한다.
+       이때 반드시 테이블(뷰)에 대한 alias(별칭)를 달리 주어서 실행해야 한다.
+   */
+   
+   --- 아래처럼 나오도록 하세요... ---
+/*
+   -------------------------------------------------------------------------------------------------------
+    사원번호              사원명             이메일     급여      직속상관번호             직속상관명
+  employee_id   first_name || last_name    email     salary   employee_id      first_name || last_name
+  -------------------------------------------------------------------------------------------------------
+     100             Steven King           SKING     24000     null                 null 
+     102             Lex De Haan           LDEHAAN   17000     100                  Steven King
+     103             Alexander Hunold      AHUNOLD   9000      102                  Lex De Haan
+     104             Bruce Ernst           BERNST    6000      103                  Alexander Hunold
+*/
+
+   select *
+   from employees
+   order by employee_id asc;
+    
+    --- SQL 1992 CODE ---
+    select E1.employee_id as 사원번호
+        , E1.first_name || ' ' || E1.last_name as 사원명
+        , E1.email as 이메일
+        , E1.salary as 급여
+        , E2.employee_id as 직속상관번호
+        , E2.first_name || ' ' || E2.last_name as 직속상관명 -- ' ' 이 없으면 null 이 나온다. 하지만 다른것들이 붙어져서 나온다.
+    from employees E1, employees E2
+    where E1.manager_id = E2.employee_id(+) -- 조인조건절
+    order by E1.employee_id;
+    
+    --- SQL 1999 CODE ---
+    select E1.employee_id as 사원번호
+        , E1.first_name || ' ' || E1.last_name as 사원명
+        , E1.email as 이메일
+        , E1.salary as 급여
+        , E2.employee_id as 직속상관번호
+        , E2.first_name || ' ' || E2.last_name as 직속상관명 
+    from employees E1 LEFT JOIN employees E2
+    ON E1.manager_id = E2.employee_id -- 조인조건절
+    order by E1.employee_id;
+    
+    
+    
+    
+    
+    select *
+    from tbl_authorbook;
+    
+    --- SELF JOIN(자기조인)을 사용하여 tbl_authorbook 테이블에서 공저(도서명은 동일하지만 작가명이 다른 도서)로 지어진 도서정보를 나타내세요... ---
+   ---                                                                =                 != 
+   /*
+       ---------------------------------
+         도서명         작가명    로얄티
+       ---------------------------------  
+         로빈슨크루소    한석규        800
+         로빈슨크루소    이순신        500
+         그리스로마신화  유관순       1200
+         그리스로마신화  이혜리       1300
+         그리스로마신화  서강준       1700
+       ---------------------------------  
+   */
+   
+   select  A1.bookname as 도서명
+        , A1.authorname as 작가명
+        , A1.loyalty as 로얄티
+   from tbl_authorbook A1 JOIN tbl_authorbook A2
+   ON A1.bookname = A2.bookname and A1.authorname != A2.authorname;
+    
+    
+    
+    
     
     
     
