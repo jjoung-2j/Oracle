@@ -5746,15 +5746,6 @@ group by department_id;
        첨부파일 : SQL JOIN 과제_양혜정.txt
 */
 
- 
-    select *
-    from tbl_taxindex;
- 
-    select *
-    from departments;
- 
-    select *
-    from locations;
 
     WITH
     B AS
@@ -5804,22 +5795,191 @@ group by department_id;
         , rank() over(order by nvl(salary + (salary * commission_pct), salary) * 12 desc) as 전체연봉등수 
     from locations L
     JOIN
-    departments D
+        departments D
     ON L.location_id = D.location_id
-    RIGHT JOIN
-    employees E
+    JOIN
+        employees E
     ON D.department_id = E.department_id
-    JOIN B
-    ON E.employee_id = B.employee_id
-    JOIN NAME
-    ON E.department_id = NAME.department_id
-    JOIN C
-    ON B.department_id = C.department_id
     JOIN 
-    tbl_taxindex T
+        B -- age, gender
+    ON E.employee_id = B.employee_id
+    JOIN 
+        NAME   -- 본부장성명
+    ON E.department_id = NAME.department_id
+    JOIN 
+        C -- 부서내연봉평균
+    ON NAME.department_id = C.department_id
+    JOIN 
+        tbl_taxindex T
     ON nvl(salary + (salary * commission_pct), salary) * 12 between T.lowerincome and T.highincome
     ORDER BY 1;
     
     
     
     
+    
+    
+    
+     ------ ====== **** SET Operator(SET 연산자, 집합연산자) **** ======= ------
+    /*
+        -- 종류 --
+        1. UNION 
+        2. UNION ALL
+        3. INTERSECT
+        4. MINUS
+        
+        -- 면접시 JOIN 과 UNION 의 차이점에 대해서 말해 보세요~~~ !! --
+        
+    ==>  UNION 은 테이블(뷰)과 테이블(뷰)을 합쳐서 보여주는 것으로써,
+         이것은 행(ROW)과 행(ROW)을 합친 결과를 보여주는 것이다.
+
+    A = { a, x, b, e, g }
+          -     -
+    B = { c, d, a, b, y, k, m}    
+                -  -    
+    A ∪ B = {a, b, c, d, e, g, k, m, x, y}  ==> UNION               
+                                             {a, b, c, d, e, g, k, m, x, y}
+
+                                             ==> UNION ALL 
+                                             {a, x, b, e, g, c, d, a, b, y, k, m} 
+
+    A ∩ B = {a,b}  ==> INTERSECT
+                       {a,b}
+
+    A - B = {x,e,g} ==> MINUS 
+                        {x,e,g}
+
+    B - A = {c,d,y,k,m} ==> MINUS 
+                           {c,d,y,k,m}
+ */
+    
+    select *
+    from tbl_panmae;
+    
+    
+    -- tbl_panmae 테이블에서 2달전에 해당하는 월(현재가 2024년 2월이므로 2023년 12월)에 판매되어진 정보만 추출해서 tbl_panmae_202312 라는 테이블로 생성하세요. 
+    
+    create table tbl_panmae_202312
+    as
+    select *
+    from tbl_panmae
+    where to_char(panmaedate,'yyyymm') = to_char(add_months(sysdate,-2),'yyyymm');
+    -- Table TBL_PANMAE_202312이(가) 생성되었습니다.
+    
+    -- tbl_panmae 테이블에서 1달전에 해당하는 월(현재가 2024년 2월이므로 2024년 1월)에 판매되어진 정보만 추출해서 tbl_panmae_202401라는 테이블로 생성하세요. 
+    
+    create table tbl_panmae_202401
+    as
+    select *
+    from tbl_panmae
+    where to_char(panmaedate,'yyyymm') = to_char(add_months(sysdate,-1),'yyyymm');
+    -- Table TBL_PANMAE_202401이(가) 생성되었습니다.
+    
+    
+    
+    -- tbl_panmae 테이블에서 이번달에 해당하는 월(현재가 2024년 2월)에 판매되어진 정보만 남겨두고 나머지는 모두 삭제하세요.
+    
+    select *
+    from tbl_panmae
+    where to_char(panmaedate,'yyyymm') != to_char(sysdate,'yyyymm');    -- 이번달이 아닌 지난달을 포함한 과거에 판매되어진 데이터 정보
+    
+     -- 이번달이 아닌 지난달을 포함한 과거에 판매되어진 데이터 정보를 삭제한다.
+    delete from tbl_panmae
+    where to_char(panmaedate,'yyyymm') != to_char(sysdate,'yyyymm');
+    -- 9개 행 이(가) 삭제되었습니다.
+    
+    commit;
+    
+    ---- *** 최근 3개월간 판매되어진 정보를 가지고 제품별 판매량의 합계를 추출하세요 *** ----   
+    /*
+    tbl_panmae          -- 이번달 데이터
+    tbl_panmae_202401   -- 1달 전 데이터
+    tbl_panmae_202312   -- 2달 전 데이터
+    */
+    select *
+    from tbl_panmae          -- 이번달 데이터
+    UNION
+    select *
+    from tbl_panmae_202401   -- 1달 전 데이터
+    UNION
+    select *
+    from tbl_panmae_202312;  -- 2달 전 데이터
+    
+    -- 위치 바꾸기
+    select *
+    from tbl_panmae_202401  -- 1달 전 데이터
+    UNION
+    select *
+    from tbl_panmae_202312  -- 2달 전 데이터
+    UNION
+    select *
+    from tbl_panmae;       -- 이번달 데이터
+    -- UNION 을 하면 항상 첫번째 컬럼(지금은 panmaedate)을 기준으로 오름차순 정렬되어 나온다.
+    -- 그래서 2023년 12월 데이터 부터 먼저 나온다.
+    
+    select jepumname, panmaedate, panmaesu
+    from tbl_panmae_202401  -- 1달 전 데이터
+    UNION
+    select jepumname, panmaedate, panmaesu
+    from tbl_panmae_202312  -- 2달 전 데이터
+    UNION
+    select jepumname, panmaedate, panmaesu
+    from tbl_panmae;       -- 이번달 데이터
+    -- UNION 을 하면 항상 첫번째 컬럼(지금은 jepumname)을 기준으로 오름차순 정렬되어 나온다.
+    -- 그래서 감자깡 부터 먼저 나온다.
+    
+    select panmaedate, jepumname, panmaesu -- panmaedate as 판매일자, jepumname as 제품명, panmaesu as 판매량 이면 별칭이 적용된다.
+    from tbl_panmae_202401  -- 1달 전 데이터
+    UNION
+    select panmaedate as 판매일자, jepumname as 제품명, panmaesu as 판매량
+    from tbl_panmae_202312  -- 2달 전 데이터
+    UNION
+    select panmaedate, jepumname, panmaesu
+    from tbl_panmae;       -- 이번달 데이터
+    -- UNION 을 사용할때 컬럼에 대한 별칭(alias)은 맨 처음 select 구문에 쓴것만 되어진다. 
+    
+    
+    select panmaedate as 판매일자, jepumname as 제품명, panmaesu as 판매량
+    from tbl_panmae_202401  -- 1달 전 데이터
+    UNION
+    select panmaedate as 판매날날날짜, jepumname as 제품명명명, panmaesu as 판매량량량  -- as "별칭" 이 있어도 사용되지 않는다.
+    from tbl_panmae_202312  -- 2달 전 데이터
+    UNION
+    select panmaedate as "1", jepumname as "2", panmaesu as "3" -- as "별칭" 이 있어도 사용되지 않는다.
+    from tbl_panmae;       -- 이번달 데이터
+    
+    select jepumname as 제품명, panmaedate as 판매일자, panmaesu as 판매량
+    from tbl_panmae_202401  -- 1달 전 데이터
+    UNION
+    select panmaedate, jepumname, panmaesu 
+    from tbl_panmae_202312  -- 2달 전 데이터
+    UNION
+    select panmaedate, jepumname, panmaesu  
+    from tbl_panmae;       -- 이번달 데이터
+    -- 오류!!!
+    -- UNION 을 할때는 반드시 컬럼의 순서는 동일한 데이터타입을 가지도록 해야 한다.
+    
+    
+    
+    
+     ---- *** 최근 3개월간 판매되어진 정보를 가지고 제품별 판매량의 합계를 추출하세요 *** ----
+    select jepumname, panmaesu
+    from tbl_panmae          -- 이번달 데이터
+    UNION
+    select jepumname, panmaesu
+    from tbl_panmae_202401   -- 1달 전 데이터
+    UNION
+    select jepumname, panmaesu
+    from tbl_panmae_202312;  -- 2달 전 데이터
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
