@@ -5750,14 +5750,14 @@ group by department_id;
     WITH
     B AS
     (
-        SELECT employee_id, gender, department_id
+        SELECT employee_id, gender
             , case when this_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd')
                         then extract(year from sysdate) - birthyear - 1 
                         else extract(year from sysdate) - birthyear
                         end as age
         FROM
         (
-            select employee_id , department_id
+            select employee_id 
                 ,case when substr(jubun,7,1) in('1','3') then '남' else '여' end as gender 
                 , to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4),'yyyymmdd') as this_year_birthday
                 , case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2) as birthyear
@@ -5780,7 +5780,7 @@ group by department_id;
         from employees E JOIN departments D
         ON E.employee_id = D.manager_id
     )
-    select D.department_id as 부서번호
+    select E.department_id as 부서번호
         , department_name as 부서명
         , street_address as 부서주소
         , fullname as 부서장성명
@@ -5790,34 +5790,37 @@ group by department_id;
         , age as 나이
         , to_char(nvl(salary + (salary * commission_pct), salary) * 12,'999,999') as 연봉
         , to_char(trunc(nvl(salary + (salary * commission_pct), salary) * 12 * taxpercent,0),'99,999') as 연봉소득세액
-        , avg_year_money - nvl(salary + (salary * commission_pct), salary) * 12  as 부서내연봉평균차액    
+        , case when D.department_id is null 
+            then nvl(salary + (salary * commission_pct), salary) * 12 - (select avg_year_money from C where department_id is null)
+        else nvl(salary + (salary * commission_pct), salary) * 12 - avg_year_money end as 부서내연봉평균차액    
         , rank() over(partition by D.department_id order by nvl(salary + (salary * commission_pct), salary) * 12 desc) as 부서내연봉등수
         , rank() over(order by nvl(salary + (salary * commission_pct), salary) * 12 desc) as 전체연봉등수 
-    from locations L
+    FROM locations L
     JOIN
         departments D
     ON L.location_id = D.location_id
-    JOIN
+    RIGHT JOIN
         employees E
-    ON D.department_id = E.department_id
-    JOIN 
+    ON nvl(D.department_id,-999) = nvl(E.department_id,-999)
+    LEFT JOIN 
         B -- age, gender
     ON E.employee_id = B.employee_id
-    JOIN 
+    FULL JOIN 
         NAME   -- 본부장성명
     ON E.department_id = NAME.department_id
-    JOIN 
+    LEFT JOIN 
         C -- 부서내연봉평균
     ON NAME.department_id = C.department_id
-    JOIN 
+    LEFT JOIN 
         tbl_taxindex T
     ON nvl(salary + (salary * commission_pct), salary) * 12 between T.lowerincome and T.highincome
     ORDER BY 1;
     
     
+    select *
+    from locations;
     
-    
-    
+    desc departments;
     
     
      ------ ====== **** SET Operator(SET 연산자, 집합연산자) **** ======= ------
@@ -5964,22 +5967,205 @@ group by department_id;
     
      ---- *** 최근 3개월간 판매되어진 정보를 가지고 제품별 판매량의 합계를 추출하세요 *** ----
     select jepumname, panmaesu
-    from tbl_panmae          -- 이번달 데이터
+    from tbl_panmae_202312   -- 2달 전 데이터
     UNION
     select jepumname, panmaesu
     from tbl_panmae_202401   -- 1달 전 데이터
     UNION
     select jepumname, panmaesu
-    from tbl_panmae_202312;  -- 2달 전 데이터
+    from tbl_panmae;         -- 이번달 데이터 
+    -- UNION 을 사용하면 중복된 데이터 행은 제거하고 1번만 보여주므로 올바른 데이터 집계가 아니므로
+    -- 위와 같이 하면 안된다.!!!! 
+     
+    select jepumname, panmaesu
+    from tbl_panmae_202312   -- 2달 전 데이터
+    UNION ALL
+    select jepumname, panmaesu
+    from tbl_panmae_202401   -- 1달 전 데이터
+    UNION ALL
+    select jepumname, panmaesu
+    from tbl_panmae;          -- 이번달 데이터 
+    /*
+    UNION ALL 을 사용하면 정렬 없이 그냥 순서대로 행을 붙여서 보여줄 뿐이다.
+    또한 UNION 과 달리 UNION ALL 을 사용하면 중복된 행이 있더라도 제거하지 않고 그대로 보여준다.
+    그러므로 올바른 데이터 집계를 하려면 UNION ALL 을 사용해야 한다.!!!!
+    */
+    select V.jepumname as 제품명
+        , sum(V.panmaesu) as 판매량
+    from
+    (
+        select jepumname, panmaesu
+        from tbl_panmae_202312   -- 2달 전 데이터
+        UNION ALL
+        select jepumname, panmaesu
+        from tbl_panmae_202401   -- 1달 전 데이터
+        UNION ALL
+        select jepumname, panmaesu
+        from tbl_panmae          -- 이번달 데이터 
+    ) V
+    group by V.jepumname
+    order by 제품명;
+     
+     
+     -- 또는
+     WITH
+     V AS
+     (
+        select jepumname, panmaesu
+        from tbl_panmae_202312   -- 2달 전 데이터
+        UNION ALL
+        select jepumname, panmaesu
+        from tbl_panmae_202401   -- 1달 전 데이터
+        UNION ALL
+        select jepumname, panmaesu
+        from tbl_panmae          -- 이번달 데이터 
+     )
+     SELECT V.jepumname as 제품명, sum(panmaesu) as 판매량
+     FROM V
+     GROUP BY V.jepumname
+     ORDER BY 1;
+     
+    --- *** [퀴즈] 최근 3개월간 판매되어진 정보를 가지고
+    ---         아래와 같이 제품명, 판매년월, 판매량의합계, 백분율(%)을 추출하세요 ***
+    -------------------------------------
+    제품명   판매년월  판매량의합계  백분율(%)
+    -------------------------------------
+    감자깡   2023-12      20      8.2
+    감자깡   2024-01      15      6.2
+    감자깡   2024-02      15      6.2
+    감자깡                50      20.6
+    새우깡   2023-12      38      15.6
+    새우깡   2024-01      8       3.3
+    새우깡   2024-02     30       12.3
+    새우깡               76       31.3
+    고구마깡  2024-01     7        2.9
+    고구마깡  2024-02    45       18.5
+    고구마깡             52       21.4
+    허니버터칩 2024-02   65        26.7
+    허니버터칩           65        26.7
+    전체                243      100.0
+    -----------------------------------
+    
+    WITH
+    V AS
+    (
+        select jepumname, panmaedate, panmaesu
+        from tbl_panmae_202312   -- 2달 전 데이터
+        UNION ALL
+        select jepumname, panmaedate, panmaesu
+        from tbl_panmae_202401   -- 1달 전 데이터
+        UNION ALL
+        select jepumname, panmaedate, panmaesu
+        from tbl_panmae          -- 이번달 데이터 
+    )
+    SELECT decode(grouping(jepumname),0,jepumname,'전체') as 제품명
+        , decode(grouping(to_char(panmaedate,'yyyy-mm')),0,to_char(panmaedate,'yyyy-mm'),' ') as 판매년월
+        , sum(panmaesu) as 판매량의합계
+        , to_char(round(sum(panmaesu) / (select sum(panmaesu)from V) * 100,1),'999.0') as "백분율(%)"
+    FROM V
+    -- GROUP BY grouping sets((jepumname, to_char(panmaedate,'yyyy-mm')), (jepumname), () );
+    -- 또는
+    GROUP BY ROLLUP(jepumname, to_char(panmaedate,'yyyy-mm'));
      
      
      
      
      
      
+     --- =============== *** INTERSECT (교집합) *** =============== ---
+     
+    insert into tbl_panmae_202312(panmaedate, jepumname, panmaesu)
+    values( to_date('2024-02-01', 'yyyy-mm-dd'), '쵸코파이', 10);
+      
+    insert into tbl_panmae_202401(panmaedate, jepumname, panmaesu)
+    values( to_date('2024-02-01', 'yyyy-mm-dd'), '쵸코파이', 10);
+      
+    insert into tbl_panmae(panmaedate, jepumname, panmaesu)
+    values( to_date('2024-02-01', 'yyyy-mm-dd'), '쵸코파이', 10);
+      
+    commit;
+    
+    select jepumname, panmaedate, panmaesu
+    from tbl_panmae_202312   -- 2달 전 데이터
+    INTERSECT
+    select jepumname, panmaedate, panmaesu
+    from tbl_panmae_202401   -- 1달 전 데이터
+    INTERSECT
+    select jepumname, panmaedate, panmaesu
+    from tbl_panmae;          -- 이번달 데이터 
+    -- 쵸코파이	24/02/01	10
      
      
+    delete tbl_panmae_202312
+    where jepumname = '쵸코파이';
+    delete tbl_panmae_202401
+    where jepumname = '쵸코파이';
+    delete tbl_panmae
+    where jepumname = '쵸코파이';
+    
+    commit;
+    
+    
+    
+    
+     --- =============== *** MINUS (차집합) *** =============== ---
      
-     
-     
-     
+    create table tbl_employees_backup
+    as
+    select *
+    from employees;
+    -- Table TBL_EMPLOYEES_BACKUP이(가) 생성되었습니다.
+    
+    
+    select * 
+    from tbl_employees_backup;
+      
+    select *
+    from employees
+    where employee_id in (173, 185, 195);
+      
+    select *
+    from tbl_employees_backup
+    where employee_id in (173, 185, 195);
+    
+    -- *** 개발자가 실수로 employees 테이블에 있던 사원들을 삭제(delete)했다. 그런데 누구를 삭제했는지 모른다.!!!!
+    --     백업받은 tbl_employees_backup 테이블을 이용하여 삭제된 사원들을 다시 복구하도록 하겠다. *** ---
+    delete from employees
+    where employee_id in (173, 185, 195);
+    -- 3개 행 이(가) 삭제되었습니다.
+  
+    commit;
+    -- 커밋 완료.
+    
+    select *
+    from tbl_employees_backup
+    MINUS
+    select *
+    from employees;
+    -- tbl_employees_backup 테이블에는 존재하지만 employees 테이블에는 존재하지 않는 행을 찾는 것이다.
+    /*
+        173
+        185
+        195
+    */
+    
+    select *
+    from employees
+    where employee_id in (173, 185, 195);
+    -- 아무것도 안나온다.
+    
+    -- 이제 employees 테이블을 복원하도록 한다.
+    insert into employees
+    select *
+    from tbl_employees_backup
+    MINUS
+    select *
+    from employees;
+    -- 3개 행 이(가) 삽입되었습니다.
+    commit;
+    -- 커밋 완료.
+    
+    select *
+    from employees
+    where employee_id in (173, 185, 195);
+    -- 복구 되어 나온다.
