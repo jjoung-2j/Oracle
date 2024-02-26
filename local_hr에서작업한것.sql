@@ -5705,7 +5705,7 @@ group by department_id;
     ORDER BY 사원번호;  -- 70명
     
     
-    -- 또는
+    -- 또는 (아래처럼 권장)
     select R.region_name as 대륙명
         , country_name as 국가명
         , L.state_province || ' ' || L.city || ' ' || L.street_address as 부서주소
@@ -5725,6 +5725,100 @@ group by department_id;
     ON D.department_id = E.department_id
     order by 사원번호; -- 70명
     
+    
+    
+    
+    
+    
+    ---- [과제] -----
+--  아래와 같이 나오도록 하세요...
+    
+-- 사원수가 107명이 나오도록 하세요
+/*
+        ----------------------------------------------------------------------------------------------------------------------------------------------------
+         부서번호    부서명    부서주소    부서장성명    사원번호   사원명    성별    나이    연봉    연봉소득세액    부서내연봉평균차액    부서내연봉등수     전체연봉등수 
+        ----------------------------------------------------------------------------------------------------------------------------------------------------
+*/
+
+/*
+       email : tjdudgkr0959@naver.com
+       메일제목 : SQL JOIN 과제_양혜정
+       첨부파일 : SQL JOIN 과제_양혜정.txt
+*/
+
+ 
+    select *
+    from tbl_taxindex;
+ 
+    select *
+    from departments;
+ 
+    select *
+    from locations;
+
+    WITH
+    B AS
+    (
+        SELECT employee_id, gender, department_id
+            , case when this_year_birthday > to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd')
+                        then extract(year from sysdate) - birthyear - 1 
+                        else extract(year from sysdate) - birthyear
+                        end as age
+        FROM
+        (
+            select employee_id , department_id
+                ,case when substr(jubun,7,1) in('1','3') then '남' else '여' end as gender 
+                , to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4),'yyyymmdd') as this_year_birthday
+                , case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2) as birthyear
+            from employees
+        ) A
+    )
+    ,
+    C AS
+    (   
+        select department_id
+            , round(avg(nvl(salary + (salary * commission_pct),salary) * 12),1) as avg_year_money
+        from employees
+        group by department_id
+    )
+    ,
+    NAME AS
+    (
+        select E.department_id
+            , first_name || ' ' || last_name as fullname
+        from employees E JOIN departments D
+        ON E.employee_id = D.manager_id
+    )
+    select D.department_id as 부서번호
+        , department_name as 부서명
+        , street_address as 부서주소
+        , fullname as 부서장성명
+        , E.employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명    
+        , gender as 성별
+        , age as 나이
+        , to_char(nvl(salary + (salary * commission_pct), salary) * 12,'999,999') as 연봉
+        , to_char(trunc(nvl(salary + (salary * commission_pct), salary) * 12 * taxpercent,0),'99,999') as 연봉소득세액
+        , avg_year_money - nvl(salary + (salary * commission_pct), salary) * 12  as 부서내연봉평균차액    
+        , rank() over(partition by D.department_id order by nvl(salary + (salary * commission_pct), salary) * 12 desc) as 부서내연봉등수
+        , rank() over(order by nvl(salary + (salary * commission_pct), salary) * 12 desc) as 전체연봉등수 
+    from locations L
+    JOIN
+    departments D
+    ON L.location_id = D.location_id
+    RIGHT JOIN
+    employees E
+    ON D.department_id = E.department_id
+    JOIN B
+    ON E.employee_id = B.employee_id
+    JOIN NAME
+    ON E.department_id = NAME.department_id
+    JOIN C
+    ON B.department_id = C.department_id
+    JOIN 
+    tbl_taxindex T
+    ON nvl(salary + (salary * commission_pct), salary) * 12 between T.lowerincome and T.highincome
+    ORDER BY 1;
     
     
     
