@@ -7359,10 +7359,25 @@ group by department_id;
         401	서강준	서울시 강북구 
     */
     
+    select *
+    from tbl_exam;
     
+    merge into tbl_exam E
+    using tbl_exam_origin O
+    on (E.no = O.no)
+    when matched then   -- 똑같은 것이 있을 경우
+        update set E.name = O.name
+                , E.address = O.address
+    when not matched then   -- 똑같은 것이 없을 경우
+    insert (no, name, address) values(O.no, O.name, O.address);    
+    -- 2개 행 이(가) 업데이트되었습니다.
     
+    -- 강사님 방법 --
+    update tbl_exam set name = (select name from tbl_exam_origin where no = tbl_exam.no)
+                        , address = (select address from tbl_exam_origin where no = tbl_exam.no)
+    where no in( select no from tbl_exam_origin );
+    -- 2개 행 이(가) 업데이트되었습니다.
     
-    
-    
-    
+    commit;
+    -- 커밋 완료.
     
