@@ -6253,14 +6253,375 @@ group by department_id;
   */
     
     
+    create table tbl_heowon
+    (userid     varchar2(20),
+     name       varchar2(20),
+     address    varchar2(100)
+    );
+    -- Table TBL_HEOWON이(가) 생성되었습니다.
+    
+    insert into tbl_heowon(userid, name, address) values('leess','이순신','서울');
+    insert into tbl_heowon(userid, name, address) values('eomjh','엄정화','인천');
+    insert into tbl_heowon(userid, name, address) values('kangkc','강감찬','수원');
+    
+    insert into tbl_heowon(userid, name, address) values('leess','이순신','서울');
+    insert into tbl_heowon(userid, name, address) values('eomjh','엄정화','인천');
+    insert into tbl_heowon(userid, name, address) values('kangkc','강감찬','수원');
+        
+    insert into tbl_heowon(userid, name, address) values('leess','이순신','서울');
+    insert into tbl_heowon(userid, name, address) values('eomjh','엄정화','인천');
+    insert into tbl_heowon(userid, name, address) values('kangkc','강감찬','수원');
+        
+    commit;
+    -- 커밋 완료.
+    
+    select *
+    from tbl_heowon;
+    
+    delete from tbl_heowon
+    where userid = 'leess';
+    -- 3개 행 이(가) 삭제되었습니다.
+    
+    rollback;
+    -- 롤백 완료.
+    
+    select rowid, userid, name, address
+    from tbl_heowon;
+    
+    select rowid, userid, name, address
+    from tbl_heowon
+    where rowid between 'AAASDWAAHAAAAGrAAD' and 'AAASDWAAHAAAAGrAAI';
+    
+    delete from tbl_heowon
+    where rowid between 'AAASDWAAHAAAAGrAAD' and 'AAASDWAAHAAAAGrAAI';
+    -- 6개 행 이(가) 삭제되었습니다.
+    
+    commit;
+    -- 커밋 완료.
     
     
     
     
+    /*
+       2. rownum (!!! 게시판 등 웹에서 아주아주아주 많이많이많이 사용됩니다. !!!)
+    */
+  
+    select boardno AS 글번호
+         , subject AS 글제목
+         , to_char(registerday, 'yyyy-mm-dd hh24:mi:ss') AS 작성일자 
+    from tbl_board;
+    
+    
+    insert into tbl_board(boardno, subject, content, userid, registerday, readcount)
+    values(6,'2월27일의 첫번째 글','안녕하세요 1','leess',default,0);
+    
+    insert into tbl_board(boardno, subject, content, userid, registerday, readcount)
+    values(7,'2월27일의 두번째 글','안녕하세요 2','leess',default,0);
+    
+    insert into tbl_board(boardno, subject, content, userid, registerday, readcount)
+    values(8,'2월27일의 세번째 글','안녕하세요 3','leess',default,0);
+    
+    insert into tbl_board(boardno, subject, content, userid, registerday, readcount)
+    values(9,'2월27일의 네번째 글','안녕하세요 4','leess',default,0);
+    
+    insert into tbl_board(boardno, subject, content, userid, registerday, readcount)
+    values(10,'2월27일의 다섯번째 글','안녕하세요 5','leess',default,0);
+    
+    insert into tbl_board(boardno, subject, content, userid, registerday, readcount)
+    values(11,'2월27일의 여섯번째 글','안녕하세요 6','leess',default,0);
+    
+    insert into tbl_board(boardno, subject, content, userid, registerday, readcount)
+    values(12,'2월27일의 일곱번째 글','안녕하세요 7','leess',default,0);
+    
+    insert into tbl_board(boardno, subject, content, userid, registerday, readcount)
+    values(13,'2월27일의 여덟번째 글','안녕하세요 8','leess',default,0);
+    
+    insert into tbl_board(boardno, subject, content, userid, registerday, readcount)
+    values(14,'2월27일의 아홉번째 글','안녕하세요 9','leess',default,0);
+    
+    commit;
+    -- 커밋 완료.
+    
+    select boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as 작성일자
+    from tbl_board
+    order by 1 desc;
+    /*
+    ----------------------------------------------------------------------------
+    번호  글번호     글제목                             글쓴이     작성일자
+    ----------------------------------------------------------------------------
+     1    14	2월27일의 아홉번째 글	                leess	2024-02-27 09:17:56
+     2    13	2월27일의 여덟번째 글	                leess	2024-02-27 09:17:54
+     3    12	2월27일의 일곱번째 글	                leess	2024-02-27 09:17:54
+     4    11	2월27일의 여섯번째 글	                leess	2024-02-27 09:17:54
+     5    10	2월27일의 다섯번째 글	                leess	2024-02-27 09:17:54
+     6    9	    2월27일의 네번째 글	                leess	2024-02-27 09:17:54
+     7    8	    2월27일의 세번째 글	                leess	2024-02-27 09:17:54
+     8    7	    2월27일의 두번째 글	                leess	2024-02-27 09:17:54
+     9    6	    2월27일의 첫번째 글	                leess	2024-02-27 09:17:54
+     10   5	    오늘도 좋은 하루되세요	                hongkd	2024-02-20 17:33:28
+     11   4	    기쁘고 감사함이 넘치는 좋은 하루되세요	leess	2024-02-20 17:33:26
+     12   3	    건강하세요	                        youks	2024-02-20 17:30:41
+     13   2	    반갑습니다	                        eomjh	2024-02-20 17:30:39
+     14   1	    안녕하세요	                        leess	2024-02-20 17:20:04
+    ---------------------------------------------------------------------
+                    1  2  3  4  5  6  7  8  9  10    ==> 페이지바
+    << 1 페이지 >>
+    ----------------------------------------------------------------------------
+    번호  글번호     글제목                             글쓴이     작성일자
+    ----------------------------------------------------------------------------
+     1    14	2월27일의 아홉번째 글	                leess	2024-02-27 09:17:56
+     2    13	2월27일의 여덟번째 글	                leess	2024-02-27 09:17:54
+     3    12	2월27일의 일곱번째 글	                leess	2024-02-27 09:17:54
+    
+    << 2 페이지 >>
+     ----------------------------------------------------------------------------
+    번호  글번호     글제목                             글쓴이     작성일자
+    ----------------------------------------------------------------------------
+     4    11	2월27일의 여섯번째 글	                leess	2024-02-27 09:17:54
+     5    10	2월27일의 다섯번째 글	                leess	2024-02-27 09:17:54
+     6    9	    2월27일의 네번째 글	                leess	2024-02-27 09:17:54
+    
+    << 3 페이지 >>
+     ----------------------------------------------------------------------------
+    번호  글번호     글제목                             글쓴이     작성일자
+    ----------------------------------------------------------------------------
+     7    8	    2월27일의 세번째 글	                leess	2024-02-27 09:17:54
+     8    7	    2월27일의 두번째 글	                leess	2024-02-27 09:17:54
+     9    6	    2월27일의 첫번째 글	                leess	2024-02-27 09:17:54
+    
+    << 4 페이지 >>
+    ----------------------------------------------------------------------------
+    번호  글번호     글제목                             글쓴이     작성일자
+    ----------------------------------------------------------------------------
+     10   5	    오늘도 좋은 하루되세요	                hongkd	2024-02-20 17:33:28
+     11   4	    기쁘고 감사함이 넘치는 좋은 하루되세요	leess	2024-02-20 17:33:26
+     12   3	    건강하세요	                        youks	2024-02-20 17:30:41
+    
+    << 5 페이지 >>
+     ----------------------------------------------------------------------------
+    번호  글번호     글제목                             글쓴이     작성일자
+    ----------------------------------------------------------------------------
+     13   2	    반갑습니다	                        eomjh	2024-02-20 17:30:39
+     14   1	    안녕하세요	                        leess	2024-02-20 17:20:04
+    */
+    -- 그냥 rownum 할 경우
+    select rownum as 번호 -- rownum(행번호)은 기본적으로 insert 되어진 순서대로 나온다.
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as 작성일자
+    from tbl_board;
+    
+    -- 마지막번호가 1번이 되게 하기
+    SELECT rownum as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , registerday as 작성일자
+    FROM
+    (
+    select boardno, subject, userid 
+        , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+    from tbl_board
+    order by 1 desc
+    ) V;
+    
+    -- 또는 WITH 절을 사용해서
+    WITH
+    V AS
+    (
+        select boardno, subject, userid 
+        , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+        from tbl_board
+        order by 1 desc
+    )
+    SELECT rownum as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , registerday as 작성일자
+    FROM V;
     
     
     
+    /*
+   한 페이지당 3개씩 보여주고자 한다.
+   
+   1 페이지 ==> rownum : 1 ~ 3    boardno : 14 ~ 12
+   2 페이지 ==> rownum : 4 ~ 6    boardno : 11 ~ 9
+   3 페이지 ==> rownum : 7 ~ 9    boardno :  8 ~ 6
+   4 페이지 ==> rownum : 10 ~ 12  boardno :  5 ~ 3
+   5 페이지 ==> rownum : 13 ~ 15  boardno :  2 ~ 1
+    */
+
+    --  1 페이지 ==> rownum : 1 ~ 3    boardno : 14 ~ 12
+    -- [잘못된 select문]
+    SELECT rownum as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , registerday as 작성일자
+    FROM
+    (
+    select boardno, subject, userid 
+        , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+    from tbl_board
+    order by 1 desc
+    ) V
+    WHERE rownum BETWEEN 1 AND 3;   -- 1페이지
     
+    SELECT rownum as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , registerday as 작성일자
+    FROM
+    (
+    select boardno, subject, userid 
+        , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+    from tbl_board
+    order by 1 desc
+    ) V
+    WHERE rownum BETWEEN 4 AND 6;   -- 2페이지가 안나온다.
+    -- 왜냐하면, rownum 을 where 절에 사용할 수 없다.
+    
+    -- [올바른 select문]
+    SELECT rno as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , registerday as 작성일자
+    FROM
+    (
+        select rownum as rno
+            , boardno, subject, userid, registerday 
+        from
+        (
+        select boardno, subject, userid 
+            , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+        from tbl_board
+        order by 1 desc
+        ) V
+    ) T
+    WHERE rno between 1 and 3;  -- 1페이지
+    /*
+    === 페이징처리의 공식 ===
+    where RNO between (조회하고자하는페이지번호 * 한페이지당보여줄행의개수) - (한페이지당보여줄행의개수 - 1) and (조회하고자하는페이지번호 * 한페이지당보여줄행의개수);
+    where RNO between ( 1 * 3 ) - ( 3 - 1 ) and ( 1 * 3 )
+    where RNO between 1 and 3
+    */
+    
+    SELECT rno as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , registerday as 작성일자
+    FROM
+    (
+        select rownum as rno
+            , boardno, subject, userid, registerday 
+        from
+        (
+        select boardno, subject, userid 
+            , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+        from tbl_board
+        order by 1 desc
+        ) V
+    ) T
+    WHERE rno between 4 and 6;  -- 2페이지
+    /*
+    === 페이징처리의 공식 ===
+    where RNO between (조회하고자하는페이지번호 * 한페이지당보여줄행의개수) - (한페이지당보여줄행의개수 - 1) and (조회하고자하는페이지번호 * 한페이지당보여줄행의개수);
+    where RNO between ( 2 * 3 ) - ( 3 - 1 ) and ( 2 * 3 )
+    where RNO between 4 and 6
+    */
+    
+    SELECT rno as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , registerday as 작성일자
+    FROM
+    (
+        select rownum as rno
+            , boardno, subject, userid, registerday 
+        from
+        (
+        select boardno, subject, userid 
+            , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+        from tbl_board
+        order by 1 desc
+        ) V
+    ) T
+    WHERE rno between 7 and 9;  -- 3페이지
+    /*
+    === 페이징처리의 공식 ===
+    where RNO between (조회하고자하는페이지번호 * 한페이지당보여줄행의개수) - (한페이지당보여줄행의개수 - 1) and (조회하고자하는페이지번호 * 한페이지당보여줄행의개수);
+    where RNO between ( 3 * 3 ) - ( 3 - 1 ) and ( 3 * 3 )
+    where RNO between 7 and 9
+    */
+    
+    SELECT rno as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , registerday as 작성일자
+    FROM
+    (
+        select rownum as rno
+            , boardno, subject, userid, registerday 
+        from
+        (
+        select boardno, subject, userid 
+            , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+        from tbl_board
+        order by 1 desc
+        ) V
+    ) T
+    WHERE rno between 10 and 12;    -- 4페이지
+    /*
+    === 페이징처리의 공식 ===
+    where RNO between (조회하고자하는페이지번호 * 한페이지당보여줄행의개수) - (한페이지당보여줄행의개수 - 1) and (조회하고자하는페이지번호 * 한페이지당보여줄행의개수);
+    where RNO between ( 4 * 3 ) - ( 3 - 1 ) and ( 4 * 3 )
+    where RNO between 10 and 12
+    */
+    
+    SELECT rno as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , registerday as 작성일자
+    FROM
+    (
+        select rownum as rno
+            , boardno, subject, userid, registerday 
+        from
+        (
+        select boardno, subject, userid 
+            , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+        from tbl_board
+        order by 1 desc
+        ) V
+    ) T
+    WHERE rno between 13 and 15;    -- 5페이지
+    /*
+    === 페이징처리의 공식 ===
+    where RNO between (조회하고자하는페이지번호 * 한페이지당보여줄행의개수) - (한페이지당보여줄행의개수 - 1) and (조회하고자하는페이지번호 * 한페이지당보여줄행의개수);
+    where RNO between ( 5 * 3 ) - ( 3 - 1 ) and ( 5 * 3 )
+    where RNO between 13 and 15
+    */
+    
+    
+    -- 또는 rownum 을 사용하지 않고 row_number() 함수를 사용해서 나타낼 수 있다.
+    select row_number() over(order by boardno desc) as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as 작성일자
+    from tbl_board;
     
     
     
