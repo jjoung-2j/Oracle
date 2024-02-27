@@ -7126,3 +7126,24 @@ group by department_id;
     -- 1 행 이(가) 업데이트되었습니다.
     commit;
     
+    -- 우석오빠에게 보내기
+    merge into tbl_reservation_jeongwooseok@WS_ORACLE_SERVER R
+    using tbl_reservation_hyejoung L    -- L : local
+    on (L.rsvno = R.rsvno)
+    when matched then   -- 똑같은 것이 있을 경우
+        update set R.memberid = L.memberid -- 바꾼다.
+                , R.ticketcnt = L.ticketcnt
+    when not matched then   -- 똑같은 것이 없을 경우
+    insert (rsvno, memberid, ticketcnt) values(L.rsvno, L.memberid, L.ticketcnt);    -- insert(컬럼명) values(값이 위치해있는 컬럼명)
+    commit;
+    
+    -- 도현씨에게 보내기
+    merge into tbl_reservation_KIMDOHYEON@DH_ORACLE_SERVER R
+    using tbl_reservation_hyejoung L    -- L : local
+    on (L.rsvno = R.rsvno)
+    when matched then   -- 똑같은 것이 있을 경우
+        update set R.memberid = L.memberid -- 바꾼다.
+                , R.ticketcnt = L.ticketcnt
+    when not matched then   -- 똑같은 것이 없을 경우
+    insert (rsvno, memberid, ticketcnt) values(L.rsvno, L.memberid, L.ticketcnt);    -- insert(컬럼명) values(값이 위치해있는 컬럼명)
+    
