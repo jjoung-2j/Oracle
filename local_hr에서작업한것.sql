@@ -5882,7 +5882,7 @@ group by department_id;
     
               , to_char( nvl(salary+(salary*commission_pct), salary)*12, '999,999') AS YearSal
               , to_char( trunc(nvl(salary+(salary*commission_pct), salary)*12 * taxpercent), '99,999') AS YearSalTax 
-              , to_char( trunc(nvl(salary+(salary*commission_pct), salary)*12 - DeptAvgYearSal), '99,999') AS DeptAvgYearSalDiff
+              , to_char( trunc(nvl(salary+(salary*commission_pct), salary)*12 - DeptAvgYearSal), '999,999') AS DeptAvgYearSalDiff
               , rank() over(partition by E.department_id
                             order by nvl(salary+(salary*commission_pct), salary)*12 desc) AS DeptYearSalRank
               , rank() over(order by nvl(salary+(salary*commission_pct), salary)*12 desc) AS TotalYearSalRank                                      
@@ -6765,14 +6765,364 @@ group by department_id;
     
     
     
+    -------------- =========== **** 계층형 쿼리 **** =========== --------------
+    /*
+       계층형 쿼리는 Spring 프레임워크 (Spring boot) 시간에 답변형 게시판에서 사용한다.
+       또한 전자결재 에서도 사용된다.
+    */
+    
+    /*
+    1.            양혜정
+                    |
+    2.            김승혜
+                    |
+            |-------|-------|
+    3.   허성심   정우석    김도현
+        |----|              |
+    4.서영학 정예린         김승진
+    */
+    
+    select *
+    from employees
+    order by employee_id asc;
+             
+    -- 결제라인을 만들어 보겠습니다.
+    --          employee_id
+    -- 출발       104 ==> 103 ==> 102 ==> 100 ==> null
+    -- level      1       2       3       4
+    
+    select level
+      , employee_id AS 사원번호
+      , first_name || ' ' || last_name AS 사원명
+      , manager_id AS 직속결재권자
+    from employees
+    start with employee_id = 104
+    connect by prior manager_id = employee_id;
+    -- **** !!!! prior 다음에 나오는 manager_id 컬럼은 start with 되어지는 행의 manager_id 컬럼의 값이다. !!!! *** -- 
+    /*
+        start with employee_id = 104
+        connect by prior 103 = employee_id
+        start with employee_id = 103
+        connect by prior 102 = employee_id
+        start with employee_id = 102
+        connect by prior 100 = employee_id
+        start with employee_id = 100
+        connect by prior null = employee_id -- null 값이면 종결!!
+    */
+    
+    /*
+    -------------------------------------------------------------------------
+     단계   사원번호       사원명         직속결재권자사원번호      직속결재권자사원명
+    -------------------------------------------------------------------------
+      1        104    Bruce Ernst           103              Alexander Hunold
+      2        103    Alexander Hunold      102              Lex De Haan
+      3        102    Lex De Haan           100              Steven King
+      4        100    Steven King   
+    */
+    
+    SELECT LVL
+        , A.employee_id as 사원번호
+        , fullname as 사원명
+        , A.manager_id as 직속결재권자
+        , E.first_name || ' ' || E.last_name as 직속결재권자사원명
+    FROM
+    (
+    select level AS LVL
+      , employee_id
+      , first_name || ' ' || last_name AS fullname
+      , manager_id 
+    from employees E
+    start with employee_id = 104
+    connect by prior manager_id = employee_id
+    ) A LEFT JOIN employees E   -- NULL 을 보여주기 위해
+    ON A.manager_id = E.employee_id
+    ORDER BY 1;
+    
+    ---------------------------------------------------------
+    select *
+    from employees
+    order by employee_id asc;
+    
+    select level
+      , employee_id AS 사원번호
+      , first_name || ' ' || last_name AS 사원명
+      , manager_id AS 직속결재권자
+    from employees
+    start with employee_id = 100
+    connect by prior employee_id = manager_id;
+    /*
+        start with employee_id = 100
+        connect by prior 100 = manager_id;
+        manager_id 가 100인 employee_id : 101, 102, 114, 120, 121, 122, 123, 124, 145, 146, 147, 148, 149, 201
+        EX) 101
+        start with employee_id = 101
+        connect by prior 101 = manager_id;
+        ...
+        start with employee_id = 110    -- 최말단        
+        connect by prior 110 = manager_id;      -- null 값이면 종결!!
+    */
     
     
     
     
     
     
+    -------------------------------------------------------------------------------------- 
+   /*
+      DML(Data Manuplation Language) : 데이터 조작어 ==> insert, update, delete, merge
+                                     : 수동 commit 이므로 rollback 이 가능하다.
+                                     
+      DDL(Data Definition Language) : 데이터 정의어 ==> create, drop, alter, truncate
+                                    : 자동 commit( Auto commit ) 이므로 rollback 이 불가하다.
+                                    
+      DCL(Data Control Language) : 데이터 제어어 ==> grant, revoke     
+                                 : 자동 commit( Auto commit ) 이므로 rollback 이 불가하다.
+                                 
+      TCL(Transaction Control Language) : 트랜잭션 제어어 ==> commit, rollback
+      
+      DQL(Data Query Language) : 데이터 질의어 ==> select 
+   */
+    
+    
+    -------- **** 데이터 조작어(DML == Data Manuplation Language) **** ---------
+   --- DML 문은 기본적으로 수동 commit 이다.
+   --- 즉, DML 문을 수행한 다음에는 바로 디스크(파일)에 적용되지 않고 commit 해야만 적용된다.
+   --- 그래서 DML 문을 수행한 다음에 디스크(파일)에 적용치 않고자 한다라면 rollback 하면 된다.
+   
+   1. insert  --> 데이터 입력
+   2. update  --> 데이터 수정
+   3. delete  --> 데이터 삭제
+   4. merge   --> 데이터 병합 
+    
+   insert 는 문법이
+   insert into 테이블명(컬럼명1,컬럼명2,...) values(값1,값2,...); 
+   이다.
+   
+   ※ Unconditional insert all  -- ==> 조건이 없는 insert 
+    [문법] insert all 
+           into 테이블명1(컬럼명1, 컬럼명2, ....)
+           values(값1, 값2, .....)
+           into 테이블명2(컬럼명3, 컬럼명4, ....)
+           values(값3, 값4, .....)
+           SUB Query문;
+           
+           
+   create table tbl_emp1
+   (empno            number(6)
+   ,ename            varchar2(50)
+   ,monthsal         number(7)
+   ,gender           varchar2(6)
+   ,manager_id       number(6)
+   ,department_id    number(4)
+   ,department_name  varchar2(30)
+   );       
+   -- Table TBL_EMP1이(가) 생성되었습니다.
+   
+   
+   create table tbl_emp1_backup
+   (empno            number(6)
+   ,ename            varchar2(50)
+   ,monthsal         number(7)
+   ,gender           varchar2(6)
+   ,manager_id       number(6)
+   ,department_id    number(4)
+   ,department_name  varchar2(30)
+   );  
+   -- Table TBL_EMP1_BACKUP이(가) 생성되었습니다.
+    
+    
+    
+    select employee_id
+        , first_name || ' ' || last_name AS fullname 
+        , nvl(salary + (salary * commission_pct), salary) AS month_sal
+        , case when substr(jubun,7,1) in('1','3') then '남' else '여' end AS gender
+        , E.manager_id
+        , E.department_id
+        , department_name
+    from employees E LEFT JOIN departments D 
+    on E.department_id = D.department_id
+    order by E.department_id asc, employee_id asc; 
+    
+    -- tbl_emp1 과 tbl_emp1_backup 에 조건없이 무조건 넣기
+    insert all 
+    into tbl_emp1(empno, ename, monthsal, gender, manager_id, department_id, department_name)
+    values(employee_id, fullname, month_sal, gender, manager_id, department_id, department_name)    -- 컬럼명으로 E. 사용하면 안된다.
+    into tbl_emp1_backup(empno, ename, monthsal, gender, manager_id, department_id, department_name)
+    values(employee_id, fullname, month_sal, gender, manager_id, department_id, department_name)
+    select employee_id
+        , first_name || ' ' || last_name AS fullname 
+        , nvl(salary + (salary * commission_pct), salary) AS month_sal
+        , case when substr(jubun,7,1) in('1','3') then '남' else '여' end AS gender
+        , E.manager_id
+        , E.department_id
+        , department_name
+    from employees E LEFT JOIN departments D 
+    on E.department_id = D.department_id
+    order by E.department_id asc, employee_id asc;
+    -- 214개 행 이(가) 삽입되었습니다. (107*2)
+    
+    -- rollback;   -- 다시 돌이키고 싶은 경우
+    -- 롤백 완료.
+    commit;
+    -- 커밋 완료.
+    
+    
+    ※ Conditional insert all -- ==> 조건이 있는 insert 
+    조건(where절)에 일치하는 행들만 특정 테이블로 찾아가서 insert 하도록 하는 것이다.
+      
+   create table tbl_emp_dept30
+   (empno            number(6)
+   ,ename            varchar2(50)
+   ,monthsal         number(7)
+   ,gender           varchar2(4)
+   ,manager_id       number(6)
+   ,department_id    number(4)
+   ,department_name  varchar2(30)
+   );
+   -- Table TBL_EMP_DEPT30이(가) 생성되었습니다.
+
+
+   create table tbl_emp_dept50
+   (empno            number(6)
+   ,ename            varchar2(50)
+   ,monthsal         number(7)
+   ,gender           varchar2(4)
+   ,manager_id       number(6)
+   ,department_id    number(4)
+   ,department_name  varchar2(30)
+   );
+   -- Table TBL_EMP_DEPT50이(가) 생성되었습니다.
+   
+
+   create table tbl_emp_dept80
+   (empno            number(6)
+   ,ename            varchar2(50)
+   ,monthsal         number(7)
+   ,gender           varchar2(4)
+   ,manager_id       number(6)
+   ,department_id    number(4)
+   ,department_name  varchar2(30)
+   );
+   -- Table TBL_EMP_DEPT80이(가) 생성되었습니다.
+    
+    insert all 
+    when department_id = 30 then
+    into tbl_emp_dept30(empno, ename, monthsal, gender, manager_id, department_id, department_name)
+    values(employee_id, fullname, month_sal, gender, manager_id, department_id, department_name)    -- 컬럼명으로 E. 사용하면 안된다.
+    when department_id = 50 then
+    into tbl_emp_dept50(empno, ename, monthsal, gender, manager_id, department_id, department_name)
+    values(employee_id, fullname, month_sal, gender, manager_id, department_id, department_name)
+    when department_id = 80 then
+    into tbl_emp_dept80(empno, ename, monthsal, gender, manager_id, department_id, department_name)
+    values(employee_id, fullname, month_sal, gender, manager_id, department_id, department_name)
+    select employee_id
+        , first_name || ' ' || last_name AS fullname 
+        , nvl(salary + (salary * commission_pct), salary) AS month_sal
+        , case when substr(jubun,7,1) in('1','3') then '남' else '여' end AS gender
+        , E.manager_id
+        , E.department_id
+        , department_name
+    from employees E JOIN departments D 
+    on E.department_id = D.department_id
+    where E.department_id in(30,50,80)
+    order by E.department_id asc, employee_id asc;
+    -- 85개 행 이(가) 삽입되었습니다.
+    
+    commit;
+    -- 커밋 완료.
     
     
     
     
+    
+    -------- ====== ****   merge(병합)   **** ====== --------
+    -- 어떤 2개 이상의 테이블에 존재하는 데이터를 다른 테이블 한곳으로 모으는것(병합)이다. 
+   
+    ------- *** 데이터베이스 링크(database link) 만들기(위에서 이미 만들었음) *** -------
+   
+    -- 생성되어진 데이터베이스 링크(database link)확인하기 --
+    select *
+    from user_db_links;
+    /*
+    ----------------------------------------------------------------
+       DB_LINK               USERNAME   PASSWORD    HOST    CREATED
+    ----------------------------------------------------------------
+    TEACHER_ORACLE_SERVER       HR      (null)     TEACHER  24/02/22
+                                                -- TEACHER 는 Net Service Name 네트서비스네임(넷서비스명)이다.
+                                                -- 네트서비스네임 확인은 
+                                                -- DB 클라이언트 컴퓨터의 탐색기의 C:\OracleXE18C\product\18.0.0\dbhomeXE\network\admin\tnsnames.ora 
+                                                -- 파일을 메모장으로 열어서 확인한다.                                 
+    */
+    
+    -- ** 데이터베이스 링크(database link) 삭제하기
+    drop database link TEACHER_ORACLE_SERVER;
+    -- Database link TEACHER_ORACLE_SERVER이(가) 삭제되었습니다.
+    
+    -- ** 데이터베이스 링크(database link) 생성하기
+    create database link bonjum_server
+    connect to hr identified by gclass  -- hr 은 본점서버에 연결할 사용자계정명 이고, gclass 는 본점서버에 연결할 사용자계정명인 hr의 암호이다.
+    using 'TEACHER';
+    -- Database link BONJUM_SERVER이(가) 생성되었습니다.
+    select *
+    from user_db_links;
+    /*
+    ----------------------------------------------------------------
+       DB_LINK        USERNAME   PASSWORD    HOST    CREATED
+    ----------------------------------------------------------------
+    BONJUM_SERVER        HR      (null)     TEACHER  24/02/22
+                                            -- TEACHER 는 Net Service Name 네트서비스네임(넷서비스명)이다.
+                                            -- 네트서비스네임 확인은 
+                                            -- DB 클라이언트 컴퓨터의 탐색기의 C:\OracleXE18C\product\18.0.0\dbhomeXE\network\admin\tnsnames.ora 
+                                            -- 파일을 메모장으로 열어서 확인한다.                                 
+    */
+    
+    -- 각 지점은 tbl_reservation_hyejoung 이라는 테이블을 생성한다.
+   create table tbl_reservation_hyejoung
+   (rsvno       varchar2(20)    -- 예약고유번호
+   ,memberid    varchar2(20)    -- 회원ID
+   ,ticketcnt   number          -- 티켓개수
+   ,constraint PK_tbl_reservation_hyejoung primary key(rsvno)
+   );
+    -- Table TBL_RESERVATION_HYEJOUNG이(가) 생성되었습니다.
+    
+    insert into tbl_reservation_hyejoung(rsvno, memberid, ticketcnt)
+    values('hyejoung001', '양혜정', 3);
+   
+    insert into tbl_reservation_hyejoung(rsvno, memberid, ticketcnt)
+    values('hyejoung002', '김환진', 7);
+   
+    commit;
+    
+    
+    /* 강사님만 하는 것! (본점)
+    -- 아래는 본점DB서버(강사님 PC)에서만 하는 것이다.
+   create table tbl_reservation_merge
+   (rsvno       varchar2(20)    -- 예약고유번호
+   ,memberid    varchar2(20)    -- 회원ID
+   ,ticketcnt   number          -- 티켓개수
+   ,constraint PK_tbl_reservation_merge primary key(rsvno)
+   );
+    */
+    
+    select *
+    from tbl_reservation_merge@BONJUM_SERVER;
+    
+    select *
+    from tbl_reservation_hyejoung; 
+    
+    -- 아래는 지점DB서버(각자 수강생들)에서 하는 것입니다.
+    merge into tbl_reservation_merge@BONJUM_SERVER R
+    using tbl_reservation_hyejoung L    -- L : local
+    on (L.rsvno = R.rsvno)
+    when matched then   -- 똑같은 것이 있을 경우
+        update set R.memberid = L.memberid -- 바꾼다.
+                , R.ticketcnt = L.ticketcnt
+    when not matched then   -- 똑같은 것이 없을 경우
+    insert (rsvno, memberid, ticketcnt) values(L.rsvno, L.memberid, L.ticketcnt);    -- insert(컬럼명) values(값이 위치해있는 컬럼명)
+    commit;
+    
+    update tbl_reservation_hyejoung set memberid = 'KimHwanJin', ticketcnt = 10
+    where rsvno = 'hyejoung002';
+    -- 1 행 이(가) 업데이트되었습니다.
+    commit;
     
