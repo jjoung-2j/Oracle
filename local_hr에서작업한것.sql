@@ -7146,4 +7146,223 @@ group by department_id;
                 , R.ticketcnt = L.ticketcnt
     when not matched then   -- 똑같은 것이 없을 경우
     insert (rsvno, memberid, ticketcnt) values(L.rsvno, L.memberid, L.ticketcnt);    -- insert(컬럼명) values(값이 위치해있는 컬럼명)
+    commit;
+    
+    
+    
+    
+    
+    -------- **** 데이터 질의어(DQL == Data Query Language) **** ---------
+    -->  DQL 은 select 를 말한다.
+    
+    
+    
+    
+    
+    -------- **** 트랜잭션 제어어(TCL == Transaction Control Language) **** ---------
+    -->  TCL 은 commit, rollback 을 말한다.
+   
+    -- *** Transaction(트랜잭션) 처리 *** --
+    --> Transaction(트랜잭션)이라 함은 관련된 일련의 DML로 이루어진 한꾸러미(한세트)를 말한다.
+    --> Transaction(트랜잭션)이라 함은 데이터베이스의 상태를 변환시키기 위하여 논리적 기능을 수행하는 하나의 작업단위를 말한다. 
+    /*
+      예>   네이버카페(다음카페)에서 활동
+            글쓰기(insert)를 1번하면 내 포인트 점수가 10점이 올라가고(update),
+            댓글쓰기(insert)를 1번하면 내 포인트 점수가 5점이 올라가도록 한다(update)
+           
+           위와같이 정의된 네이버카페(다음카페)에서 활동은 insert 와 update 가 한꾸러미(한세트)로 이루어져 있는 것이다.
+           이와 같이 서로 다른 DML문이 1개의 작업을 이룰때 Transaction(트랜잭션) 처리라고 부른다.
+           
+           Transaction(트랜잭션) 처리에서 가장 중요한 것은 
+           모든 DML문이 성공해야만 최종적으로 모두 commit 을 해주고,
+           DML문중에 1개라도 실패하면 모두 rollback 을 해주어야 한다는 것이다. 
+           
+           예를 들면 네이버카페(다음카페)에서 글쓰기(insert)가 성공 했다라면
+           그 이후에 내포인트 점수가 10점이 올라가는(update) 작업을 해주고, update 작업이 성공했다라면
+           commit 을 해준다. 
+           만약에 글쓰기(insert) 또는 10점이 올라가는(update) 작업이 실패했다라면
+           rolllback 을 해준다.
+           이러한 실습은 자바에서 하겠습니다.
+    */
+    
+    
+    
+    
+    
+    
+    ----- **** ==== ROLLBACK TO SAVEPOINT  ==== **** -----
+    ----- **** 특정 시점까지 rollback 을 할 수 있습니다. **** -----
+    
+    select *
+    from employees
+    where department_id = 50;
+    
+    update employees set first_name = '몰라'
+    where department_id = 50;
+    -- 45개 행 이(가) 업데이트되었습니다.
+    
+    savepoint point_1;
+    -- Savepoint이(가) 생성되었습니다.
+    
+    delete from employees
+    where department_id is null;
+    -- 1 행 이(가) 삭제되었습니다.
+        
+    select first_name
+    from employees
+    where department_id = 50;
+    -- 전부다 '몰라' 로 나온다.
+    
+    select *
+    from employees
+    where department_id is null;
+    -- 행이 없다.
+    
+    rollback to savepoint point_1;
+    -- 롤백 완료.
+    -- savepoint point_1; 이 선언되어진 이후로 실행된 DML문을 rollback 시킨다.
+    /*
+       그러므로
+       delete from employees
+       where department_id is null; 만 롤백시킨다.
+    */
+    
+    select *
+    from employees
+    where department_id is null;
+    -- 행이 나온다.
+    
+    select first_name
+    from employees
+    where department_id = 50;
+    -- 아직까지 전부다 '몰라' 로 나온다.
+    
+    rollback;  --> commit; 한 이후로 수행되어진 모든 DML문을 롤백시킨다.
+    -- 롤백 완료.
+   
+    select first_name
+    from employees
+    where department_id = 50;
+    -- first_name 컬럼의 값이 원상복구됨.
+    
+    
+    
+    
+    
+    
+    
+    ---- *** >>> 데이터 백업 없이 delete, update 한 후 commit 되어진 데이터 복구하기 <<< *** ----
+   /*
+        타임머신 기능을 이용하여 delete, update 한 후 commit 되어진 데이터를 복구할 수 있다. (oracle 11g 이후 부터 가능)
+   */
+   
+   --  flashback query : 어떤 테이블의 데이터값을 과거의 데이터값으로 돌아가는 기능이다.
+   create table tbl_exam
+   (no      number(4)
+   ,name    Nvarchar2(20)
+   ,address Nvarchar2(20)
+   );
+   -- Table TBL_EXAM이(가) 생성되었습니다.
+   
+   insert into tbl_exam(no, name, address) values(101, '이순신', '서울시 강동구');
+   insert into tbl_exam(no, name, address) values(201, '엄정화', '서울시 강서구');
+   insert into tbl_exam(no, name, address) values(301, '유관순', '서울시 강남구');
+   insert into tbl_exam(no, name, address) values(401, '서강준', '서울시 강북구');
+   
+   commit;
+   -- 커밋 완료.
+   
+    select systimestamp
+    from dual;
+    --  24/02/27 16:35:13.270000000 +09:00  -- 시각에 insert 함
+   
+    select *
+    from tbl_exam;
+    /*
+        101	이순신	서울시 강동구
+        201	엄정화	서울시 강서구
+        301	유관순	서울시 강남구
+        401	서강준	서울시 강북구
+    */
+    
+    -- *** 2분 정도 아무것도 하지 말고 기다린다.
+    select systimestamp
+    from dual;
+    -- 24/02/27 16:37:20.537000000 +09:00
+    
+    delete from tbl_exam;
+    -- 4개 행 이(가) 삭제되었습니다.
+    commit;
+    -- 커밋 완료.
+    
+    -- *** 2분 정도 아무것도 하지 말고 기다린다.
+    select systimestamp
+    from dual;
+    -- 24/02/27 16:39:27.946000000 +09:00
+    select *
+    from tbl_exam;
+    -- 아무것도 나오지 않는다.
+    
+    
+    select *
+    from tbl_exam as of timestamp(systimestamp - interval '4' minute);
+    /*
+        101	이순신	서울시 강동구
+        201	엄정화	서울시 강서구
+        301	유관순	서울시 강남구
+        401	서강준	서울시 강북구
+    */
+    create table tbl_exam_backup
+    as
+    select *
+    from tbl_exam as of timestamp(systimestamp - interval '5' minute);  -- 시간은 계속 흐름으로 나오는 것 확인하고 백업 테이블 생성하기
+    -- Table TBL_EXAM_BACKUP이(가) 생성되었습니다.
+    
+    insert into tbl_exam
+    select *
+    from tbl_exam_backup;
+    -- 4개 행 이(가) 삽입되었습니다.
+    commit;
+    -- 커밋 완료.
+    
+    select *
+    from tbl_exam;  -- 원래대로 잘 나온다.
+    
+    drop table tbl_exam_backup purge;
+    -- Table TBL_EXAM_BACKUP이(가) 삭제되었습니다.
+    
+    update tbl_exam set name = '몰라', address = '없음'
+    where no in(101,401);
+    -- 2개 행 이(가) 업데이트되었습니다.
+    commit;
+    -- 커밋 완료.
+    
+
+    select *
+    from tbl_exam as of timestamp(systimestamp - interval '14' minute)
+    MINUS
+    select *
+    from tbl_exam;
+    
+    create table tbl_exam_origin
+    as
+    select *
+    from tbl_exam as of timestamp(systimestamp - interval '14' minute)
+    MINUS   -- 101, 104 원래모습
+    select *
+    from tbl_exam;
+
+    select *
+    from tbl_exam_origin;    
+    /*
+        101	이순신	서울시 강동구
+        401	서강준	서울시 강북구 
+    */
+    
+    
+    
+    
+    
+    
+    
     
