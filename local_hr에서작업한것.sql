@@ -1906,7 +1906,6 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
         -- 주민번호의 개수가 모두 다를 경우
         , substr(jubun, 1,7) || lpad('*',6,'*') as  "주민번호2"
         , substr(jubun, 1,7) || lpad('*',length(jubun)-7, '*') as  "주민번호3"
-       --  , substr(jubun, 1,7) || lpad('*',to_number(substr(jubun,8))) as  "주민번호" --> 실행 안해봄
         
     from employees;
     
@@ -2371,15 +2370,15 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
                 else extract(year from sysdate) - birthyear
                 end as age
                         
-                FROM    -- FROM()V => V 대신 아무글자 사용 가능 () 안을 하나의 테이블로 보겠다는 말이다.
-                (
-                select employee_id  -- 사원번호
-                    , first_name || ' ' || last_name as FULLNAME    -- 사원명
-                    , case when substr(jubun,7,1) in('1','3') then '남' else '여' end as GENDER   -- 성별
-                    , to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4), 'yyyymmdd') as "CURRENT_YEAR_BIRTHDAY" -- 올해생일 
-                    , case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2)  as BIRTHYEAR -- 태어난 년도 
-                 from employees
-                ) V;
+FROM    -- FROM()V => V 대신 아무글자 사용 가능 () 안을 하나의 테이블로 보겠다는 말이다.
+(
+select employee_id  -- 사원번호
+    , first_name || ' ' || last_name as FULLNAME    -- 사원명
+    , case when substr(jubun,7,1) in('1','3') then '남' else '여' end as GENDER   -- 성별
+    , to_date(to_char(sysdate,'yyyy') || substr(jubun,3,4), 'yyyymmdd') as "CURRENT_YEAR_BIRTHDAY" -- 올해생일
+    , case when substr(jubun,7,1) in('1','2') then '19' else '20' end || substr(jubun,1,2)  as BIRTHYEAR -- 태어난 년도
+ from employees
+) V;
     -- View VIEW_EMP_AGE이(가) 생성되었습니다.
     
     select *
@@ -2469,7 +2468,8 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
     */
     
     desc employees;
---- ♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥
+
+--- 내방법
     SELECT employee_id as 사원번호
          , fullname as 사원명
          , jubun as 주민번호
@@ -2506,7 +2506,7 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
                     end as age      -- 현재나이
                 , month_money    -- 월급
                 , hire_date     -- 입사일자
-                /*
+                /* 만나이 반영 없이
                 , case when (substr(jubun,3,4) >= 0301 and substr(jubun,3,4) < 0901)
                     then last_day(to_date(birthyear+63 || '0801','yyyymmdd'))-- '31'    
                     else last_day(to_date(birthyear+63 || '0201','yyyymmdd'))-- '28'   
@@ -2527,7 +2527,9 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
                     ) V
         ) T
     ) A;
- -- ♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥♥   
+
+
+
     
     -- 강사님 --
     
@@ -2785,9 +2787,9 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
         , subject as 글제목
         , content as 글내용
         , lead(boardno,1) over(order by boardno desc) as 다음글번호
-          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 1칸 올라간 행에서 boardno 컬럼의 값을 가져온다.
+          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 아래쪽으로 1칸 올라간 행에서 boardno 컬럼의 값을 가져온다.
         , lead(subject,1) over(order by boardno desc) as 다음글제목
-          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 1칸 올라간 행에서 subject 컬럼의 값을 가져온다.
+          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 아래쪽으로 1칸 올라간 행에서 subject 컬럼의 값을 가져온다.
     from tbl_board;
     
     
@@ -2799,9 +2801,9 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
         , subject as 글제목
         , content as 글내용
         , lead(boardno,2) over(order by boardno desc) as 다음글번호
-          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 2칸 올라간 행에서 boardno 컬럼의 값을 가져온다.
+          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 아래쪽으로 2칸 올라간 행에서 boardno 컬럼의 값을 가져온다.
         , lead(subject,2) over(order by boardno desc) as 다음글제목
-          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 2칸 올라간 행에서 subject 컬럼의 값을 가져온다.
+          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 아래쪽으로 2칸 올라간 행에서 subject 컬럼의 값을 가져온다.
     from tbl_board;
     
     -- 숫자가 없으면 1칸을 뜻한다.
@@ -2813,9 +2815,9 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
         , subject as 글제목
         , content as 글내용
         , lead(boardno) over(order by boardno desc) as 다음글번호
-          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 1칸 올라간 행에서 boardno 컬럼의 값을 가져온다.
+          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 아래쪽으로 1칸 올라간 행에서 boardno 컬럼의 값을 가져온다.
         , lead(subject) over(order by boardno desc) as 다음글제목
-          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 위쪽으로 1칸 올라간 행에서 subject 컬럼의 값을 가져온다.
+          -- boardno(글번호) 컬럼의 값을 내림차순으로 정렬했을때 아래쪽으로 1칸 올라간 행에서 subject 컬럼의 값을 가져온다.
     from tbl_board;
     
     
@@ -2948,8 +2950,8 @@ from REGIONS;   -- 대륙정보를 알려주는 테이블
 /*
         1. sum       -- 합계
         2. avg       -- 평균
-        3. max       -- 최대값
-        4. min       -- 최소값
+        3. max       -- 최댓값
+        4. min       -- 최솟값
         5. median    -- 중앙값
         6. count     -- select 되어서 나온 결과물의 행의 개수 
         7. variance  -- 분산
@@ -3325,7 +3327,7 @@ ORDER BY 1;
 
 
 -- 또는
----- ====>>> with 절을 사용한 inline view 만ㄷ르기 <<<==== ----
+---- ====>>> with 절을 사용한 inline view 만들기 <<<==== ----
 
 WITH
 V AS
@@ -3457,7 +3459,7 @@ FROM
         , case when substr(jubun,7,1) in('1','3') then '남' else '여' end as gender
     from employees
 ) V
-GROUP BY cube(department_id, gender)
+GROUP BY rollup(department_id, gender)
 ORDER BY department_id,1,2; -- department_id 숫자~null 정렬, 1은 null 끼리의 정렬, 2 는 gender 정렬 // 문자는 ㄱ~ㅎ 정렬
 -- department_id 는 부서번호(숫자)정렬, 1은 grouping(department_id)의 값을 정렬 0과 1(null 값 정렬가능), gender 정렬
 
@@ -3578,7 +3580,7 @@ group by department_id;
    --- [퀴즈4] employees 테이블에서 모든 사원들이 벌어들이는 월급의 합계를 100% 로 보았을때 
    ---       각 부서번호별로 벌어들이는 월급의 합계를 % 로 나타내어보자.
 
-    select decode(grouping(department_id), 0,to_char(nvl(department_id,9999)), '전체') as 부서번호
+    select decode(grouping(department_id), 0,nvl(to_char(department_id),'부서없음'), '전체') as 부서번호
         , round(sum(nvl(salary + (salary * commission_pct),salary)) 
             / (select sum(nvl(salary + (salary * commission_pct),salary)) from employees) * 100, 1) as "부서별로 총 월급 / 전체월급"
     from employees
@@ -4312,7 +4314,7 @@ group by department_id;
                                                from V
                                                group by department_id)
     -- ORDER BY 6,1;    -- 전체등수별로 보기 쉬움
-   ORDER BY 1,4;    -- 각 부서별로 최소기본급여의 등수와 최대기본급여의 등수를 보기 쉬움
+   ORDER BY 1,4;    -- 각 부서별로 최대,최소 기본급여의 등수를 보기 쉬움
    
    
    
@@ -5214,6 +5216,12 @@ group by department_id;
     from E LEFT JOIN D  -- SQL 1999 CODE
     on E.department_id = D.department_id
     order by E.department_id; 
+
+    select
+        EMPLOYEE_ID,
+        SALARY
+    from EMPLOYEES;
+        
     
     
     
@@ -5817,10 +5825,68 @@ group by department_id;
     ORDER BY 1;
     
     
-    select *
-    from locations;
+    -- 강사님 방법 --
+    WITH 
+    A as
+    (
+         select D.department_id
+              , department_name
+              , street_address || ' ' || city || ' ' || state_province AS Address 
+              , E.first_name || ' ' || E.last_name AS DeptHeadName
+         from departments D JOIN locations L 
+         ON D.location_id = L.location_id
+         JOIN employees E
+         ON D.manager_id = E.employee_id
+    )
+    , 
+    B as 
+    (  select department_id
+            , trunc(avg(nvl(salary+(salary*commission_pct), salary)*12)) AS DeptAvgYearSal
+       from employees
+       group by department_id
+    ) 
+    , 
+    C as
+    (
+        select E.department_id
+              , employee_id 
+              , first_name || ' ' || last_name AS Ename
+              , case when substr(jubun, 7, 1) in('1','3') then '남' else '여' end AS Gender
+              
+              , case when to_date(to_char(sysdate, 'yyyy')||substr(jubun,3,4), 'yyyymmdd') - to_date(to_char(sysdate, 'yyyymmdd'),'yyyymmdd') > 0 
+                     then extract(year from sysdate) - ( to_number(substr(jubun, 1, 2)) + case when substr(jubun, 7, 1) in('1','2') then 1900 else 2000 end ) - 1 
+                     else extract(year from sysdate) - ( to_number(substr(jubun, 1, 2)) + case when substr(jubun, 7, 1) in('1','2') then 1900 else 2000 end )
+                 end AS Age     
     
-    desc departments;
+              , to_char( nvl(salary+(salary*commission_pct), salary)*12, '999,999') AS YearSal
+              , to_char( trunc(nvl(salary+(salary*commission_pct), salary)*12 * taxpercent), '99,999') AS YearSalTax 
+              , to_char( trunc(nvl(salary+(salary*commission_pct), salary)*12 - DeptAvgYearSal), '99,999') AS DeptAvgYearSalDiff
+              , rank() over(partition by E.department_id
+                            order by nvl(salary+(salary*commission_pct), salary)*12 desc) AS DeptYearSalRank
+              , rank() over(order by nvl(salary+(salary*commission_pct), salary)*12 desc) AS TotalYearSalRank                                      
+         from employees E JOIN tbl_taxindex T  
+         ON nvl(salary+(salary*commission_pct), salary)*12 between lowerincome and highincome 
+         JOIN B
+         ON nvl(E.department_id, -9999) = nvl(B.department_id, -9999)
+    )
+    select A.department_id AS 부서번호
+        , department_name AS 부서명
+        , Address AS 부서주소
+        , DeptHeadName AS 부서장성명
+        , employee_id AS 사원번호
+        , Ename AS 사원명
+        , Gender AS 성별
+        , Age AS 나이 
+        , YearSal AS 연봉
+        , YearSalTax AS 연봉소득세액
+        , DeptAvgYearSalDiff AS 부서내연봉평균차액
+        , DeptYearSalRank AS 부서내연봉등수
+        , TotalYearSalRank AS 전체연봉등수  
+    from A RIGHT JOIN C
+    ON A.department_id = C.department_id
+    order by 부서번호, 연봉 desc;
+    
+    
     
     
      ------ ====== **** SET Operator(SET 연산자, 집합연산자) **** ======= ------
@@ -6169,3 +6235,36 @@ group by department_id;
     from employees
     where employee_id in (173, 185, 195);
     -- 복구 되어 나온다.
+
+    
+    
+    
+    
+    
+    
+    ----------- ====== **** Pseudo(의사, 유사, 모조) Column **** ====== -----------
+  
+    ------ Pseudo(의사) Column 은 rowid 와 rownum 이 있다.
+  
+  /*
+    1. rowid
+       rowid 는 오라클이 내부적으로 사용하기 위해 만든 id 값으로써 행에 대한 id값 인데
+       오라클 전체내에서 고유한 값을 가진다.
+  */
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
