@@ -5790,7 +5790,7 @@ group by department_id;
     )
     select E.department_id as 부서번호
         , department_name as 부서명
-        , street_address as 부서주소
+        , street_address || ' ' || city || ' ' || state_province as 부서주소
         , fullname as 부서장성명
         , E.employee_id as 사원번호
         , first_name || ' ' || last_name as 사원명    
@@ -5826,15 +5826,37 @@ group by department_id;
     
     
     -- 강사님 방법 --
+    /*
+        ----------------------------------------------------------------------------------------------------------------------------------------------------
+         부서번호    부서명    부서주소    부서장성명    사원번호   사원명    성별    나이    연봉    연봉소득세액    부서내연봉평균차액    부서내연봉등수     전체연봉등수 
+        ----------------------------------------------------------------------------------------------------------------------------------------------------
+    */
+    
+    /*
+    --------------------------------------------------------------
+    부서주소    부서번호    부서명     부서장사원번호        부서장성명
+    --------------------------------------------------------------
+    |||||||    ================================       ***********
+    locations            departments                   employees
+    L.location_id = D.location_id   D.manager_id = E.employee_id
+    
+    -----------------------------------------------------------------------------------------------------------
+    사원번호   사원명    성별    나이    연봉    연봉소득세액    부서내연봉평균차액    부서내연봉등수     전체연봉등수 
+    ------------------------------------------------------------------------------------------------------------
+    =====================================   ***********     |||||||||||     =============================
+                employees                  tbl_taxindex    평균 따로만들기             employees
+                연봉 between lowerincome and highincome           nvl(departmnet_id,-999)
+    */
+    
     WITH 
     A as
     (
          select D.department_id
               , department_name
-              , street_address || ' ' || city || ' ' || state_province AS Address 
-              , E.first_name || ' ' || E.last_name AS DeptHeadName
-         from departments D JOIN locations L 
-         ON D.location_id = L.location_id
+              , street_address || ' ' || city || ' ' || state_province AS Address -- 부서주소
+              , E.first_name || ' ' || E.last_name AS DeptHeadName  -- 부서장성명
+         from locations L JOIN departments D   
+         ON L.location_id = D.location_id
          JOIN employees E
          ON D.manager_id = E.employee_id
     )
@@ -6500,10 +6522,10 @@ group by department_id;
             , boardno, subject, userid, registerday 
         from
         (
-        select boardno, subject, userid 
-            , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
-        from tbl_board
-        order by 1 desc
+            select boardno, subject, userid 
+                , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+            from tbl_board
+            order by 1 desc
         ) V
     ) T
     WHERE rno between 1 and 3;  -- 1페이지
@@ -6525,10 +6547,10 @@ group by department_id;
             , boardno, subject, userid, registerday 
         from
         (
-        select boardno, subject, userid 
-            , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
-        from tbl_board
-        order by 1 desc
+            select boardno, subject, userid 
+                , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+            from tbl_board
+            order by 1 desc
         ) V
     ) T
     WHERE rno between 4 and 6;  -- 2페이지
@@ -6550,10 +6572,10 @@ group by department_id;
             , boardno, subject, userid, registerday 
         from
         (
-        select boardno, subject, userid 
-            , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
-        from tbl_board
-        order by 1 desc
+            select boardno, subject, userid 
+                , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+            from tbl_board
+            order by 1 desc
         ) V
     ) T
     WHERE rno between 7 and 9;  -- 3페이지
@@ -6575,10 +6597,10 @@ group by department_id;
             , boardno, subject, userid, registerday 
         from
         (
-        select boardno, subject, userid 
-            , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
-        from tbl_board
-        order by 1 desc
+            select boardno, subject, userid 
+                , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+            from tbl_board
+            order by 1 desc
         ) V
     ) T
     WHERE rno between 10 and 12;    -- 4페이지
@@ -6600,10 +6622,10 @@ group by department_id;
             , boardno, subject, userid, registerday 
         from
         (
-        select boardno, subject, userid 
-            , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
-        from tbl_board
-        order by 1 desc
+            select boardno, subject, userid 
+                , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+            from tbl_board
+            order by 1 desc
         ) V
     ) T
     WHERE rno between 13 and 15;    -- 5페이지
@@ -6622,6 +6644,131 @@ group by department_id;
         , userid as 글쓴이
         , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as 작성일자
     from tbl_board;
+    
+    /* 아래는 오류가 발생한다. 왜냐하면 row_number() 은 where 절에 사용할 수 없기 때문이다.
+    select row_number() over(order by boardno desc) as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as 작성일자
+    from tbl_board
+    where row_number() over(order by boardno desc) between 1 and 3; -- 오류!!
+    */
+    
+    -- [row_number() 함수를 사용한 올바른 select문]
+    SELECT rno as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , registerday as 작성일자
+    FROM
+    (
+        select row_number() over(order by boardno desc) as rno 
+            , boardno, subject, userid 
+            , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+        from tbl_board
+        order by 2 desc
+    ) V
+    WHERE rno between 1 and 3;  -- 1페이지
+    /*
+    === 페이징처리의 공식 ===
+    where RNO between (조회하고자하는페이지번호 * 한페이지당보여줄행의개수) - (한페이지당보여줄행의개수 - 1) and (조회하고자하는페이지번호 * 한페이지당보여줄행의개수);
+    where RNO between ( 1 * 3 ) - ( 3 - 1 ) and ( 1 * 3 )
+    where RNO between 1 and 3
+    */
+    
+    SELECT rno as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , registerday as 작성일자
+    FROM
+    (
+        select row_number() over(order by boardno desc) as rno 
+            , boardno, subject, userid 
+            , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+        from tbl_board
+        order by 2 desc
+    ) V
+    WHERE rno between 4 and 6;  -- 2페이지
+    /*
+    === 페이징처리의 공식 ===
+    where RNO between (조회하고자하는페이지번호 * 한페이지당보여줄행의개수) - (한페이지당보여줄행의개수 - 1) and (조회하고자하는페이지번호 * 한페이지당보여줄행의개수);
+    where RNO between ( 2 * 3 ) - ( 3 - 1 ) and ( 2 * 3 )
+    where RNO between 4 and 6
+    */
+    
+    SELECT rno as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , registerday as 작성일자
+    FROM
+    (
+        select row_number() over(order by boardno desc) as rno 
+            , boardno, subject, userid 
+            , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+        from tbl_board
+        order by 2 desc
+    ) V
+    WHERE rno between 7 and 9;  -- 3페이지
+    /*
+    === 페이징처리의 공식 ===
+    where RNO between (조회하고자하는페이지번호 * 한페이지당보여줄행의개수) - (한페이지당보여줄행의개수 - 1) and (조회하고자하는페이지번호 * 한페이지당보여줄행의개수);
+    where RNO between ( 3 * 3 ) - ( 3 - 1 ) and ( 3 * 3 )
+    where RNO between 7 and 9
+    */
+    
+    SELECT rno as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , registerday as 작성일자
+    FROM
+    (
+        select row_number() over(order by boardno desc) as rno 
+            , boardno, subject, userid 
+            , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+        from tbl_board
+        order by 2 desc
+    ) V
+    WHERE rno between 10 and 12;  -- 4페이지
+    /*
+    === 페이징처리의 공식 ===
+    where RNO between (조회하고자하는페이지번호 * 한페이지당보여줄행의개수) - (한페이지당보여줄행의개수 - 1) and (조회하고자하는페이지번호 * 한페이지당보여줄행의개수);
+    where RNO between ( 4 * 3 ) - ( 3 - 1 ) and ( 4 * 3 )
+    where RNO between 10 and 12
+    */
+    
+    SELECT rno as 번호
+        , boardno as 글번호
+        , subject as 글제목
+        , userid as 글쓴이
+        , registerday as 작성일자
+    FROM
+    (
+        select row_number() over(order by boardno desc) as rno 
+            , boardno, subject, userid 
+            , to_char(registerday,'yyyy-mm-dd hh24:mi:ss') as registerday
+        from tbl_board
+        order by 2 desc
+    ) V
+    WHERE rno between 13 and 15;  -- 5페이지
+    /*
+    === 페이징처리의 공식 ===
+    where RNO between (조회하고자하는페이지번호 * 한페이지당보여줄행의개수) - (한페이지당보여줄행의개수 - 1) and (조회하고자하는페이지번호 * 한페이지당보여줄행의개수);
+    where RNO between ( 5 * 3 ) - ( 3 - 1 ) and ( 5 * 3 )
+    where RNO between 13 and 15
+    */
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
