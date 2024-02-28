@@ -8223,6 +8223,7 @@ group by department_id;
     
     
     
+    
     ---- >>> Unique Key(후보키, 후보식별자) 제약에 대해서 알아봅니다. <<< ----
     --   Unique Key 로 되어지는 컬럼은 NULL 은 허용한다.
     --   그런데 어떤 테이블에서 후보키(==후보식별자)로 사용되어질 컬럼이라면 
@@ -8306,7 +8307,7 @@ group by department_id;
     values('eomjh', '엄정화', null, 'eomjh@naver.com');
     -- 1 행 이(가) 삽입되었습니다.
     
-    insert into tbl_gogek(gogekId, gogekName, gogekPhone, gogekEmail) --> gogekPhone이 unique지만 not null 해주었기 때문에 null값이 들어올 수 없다.
+    insert into tbl_gogek(gogekId, gogekName, gogekPhone, gogekEmail) --> gogekemail이 unique지만 not null 해주었기 때문에 null값이 들어올 수 없다.
     values('kangkc', '강감찬', null, null);
     /*
     오류 보고 -
@@ -8335,7 +8336,6 @@ group by department_id;
     
     select *
     from tbl_gogek;
-    
     
     
     
@@ -8419,141 +8419,76 @@ group by department_id;
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         ----- **** >>> Check 제약에 대해서 알아봅니다. <<< **** -----
   
-  create table tbl_sawon
-  (sano         number 
-  ,saname       varchar2(20) not null 
-  ,salary       number(5) not null          -- 급여는 커미션 보다 커야 한다.
-  ,commission   number(5)                   -- 커미션은 0 이상이어야 한다. 
-  ,jik          varchar2(20) default '사원'  -- 직급의 종류는 '사장','부장','과장','대리','사원' 만 가능하다.
-  ,email        varchar2(50) not null 
-  ,hire_date    date default sysdate 
-  ,constraint  PK_tbl_sawon_sano  primary key(sano)
-  ,constraint  UQ_tbl_sawon_email unique(email)
-  ,constraint  CK_tbl_sawon_jik check( jik in('사장','부장','과장','대리','사원') )
-  ,constraint  CK_tbl_sawon_salary_commission check(salary > commission and commission >= 0)
-  );
-  -- Table TBL_SAWON이(가) 생성되었습니다. 
+    create table tbl_sawon
+    (sano         number 
+    ,saname       varchar2(20) not null 
+    ,salary       number(5) not null          -- 급여는 커미션 보다 커야 한다.
+    ,commission   number(5)                   -- 커미션은 0 이상이어야 한다. 
+    ,jik          varchar2(20) default '사원'  -- 직급의 종류는 '사장','부장','과장','대리','사원' 만 가능하다.
+    ,email        varchar2(50) not null 
+    ,hire_date    date default sysdate 
+    ,constraint  PK_tbl_sawon_sano  primary key(sano)
+    ,constraint  UQ_tbl_sawon_email unique(email)
+    ,constraint  CK_tbl_sawon_jik check( jik in('사장','부장','과장','대리','사원') )
+    ,constraint  CK_tbl_sawon_salary_commission check(salary > commission and commission >= 0)
+    );
+    -- Table TBL_SAWON이(가) 생성되었습니다. 
   
-  insert into tbl_sawon(sano, saname, salary, commission, jik, email)
-  values(1001, '홍길동', 500, 1000, '과장', 'hongkd@gmail.com'); --> salary 가 commission 보다 큰 값이어야하는데 salary가 더 작아서 오류가 발생한다.
-  /*
+    insert into tbl_sawon(sano, saname, salary, commission, jik, email)
+    values(1001, '홍길동', 500, 1000, '과장', 'hongkd@gmail.com'); --> salary 가 commission 보다 큰 값이어야하는데 salary가 더 작아서 오류가 발생한다.
+    /*
     오류 보고 -
     ORA-02290: 체크 제약조건(HR.CK_TBL_SAWON_SALARY_COMMISSION)이 위배되었습니다
-  */
-  
-  insert into tbl_sawon(sano, saname, salary, commission, jik, email)
-  values(1001, '홍길동', 500, -100, '과장', 'hongkd@gmail.com'); --> commission은 반드시 0보다 커야하는데 음수가 들어와서 오류가 발생한다.
-  /*
+    */
+    
+    insert into tbl_sawon(sano, saname, salary, commission, jik, email)
+    values(1001, '홍길동', 500, -100, '과장', 'hongkd@gmail.com'); --> commission은 반드시 0보다 커야하는데 음수가 들어와서 오류가 발생한다.
+    /*
     오류 보고 -
     ORA-02290: 체크 제약조건(HR.CK_TBL_SAWON_SALARY_COMMISSION)이 위배되었습니다
-  */
-  
-  insert into tbl_sawon(sano, saname, salary, commission, jik, email)
-  values(1001, '홍길동', 500, 100, '병장', 'hongkd@gmail.com'); --> jik에는 반드시 '사장','부장','과장','대리','사원' 만 가능한데 '병장'이 들어와서 오류가 발생한다.
-  /*
+    */
+    
+    insert into tbl_sawon(sano, saname, salary, commission, jik, email)
+    values(1001, '홍길동', 500, 100, '병장', 'hongkd@gmail.com'); --> jik에는 반드시 '사장','부장','과장','대리','사원' 만 가능한데 '병장'이 들어와서 오류가 발생한다.
+    /*
      오류 보고 -
      ORA-02290: 체크 제약조건(HR.CK_TBL_SAWON_JIK)이 위배되었습니다
-  */
-  
-  insert into tbl_sawon(sano, saname, salary, commission, jik, email)
-  values(1001, '홍길동', 500, 100, '과장', 'hongkd@gmail.com');
-  -- 1 행 이(가) 삽입되었습니다.
-  
-  commit;
-  
-  select * 
-  from tbl_sawon;
-  
-  update tbl_sawon set commission = 500 --> commission을 salary와 같은 값으로 update하려고 하지만 salary는 반드시 commission보다 커야하기 때문에 오류가 발생한다.
-  where sano = 1001;
-  /*
+    */
+    
+    insert into tbl_sawon(sano, saname, salary, commission, jik, email)
+    values(1001, '홍길동', 500, 100, '과장', 'hongkd@gmail.com');
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    commit;
+    
+    select * 
+    from tbl_sawon;
+    
+    update tbl_sawon set commission = 500 --> commission을 salary와 같은 값으로 update하려고 하지만 salary는 반드시 commission보다 커야하기 때문에 오류가 발생한다.
+    where sano = 1001;
+    /*
     오류 보고 -
     ORA-02290: 체크 제약조건(HR.CK_TBL_SAWON_SALARY_COMMISSION)이 위배되었습니다
-  */
-  
-  update tbl_sawon set commission = 499
-  where sano = 1001;
-  -- 1 행 이(가) 업데이트되었습니다.
-  
-  commit;
-  
-  
-  --- *** tbl_sawon 테이블에 존재하는 제약조건 알아보기 *** ---
-  select A.table_name, A.constraint_name, A.constraint_type, A.search_condition
+    */
+    
+    update tbl_sawon set commission = 499
+    where sano = 1001;
+    -- 1 행 이(가) 업데이트되었습니다.
+    
+    commit;
+    
+    
+    --- *** tbl_sawon 테이블에 존재하는 제약조건 알아보기 *** ---
+    select A.table_name, A.constraint_name, A.constraint_type, A.search_condition
        , B.column_name, B.position 
-  from user_constraints A JOIN user_cons_columns B
-  ON A.constraint_name = B.constraint_name
-  where A.table_name = 'TBL_SAWON';
+    from user_constraints A JOIN user_cons_columns B
+    ON A.constraint_name = B.constraint_name
+    where A.table_name = 'TBL_SAWON';
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
   
   
   
@@ -8601,7 +8536,7 @@ group by department_id;
     
     create table tbl_yeyak
     (yeyakno     number   --> 예약번호.  예약번호의 값은 NOT NULL 이면서 고유한 값만 가져야 한다. 
-                        --  그러므로 yeyakno 컬럼에는 Primary Key 제약을 주어야 한다.
+                          --  그러므로 yeyakno 컬럼에는 Primary Key 제약을 주어야 한다.
                         /*
                             예약번호는 사용자가 수동적으로 입력치 않고 자동적으로 들어와야 한다.
                             그리고 예약번호는 매번 그 숫자가 증가되면서 고유해야 한다.
@@ -8613,7 +8548,7 @@ group by department_id;
                                         -- 참조를 당하는 컬럼은 (여기서는 tbl_gogek 테이블의 gogekid 임) 반드시 고유한 값을 가지는 컬럼이어야 한다.
                                         -- 즉, 참조를 당하는 컬럼은 (여기서는 tbl_gogek 테이블의 gogekid 임) Primary Key 또는 Unique 제약을 가져야 한다. 
                         
-    ,ticketCnt      number(2) not null     -- 예약티켓개수   
+    ,ticketCnt      number(2) not null   -- 예약티켓개수   
                                          -- 데이터 타입이 number(2) 이므로 -99 ~ 99 값들이 들어온다.
                                          -- 그런데 예약티켓개수는 1번 예약에 최대 10개 까지만 허락하고자 한다.
                                          -- 즉, ticketCnt 컬럼에 들어오는 값은 1 ~ 10 까지만 가능하도록 해야 한다.
@@ -8625,7 +8560,8 @@ group by department_id;
     ,constraint FK_tbl_yeyak_fk_gogekID foreign key(fk_gogekID) references tbl_gogek(gogekId) 
     /*
       tbl_yeyak 테이블의 fk_gogekID 컬럼에는 foreign key 제약을 만들었는데
-      그 뜻은 tbl_yeyak 테이블의 fk_gogekID 컬럼에 입력되거나 수정되어지는 값은 반드시 tbl_gogek 테이블의 gogekid 컬럼에 존재하는 값들만 가능하다는 말이다.
+      그 뜻은 tbl_yeyak 테이블의 fk_gogekID 컬럼에 입력(insert)되거나 수정(update)되어지는 값은 
+      반드시 tbl_gogek 테이블의 gogekid 컬럼에 존재하는 값들만 가능하다는 말이다.
       즉, tbl_gogek 테이블의 gogekid 컬럼에 존재하지 않는 값은 tbl_yeyak 테이블의 fk_gogekID 컬럼에 들어올 수 없다는 말이다.
       그리고 중요한 것은 tbl_gogek 의 gogekid 컬럼은 식별자 컬럼(Primary Key, Unique Key)이어야 한다. 
     */
@@ -8633,3 +8569,128 @@ group by department_id;
     );
     -- Table TBL_YEYAK이(가) 생성되었습니다.
     
+    
+    create sequence seq_tbl_yeyak   -- 예약번호
+    start with 1 
+    increment by 1 
+    nomaxvalue
+    nominvalue
+    nocycle
+    nocache;
+    -- Sequence SEQ_TBL_YEYAK이(가) 생성되었습니다.
+    
+    insert into tbl_yeyak(yeyakno, fk_gogekID, ticketCnt) values(seq_tbl_yeyak.nextval, 'leess', 5); 
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    insert into tbl_yeyak(yeyakno, fk_gogekID, ticketCnt) values(seq_tbl_yeyak.nextval, 'superman', 3);     -- 고객 중 superman 없다.
+    /*
+     오류 보고 -
+     ORA-02291: 무결성 제약조건(HR.FK_TBL_YEYAK_FK_GOGEKID)이 위배되었습니다- 부모 키가 없습니다
+    */
+    
+    insert into tbl_yeyak(yeyakno, fk_gogekID, ticketCnt) values(seq_tbl_yeyak.nextval, 'eomjh', 3);   -- seq_tbl_yeyak.nextval = 3 superman 이 2
+    -- 1 행 이(가) 삽입되었습니다.                                                                        -- 고유한 값이면 상관없음. 굳이 2를 안해도된다.
+    
+    insert into tbl_yeyak(yeyakno, fk_gogekID, ticketCnt) values(seq_tbl_yeyak.nextval, 'eomjh', 8); 
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    insert into tbl_yeyak(yeyakno, fk_gogekID, ticketCnt) values(seq_tbl_yeyak.nextval, 'eomjh', 20);   -- 동시에 20개는 안됨. check 제약
+    /*
+     오류 보고 -
+     ORA-02290: 체크 제약조건(HR.CK_TBL_YEYAK_TICKETCNT)이 위배되었습니다
+    */
+    
+    insert into tbl_yeyak(yeyakno, fk_gogekID, ticketCnt) values(seq_tbl_yeyak.nextval, 'sunsin', 5); 
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    select *
+    from tbl_yeyak;
+    
+    commit;
+    -- 커밋 완료.
+    select *
+    from tbl_gogek;
+    -- tbl_yeyak 의 fk_gogekid 와 tbl_gogek 의 gogekid JOIN
+    
+    select Y.yeyakno as 예약번호
+        , Y.fk_gogekid as 고객아이디
+        , G.gogekname as 고객명
+        , G.gogekemail as 이메일
+        , Y.registerday as 등록일자
+        , Y.ticketcnt as 티켓수
+    from tbl_yeyak Y JOIN tbl_gogek G
+    ON Y.fk_gogekid = G.gogekid;
+    
+    
+    ---- **** foreign key 제약이 있는 테이블을 "자식" 테이블 이라고 부르고,
+    ----      foreign key 에 의해 참조를 당하는 테이블을 "부모" 테이블 이라고 부른다. **** ---
+    select *
+    from tbl_gogek;  -- "부모" 테이블 
+    
+    select *
+    from tbl_yeyak;  -- "자식" 테이블
+    
+    
+    select *
+    from departments;   -- department_id 컬럼이 P.K
+    select *
+    from employees;     -- department_id 컬럼이 F.K
+    
+    update employees set department_id = 110
+    where employee_id = 100;
+    -- 1 행 이(가) 업데이트되었습니다.
+    
+    update employees set department_id = 500    -- 500 번이 없어서 오류!
+    where employee_id = 100;
+    -- 오류 보고 -
+    -- SQL 오류: ORA-00001: 무결성 제약 조건(HR.JHIST_EMP_ID_ST_DATE_PK)에 위배됩니다
+    
+    rollback;
+    -- 롤백 완료.
+    
+    update tbl_yeyak set fk_gogekid = 'eomjh'   -- 회원을 넣을 경우
+    where yeyakno = 6;
+    -- 1 행 이(가) 업데이트되었습니다.
+    
+    update tbl_yeyak set fk_gogekid = 'batman'   -- 회원이 아닌 사람을 넣을 경우
+    where yeyakno = 6;
+    -- 오류 보고 -
+    -- ORA-02291: 무결성 제약조건(HR.FK_TBL_YEYAK_FK_GOGEKID)이 위배되었습니다- 부모 키가 없습니다
+    
+    rollback;
+    -- 롤백 완료.
+    
+    
+    
+    
+    
+    
+    
+    ---- **** tbl_yeyak 테이블에 생성되어진 foreign key 제약조건을 조회해봅니다. **** ----
+    select A.table_name, A.constraint_name, A.constraint_type, A.search_condition
+       , B.column_name, B.position , A.r_constraint_name as 참조받는부모테이블의식별자제약조건명
+    from user_constraints A JOIN user_cons_columns B
+    ON A.constraint_name = B.constraint_name
+    where A.table_name = 'TBL_YEYAK' and A.constraint_type = 'R';
+    
+    --- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ---   
+    --- tbl_yeyak 테이블에 존재하는 foreign key 컬럼명과 부모테이블명과 참조를 당하는 primary key(unique key)에 해당하는 컬럼명을 조회해보세요. ---
+    SELECT C.column_name as "외래키 컬럼명"
+        , D.table_name as "부모테이블명"
+        , D.column_name as "참조를 당하는 컬럼명"
+    FROM
+    (
+        select B.column_name, A.r_constraint_name
+        from user_constraints A JOIN user_cons_columns B
+        ON A.constraint_name = B.constraint_name
+        where A.table_name = 'TBL_YEYAK' and A.constraint_type = 'R'
+    ) C JOIN user_cons_columns D
+    ON C.r_constraint_name = D.constraint_name;     -- PK_TBL_GOGEK_GOGEKID
+    /*
+    -------------------------------------------------
+    외래키 컬럼명     부모테이블명      참조를 당하는 컬럼명
+    ------------------------------------------------
+    FK_GOGEKID	    TBL_GOGEK	    GOGEKID
+    */
+    select *
+    from user_cons_columns;
