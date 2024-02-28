@@ -7776,5 +7776,283 @@ group by department_id;
     select *
     from tbl_board_test_2;
     
+    -- *** 시퀀스 SEQ_YEYAKNO_2 이 마지막으로 사용되어진 값(= 현재 시퀀스값) 을 알아보려고 한다. *** -- 
+    select seq_yeyakno_2.currval
+    from dual;
+    -- 11
+    
+    select last_number  -- 다음번에 들어올 시퀀스 값을 미리 알려주는 것이다.
+    from user_sequences
+    where sequence_name = 'SEQ_YEYAKNO_2';
+    
+    ---- *** 시퀀스(sequence) 삭제하기 *** ----
+    drop sequence seq_yeyakno_2;
+    -- Sequence SEQ_YEYAKNO_2이(가) 삭제되었습니다.
+    
+    ---- **** 생성되어진 시퀀스(sequence)를 조회해 봅니다. **** ----
+    select *
+    from user_sequences
+    where sequence_name in('SEQ_YEYAKNO_1', 'SEQ_YEYAKNO_2', 'SEQ_YEYAKNO_3');
     
     
+    
+    
+    
+    
+    
+    
+    
+    ------- ==== *** 시노님(Synonym, 동의어) *** ==== --------
+    select *        
+    from orauser1.tbl_sawon; 
+    -- ORA-00942: 테이블 또는 뷰가 존재하지 않습니다
+    -- orauser1.tbl_sawon 테이블에 select 할 수 있는 권한이 없다라는 것이다. 
+    
+    
+    select *        
+    from orauser1.tbl_sawon;
+    
+    --- orauser1.tbl_sawon 이름을 sawon 이라는 이름으로 사용하도록 한다.
+    --- 이러한 경우 시노님(Synonym, 동의어)을 사용하여 해결한다.
+    
+    create or replace synonym sawon for orauser1.tbl_sawon;
+    -- Synonym SAWON이(가) 생성되었습니다.
+    -- sawon 이 시노님(Synonym, 동의어)이고, for 다음에 나오는 orauser1.tbl_sawon 이 원래 이름이다. 
+          
+    select *
+    from sawon; 
+    
+    
+    --- *** 생성되어진 시노님(Synonym, 동의어)을 조회해 본다. *** ---
+    select *
+    from user_synonyms;
+    /*
+      ------------------------------------------------------
+        SYNONYM_NAME   TABLE_OWNER   TABLE_NAME   DB_LINK
+      ------------------------------------------------------
+        SAWON          ORAUSER1      TBL_SAWON    (null)        -- DB_LINK가 NULL 이면 자기꺼
+      ------------------------------------------------------  
+    */
+    
+    
+    select *
+    from tbl_reservation_merge@BONJUM_SERVER;
+    
+    create or replace synonym reservation for tbl_reservation_merge@BONJUM_SERVER;  
+    -- Synonym RESERVATION이(가) 생성되었습니다.
+    
+    select *
+    from reservation;
+      
+    select *
+    from user_synonyms;
+    /*
+      ------------------------------------------------------------------------
+        SYNONYM_NAME   TABLE_OWNER   TABLE_NAME               DB_LINK
+      ------------------------------------------------------------------------
+        RESERVATION       (null)        TBL_RESERVATION_MERGE     BONJUM_SERVER
+        SAWON           ORAUSER1    TBL_SAWON                 (null)
+    */
+    
+    
+    --- *** 시노님(Synonym, 동의어) 삭제하기 *** ---  
+    drop synonym RESERVATION;
+    -- Synonym RESERVATION이(가) 삭제되었습니다.
+    
+    select *
+    from user_synonyms;
+    
+    
+    
+    
+    
+    -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! --
+   --------------------------------------------------------------------------
+   ---- ==== Constraint(제약조건)을 사용하여 테이블을 생성해 보겠습니다. ==== -----
+     
+  /*
+     >>>> 제약조건(Constraint)의 종류 <<<<
+     
+     --   제약조건의 이름은 오라클 전체에서 고유해야 한다.
+     
+     1. Primary Key(기본키, 대표식별자) 제약 [P]  -- 하나의 테이블당 오로지 1개만 생성할 수 있다.
+                                               -- 어떤 컬럼에 Primary Key(기본키) 제약을 주면 그 컬럼에는 자동적으로 NOT NULL 이 주어지면서 동시에 그 컬럼에는 중복된 값은 들어올 수 없고 오로지 고유한 값만 들어오게 되어진다.
+                                               -- 컬럼 1개를 가지고 생성된 Primary Key 를 Single Primary Key 라고 부르고,
+                                               -- 컬럼 2개 이상을 가지고 생성된 Primary Key 를 Composite(복합) Primary Key 라고 부른다.
+     
+     2. Unique 제약 [U]              -- 하나의 테이블당 여러개를 생성할 수 있다.                                 
+                                    -- 어떤 컬럼에 Unique 제약을 주면 그 컬럼에는 NULL 을 허용할 수 있으며, 그 컬럼에는 중복된 값은 들어올 수 없고 오로지 고유한 값만 들어오게 되어진다.             
+                                    -- 여러개의 Unique Key 중에 후보키, 후보식별자가 되려면 해당 컬럼은 NOT NULL 이어야 한다. 
+  
+     3. Foreign Key(외래키) 제약 [R]  -- 하나의 테이블당 여러개를 생성할 수 있다. 
+                                     -- Foreign Key(외래키) 제약에 의해 참조(Reference)받는 컬럼은 반드시 NOT NULL 이어야 하고, 중복된 값을 허락하지 않는 고유한 값만 가지는 컬럼이어야 한다. 
+                                     
+     4. Check 제약 [C]               -- 하나의 테이블당 여러개를 생성할 수 있다.
+                                    -- insert(입력) 또는 update(수정) 시 어떤 컬럼에 입력되거나 수정되는 데이터값을 아무거나 허락하는 것이 아니라 조건에 맞는 데이터값만 넣고자 할 경우에 사용되는 것이다.
+  
+     5. NOT NULL 제약 [C]            -- 하나의 테이블당 여러개를 생성할 수 있다.
+                                    -- 특정 컬럼에 NOT NULL 제약을 주면 그 컬럼에는 반드시 데이터값을 주어야 한다는 말이다. 
+     NOT NULL - oracle / Default - ms   
+  */
+    
+    
+    ---- >>> Primary Key(기본키, 대표식별자) 제약에 대해서 알아봅니다. <<<< -----
+  
+    ---- ***   "고객" 이라는 테이블을 생성해 보겠습니다. *** ----
+    create table tbl_gogek
+    (gogekId     varchar2(30)
+    ,gogekName   varchar2(30) not null
+    ,gogekPhone  varchar2(30)
+    );
+    -- Table TBL_GOGEK이(가) 생성되었습니다.
+    
+    insert into tbl_gogek(gogekId, gogekName, gogekPhone) values('leess', '이순신', '010-2345-6789');
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    insert into tbl_gogek(gogekId, gogekName, gogekPhone) values('leess', '이삼순', '010-6789-1234');
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    insert into tbl_gogek(gogekId, gogekName, gogekPhone) values('eomjh', '엄정화', null);
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    insert into tbl_gogek(gogekId, gogekName, gogekPhone) values(null, '엄주희', '010-4567-0090');
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    commit;
+    
+    select * 
+    from tbl_gogek;
+    -- 엄주희의 아이디 미입력으로 잘못된 테이블이다. -> 삭제
+    drop table tbl_gogek purge;
+    -- Table TBL_GOGEK이(가) 삭제되었습니다.
+    
+    create table tbl_gogek
+    (gogekId     varchar2(30) primary key   -- column level 제약조건
+    ,gogekName   varchar2(30) not null
+    ,gogekPhone  varchar2(30)
+    );
+    -- Table TBL_GOGEK이(가) 생성되었습니다.
+    
+    insert into tbl_gogek(gogekId, gogekName, gogekPhone) values('leess', '이순신', '010-2345-6789');
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    insert into tbl_gogek(gogekId, gogekName, gogekPhone) values('leess', '이삼순', '010-6789-1234');
+    -- 오류 보고 -
+    -- ORA-00001: 무결성 제약 조건(HR.SYS_C007352)에 위배됩니다
+    
+    insert into tbl_gogek(gogekId, gogekName, gogekPhone) values('eomjh', '엄정화', null);
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    insert into tbl_gogek(gogekId, gogekName, gogekPhone) values(null, '엄주희', '010-4567-0090');
+    -- 오류 보고 -
+    -- SQL 오류: ORA-01400: NULL을 ("HR"."TBL_GOGEK"."GOGEKID") 안에 삽입할 수 없습니다
+    commit;
+    -- 커밋 완료.
+    
+    select * 
+    from tbl_gogek;
+    
+    drop table tbl_gogek purge;
+    -- Table TBL_GOGEK이(가) 삭제되었습니다.
+    
+    create table tbl_gogek
+    (gogekId     varchar2(30) 
+    ,gogekName   varchar2(30) not null
+    ,gogekPhone  varchar2(30)
+    ,constraint  PK_tbl_gogek_gogekId primary key(gogekId)  -- row level 제약조건
+    -- gogekId 컬럼에 primary key(==기본키) 제약을 준것이다.
+    );
+    -- Table TBL_GOGEK이(가) 생성되었습니다.
+    
+    insert into tbl_gogek(gogekId, gogekName, gogekPhone) values('leess', '이순신', '010-2345-6789');
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    insert into tbl_gogek(gogekId, gogekName, gogekPhone) values('leess', '이삼순', '010-6789-1234');
+    -- 오류 보고 -
+    -- ORA-00001: 무결성 제약 조건(HR.PK_TBL_GOGEK_GOGEKID)에 위배됩니다
+    
+    insert into tbl_gogek(gogekId, gogekName, gogekPhone) values('eomjh', '엄정화', null);
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    insert into tbl_gogek(gogekId, gogekName, gogekPhone) values(null, '엄주희', '010-4567-0090');
+    -- 오류 보고 -
+    -- SQL 오류: ORA-01400: NULL을 ("HR"."TBL_GOGEK"."GOGEKID") 안에 삽입할 수 없습니다
+    commit;
+    -- 커밋 완료.
+    
+    select * 
+    from tbl_gogek;
+    
+    drop table tbl_gogek purge;
+    -- Table TBL_GOGEK이(가) 삭제되었습니다.
+    
+    create table tbl_gogek
+    (gogekId     varchar2(30)
+    ,email       varchar2(50)
+    ,gogekName   varchar2(30) not null
+    ,gogekPhone  varchar2(30)
+    ,constraint  PK_tbl_gogek_gogekId primary key(gogekId)  -- row level 제약조건
+    -- gogekId 컬럼에 primary key(==기본키) 제약을 준것이다.
+    , constraint PK_tbl_gogek_email primary key(email)      -- row level 제약조건
+    -- email 컬럼에 primary key(==기본키) 제약을 준것이다.
+    );
+    -- 오류 보고 -
+    -- ORA-02260: 테이블에는 하나의 기본 키만 가질 수 있습니다.
+    
+    create table tbl_gogek
+    (gogekId     varchar2(30) primary key   -- column level 제약조건
+    ,email       varchar2(50) primary key   -- column level 제약조건
+    ,gogekName   varchar2(30) not null
+    ,gogekPhone  varchar2(30)
+    );
+    -- 오류 보고 -
+    -- ORA-02260: 테이블에는 하나의 기본 키만 가질 수 있습니다.
+    
+    
+    -- 원상복구
+    create table tbl_gogek
+    (gogekId     varchar2(30)
+    ,gogekName   varchar2(30) not null
+    ,gogekPhone  varchar2(30)
+    ,constraint  PK_tbl_gogek_gogekId primary key(gogekId)  -- row level 제약조건
+    -- gogekId 컬럼에 primary key(==기본키) 제약을 준것이다.
+    );
+    -- Table TBL_GOGEK이(가) 생성되었습니다.
+    
+    desc tbl_gogek;
+/*
+       이름        널?       유형           
+    ---------- -------- ------------ 
+    GOGEKID    NOT NULL VARCHAR2(30)    -- primary key 를 통해 자동적으로 NOT NULL 이 나온다.
+    GOGEKNAME  NOT NULL VARCHAR2(30) 
+    GOGEKPHONE          VARCHAR2(30)
+*/
+
+
+
+
+
+    ---- **** Composite(복합) Primary Key 예제 **** ----
+    create table tbl_jumun
+    (gogekId    varchar2(20) primary key
+    ,jepumCode  varchar2(30)
+    ,jumunDay   date default sysdate
+    ,jumunSu    number(10)
+    );
+    -- Table TBL_JUMUN이(가) 생성되었습니다.
+    
+    insert into tbl_jumun(gogekId, jepumCode, jumunDay, jumunSu)
+    values('leess', '새우깡', default, 20);
+    -- 1 행 이(가) 삽입되었습니다.
+    insert into tbl_jumun(gogekId, jepumCode, jumunDay, jumunSu)
+    values('eomjh', '감자깡', default, 10);
+    -- 1 행 이(가) 삽입되었습니다.
+    insert into tbl_jumun(gogekId, jepumCode, jumunDay, jumunSu)
+    values('leess', '감자깡', default, 30);
+    -- 오류 보고 -
+    -- ORA-00001: 무결성 제약 조건(HR.SYS_C007357)에 위배됩니다
+    
+    select *
+    from tbl_jumun;
+
+
