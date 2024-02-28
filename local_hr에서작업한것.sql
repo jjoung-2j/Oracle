@@ -7381,3 +7381,400 @@ group by department_id;
     commit;
     -- 커밋 완료.
     
+    
+    
+    
+    
+    
+    
+    -------- **** 데이터 정의어(DDL == Data Defination Language) **** ---------
+    ==> DDL : create, drop, alter, truncate 
+    --> 여기서 중요한 것은 DDL 문을 실행을 하면 자동적으로 commit; 이 되어진다.
+    --  즉, auto commit 되어진다.
+    
+    select *
+    from employees
+    where employee_id = 100;
+    -- salary ==> 24000
+    -- email  ==> SKING 
+    
+    update employees set salary = 11111, email = 'sdfsdf'
+    where employee_id = 100;
+    -- 1 행 이(가) 업데이트되었습니다.
+    
+    create table tbl_imsi
+    (no    number
+    ,name  varchar2(20)
+    );
+    -- Table TBL_IMSI이(가) 생성되었습니다.
+    -- DDL 문을 실행했으므로 자동적으로 commit; 이 되어진다.
+    
+    select *
+    from employees
+    where employee_id = 100;
+    
+    rollback;
+    -- 롤백 완료.
+    
+    select *
+    from employees
+    where employee_id = 100;
+    -- 위에서 DDL문(create)을 실행했으므로 자동적으로 commit; 이 되어지기 때문에 rollback 안 됨.
+    
+    -- 원상복구
+    update employees set salary = 24000, email = 'SKING'
+    where employee_id = 100;
+    -- 1 행 이(가) 업데이트되었습니다.
+    commit;    
+    -- 커밋 완료.
+    
+    
+    
+    
+    
+    
+    ------ ====== **** TRUNCATE table 테이블명; **** ====== ------  
+    --> TRUNCATE table 테이블명; 을 실행하면 테이블명 에 존재하던 모든 행(row)들을 삭제해주고,
+    --  테이블명에 해당하는 테이블은 완전초기화 가 되어진다.
+    --  중요한 사실은 TRUNCATE table 테이블명; 은 DDL 문이기에 auto commit; 되어지므로 rollback 이 불가하다.
+   
+    --  delete from 테이블명; 을 실행하면 이것도 테이블명 에 존재하던 모든 행(row)들을 삭제해준다.
+    --  이것은 DML문 이므로 rollback 이 가능하다.
+    
+    create table tbl_emp_copy1
+    as
+    select * from employees;
+    -- Table TBL_EMP_COPY1이(가) 생성되었습니다.
+    
+    select *
+    from tbl_emp_copy1;
+    -- [DML 문(delete)]
+    delete from tbl_emp_copy1;
+    -- 107개 행 이(가) 삭제되었습니다.
+    
+    select count(*)
+    from tbl_emp_copy1;  -- 0
+    
+    rollback;
+    -- 롤백 완료.
+    
+    select count(*)
+    from tbl_emp_copy1;  -- 107
+    
+    
+    truncate table tbl_emp_copy1;
+    -- Table TBL_EMP_COPY1이(가) 잘렸습니다.
+    
+    select *
+    from tbl_emp_copy1;
+    
+    select count(*)
+    from tbl_emp_copy1; -- 0 
+    
+    rollback;  -- auto commit 이 되어졌으므로 rollback 해봐야 소용없다. 
+    -- 롤백 완료.
+    
+    select *
+    from tbl_emp_copy1;
+    
+    select count(*)
+    from tbl_emp_copy1; -- 0    
+    
+    
+    select * from tab;
+    
+    
+    
+    
+    
+    
+    ---------- **** 데이터 제어어(DCL == Data Control Language) **** -------------
+    ==> DCL : grant(권한 부여하기) , revoke(권한 회수하기)
+    --> 여기서 중요한 것은 DCL 문을 실행을 하면 자동적으로 commit; 이 되어진다.
+    --  즉, auto commit 되어진다.
+    
+    
+    --- **** SYS 또는 SYSTEM 에서 아래와 같은 작업을 한다. 시작 **** ---
+    show user;
+    -- USER이(가) "SYS"입니다.
+    
+    --  orauser1 이라는 오라클 일반사용자 계정을 생성합니다. 암호는 gclass 라고 하겠습니다.
+    alter session set "_ORACLE_SCRIPT"=true;
+    -- Session이(가) 변경되었습니다.
+    
+    create user orauser1 identified by gclass default tablespace users; -- DBA 가 하는 것 developer 
+    -- User ORAUSER1이(가) 생성되었습니다.
+    
+    -- orauser1 계정의 암호를 abcd 로 변경한 것임.
+    alter user orauser1 identified by abcd;
+    -- User ORAUSER1이(가) 생성되었습니다.
+    
+    alter user orauser1 identified by gclass;
+    -- User ORAUSER1이(가) 변경되었습니다.
+    
+    -- 생성되어진 오라클 일반사용자 계정인 orauser1 에게 오라클서버에 접속이 되어지고, 
+    -- 접속이 되어진 후 테이블 등을 생성할 수 있도록 권한을 부여해주겠다.
+    grant connect, resource, unlimited tablespace to orauser1;
+    -- Grant을(를) 성공했습니다.
+    
+    --- **** SYS 또는 SYSTEM 에서 아래와 같은 작업을 한다. 끝 **** ---
+    
+    
+    --- **** HR에서 아래와 같은 작업을 한다. **** ---
+    show user;
+    -- USER이(가) "HR"입니다.
+    
+    select *
+    from HR.employees;
+    
+    -- 현재 오라클 서버에 접속된 사용자가 HR 이므로 HR.employees 대신에 employees 을 쓰면 HR.employees 으로 인식해준다.
+    select *
+    from employees; 
+    
+    -- orauser1 에게 HR이 자신의 소유인 employees 테이블에 대해 select(읽기) 할 수 있도록 권한을 부여하겠습니다.
+    grant select on employees to orauser1;
+    -- Grant을(를) 성공했습니다.
+    
+    -- orauser1 에게 HR이 자신의 소유인 departments 테이블에 대해 select(읽기) 할 수 있도록 권한을 부여하겠습니다.
+    grant select on departments to orauser1;
+    -- Grant을(를) 성공했습니다.
+    
+    -- orauser1 에게 HR이 자신의 소유인 employees 테이블에 대해 update 할 수 있도록 권한을 부여하겠습니다.
+    grant update on employees to orauser1;
+    -- Grant을(를) 성공했습니다.
+    
+    -- orauser1 에게 HR이 자신의 소유인 employees 테이블에 대해 delete 할 수 있도록 권한을 부여하겠습니다.
+    grant delete on employees to orauser1;
+    -- Grant을(를) 성공했습니다.
+    
+    
+    select *
+    from employees
+    where employee_id = 100;
+    
+    select *
+    from employees
+    where department_id is null;
+    
+    -- ★ [local_orauser1 에서 commit 이나 rollback 을 안한 경우 읽기는 가능하지만 다른 DML 은 LOCK 이 걸린다!! ] ★
+    update employees set salary = 22222
+    where employee_id = 100;
+    
+    update employees set salary = 7777
+    where department_id is null;
+    -- [local_orauser1에서 commit 이나 rollback 하면 자동적으로 실행된다.]
+    rollback;
+    
+    -- orauser1 에게 HR이 자신의 소유인 employees 테이블에 대해 select(읽기) 할 수 있도록 권한을 부여한 것을 회수하겠습니다.
+    revoke select on employees from orauser1;
+    -- Revoke을(를) 성공했습니다.
+    
+    -- orauser1 에게 HR이 자신의 소유인 departments 테이블에 대해 select(읽기) 할 수 있도록 권한을 부여한 것을 회수하겠습니다.
+    revoke select on departments from orauser1;
+    -- Revoke을(를) 성공했습니다.
+    
+    -- orauser1 에게 HR이 자신의 소유인 employees 테이블에 대해 delete 권한을 부여한 것을 회수하겠습니다.
+    revoke delete on employees from orauser1;
+    -- Revoke을(를) 성공했습니다.
+    
+    -- orauser1 에게 HR이 자신의 소유인 employees 테이블에 대해 update 권한을 부여한 것을 회수하겠습니다.
+    revoke update on employees from orauser1;
+    -- Revoke을(를) 성공했습니다.
+    
+    
+    -- orauser1 에게 HR이 자신의 소유인 employees 테이블에 대해 select, update, delete 할 수 있도록 권한을 부여하겠습니다.
+    grant select, update, delete on employees to orauser1;
+    -- Grant을(를) 성공했습니다.
+    -- orauser1 에게 HR이 자신의 소유인 employees 테이블에 대해 select, update, delete 권한을 부여한 것을 회수하겠습니다.
+    revoke select, update, delete on employees from orauser1;
+    -- Revoke을(를) 성공했습니다.
+    
+    
+    
+    
+    
+    ------------------------------------------------------------------
+    
+    -- 오라클을 설치한지 6개월이 지나면 자동적으로 HR의 암호가 만료가 되어진다.
+    -- 그래서 아래와 같이 암호를 갱신해주면 됩니다.
+    show user;
+    -- USER이(가) "HR"입니다.
+    alter user hr identified by gclass;
+    -- User HR이(가) 변경되었습니다.
+    
+    -- 또는
+    show user;
+    -- USER이(가) "SYS"입니다.
+    alter user hr identified by gclass;
+    -- User HR이(가) 변경되었습니다.
+    
+    show user;
+    -- USER이(가) "HR"입니다.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+      -------- **** ==== 시퀀스(sequence) ===== **** ----------
+           
+   -- 시퀀스(sequence)란? 쉽게 생각하면 은행에서 발급해주는 대기번호표 와 비슷한 것이다.
+   -- 시퀀스(sequence)는 숫자로 이루어져 있으며 매번 정해진 증가치 만큼 숫자가 증가되어지는 것이다.    
+   
+   /*
+     create sequence seq_yeyakno   -- seq_yeyakno 은 시퀀스(sequence) 이름이다.
+     start with 1    -- 첫번째 출발은 1 부터 한다.
+     increment by 1  -- 증가치 값    2 3 4 5 ......
+     maxvalue 5      -- 최대값이 5 이다.
+  -- nomaxvalue      -- 최대값이 없는 무제한. 계속 증가시키겠다는 말이다.
+     minvalue 2      -- 최소값이 2 이다. cycle 이 있을때만 minvalue 에 주어진 값이 사용된다. 
+                     --                nocycle 일 경우에는 minvalue 에 주어진 값이 사용되지 않는다.
+                     -- minvalue 숫자 에 해당하는 숫자 값은 start with 숫자 에 해당하는 숫자 값과 같든지 
+                     -- 아니면 start with 숫자 에 해당하는 숫자보다 작아야 한다.
+                     
+  -- nominvalue      -- 최소값이 없다.   
+     cycle           -- 반복을 한다.
+  -- nocycle         -- 반복이 없는 직진.
+     nocache;
+  */
+  
+    create sequence seq_yeyakno_1   -- seq_yeyakno_1 은 시퀀스(sequence) 이름이다.
+    start with 1    -- 첫번째 출발은 1 부터 한다.
+    increment by 1  -- 증가치는 1이다. 즉 1씩 증가한다.     2 3 4 5 ......
+    maxvalue 5      -- 최대값이 5 이다.
+    minvalue 2      -- 최소값이 2 이다.   ==> start with 숫자보다 크기 때문에 오류!!
+    -- nomaxvalue      -- 최대값이 없는 무제한. 계속 증가시키겠다는 말이다.      // 대부분 이것 사용
+    -- nominvalue      -- 최소값이 없다.                                    // nomaxvalue 사용 시 최솟값은 nominvalue
+    cycle           -- 반복을 한다.
+    -- nocycle         -- 반복이 없는 직진.                                // 대부분 이것 사용(nomaxvalue, nominvalue 이기에 cycle이 없다.)
+    nocache;
+/*
+    오류 보고 -
+    ORA-04006: START WITH 에 MINVALUE 보다 작은 값은 지정할 수 없습니다
+    
+    -- minvalue 숫자 에 해당하는 숫자 값은 start with 숫자 에 해당하는 숫자 값과 같든지 
+    -- 아니면 start with 숫자 에 해당하는 숫자보다 작아야 한다.
+*/
+    
+    create sequence seq_yeyakno_1   -- seq_yeyakno_1 은 시퀀스(sequence) 이름이다.
+    start with 2    -- 첫번째 출발은 2 부터 한다.
+    increment by 1  -- 증가치는 1이다. 즉 1씩 증가한다.     2 3 4 5 ......
+    maxvalue 5      -- 최대값이 5 이다.
+    minvalue 1      -- 최소값이 1 이다.   
+    cycle           -- 반복을 한다.
+    nocache;
+    -- Sequence SEQ_YEYAKNO_1이(가) 생성되었습니다.
+    
+    
+    ---- **** 생성되어진 시퀀스(sequence)를 조회해 봅니다. **** ----
+    select *
+    from user_sequences;
+      
+    select *
+    from user_sequences
+    where sequence_name = 'SEQ_YEYAKNO_1';
+      
+    select last_number  -- 다음번에 들어올 시퀀스 값을 미리 알려주는 것이다. 
+    from user_sequences
+    where sequence_name = 'SEQ_YEYAKNO_1';
+    
+    
+    create table tbl_board_test_1
+    (boardno        number
+    ,subject        varchar2(100)
+    ,registerdate   date default sysdate
+    );
+    -- Table TBL_BOARD_TEST_1이(가) 생성되었습니다.
+    
+    select *
+    from tbl_board_test_1;
+    
+    insert into tbl_board_test_1(boardno, subject) values(seq_yeyakno_1.nextval, '첫번째 글입니다.');  
+    -- 1 행 이(가) 삽입되었습니다.
+    -- seq_yeyakno_1 시퀀스의 start 값이 2 이었다.
+    
+    insert into tbl_board_test_1(boardno, subject) values(seq_yeyakno_1.nextval, '두번째 글입니다.');
+    -- 1 행 이(가) 삽입되었습니다.
+    -- seq_yeyakno_1 시퀀스의 increment 값이 1 이었다.
+    
+    insert into tbl_board_test_1(boardno, subject) values(seq_yeyakno_1.nextval, '세번째 글입니다.');
+    -- 1 행 이(가) 삽입되었습니다.
+    -- seq_yeyakno_1 시퀀스의 increment 값이 1 이었다.
+    
+    insert into tbl_board_test_1(boardno, subject) values(seq_yeyakno_1.nextval, '네번째 글입니다.');
+    -- 1 행 이(가) 삽입되었습니다.
+    -- seq_yeyakno_1 시퀀스의 increment 값이 1 이었다.
+    -- seq_yeyakno_1 시퀀스의 maxvalue 값이 5 이었고, cycle 이었다. 즉, 반복을 한다. 
+    
+    insert into tbl_board_test_1(boardno, subject) values(seq_yeyakno_1.nextval, '다섯번째 글입니다.');
+    -- 1 행 이(가) 삽입되었습니다.
+    -- seq_yeyakno_1 시퀀스의 minvalue 값이 1 이었고, cycle(반복) 이었으므로
+    -- maxvalue 값이 사용되어진 다음에 들어오는 시퀀스 값은 minvalue 값인 1 이 들어온다.
+    
+    insert into tbl_board_test_1(boardno, subject) values(seq_yeyakno_1.nextval, '여섯번째 글입니다.');
+    -- 1 행 이(가) 삽입되었습니다.
+    -- seq_yeyakno_1 시퀀스의 increment 값이 1 이었다.
+    
+    insert into tbl_board_test_1(boardno, subject) values(seq_yeyakno_1.nextval, '일곱번째 글입니다.');
+    -- 1 행 이(가) 삽입되었습니다.
+    -- seq_yeyakno_1 시퀀스의 increment 값이 1 이었다.
+    
+    /*
+      seq_yeyakno_1 시퀀스값의 사용은 
+      2(start)  3  4  5(maxvalue) 1(minvalue) 2 3 4 5(maxvalue) 1(minvalue) 2 3 4 5 1 2 3 ...... 
+      와 같이 사용된다.
+    */
+    
+    commit;
+    -- 커밋 완료.
+    
+    
+    
+    create sequence seq_yeyakno_2
+    start with 1    -- 첫번째 출발은 1 부터 한다. 
+    increment by 1  -- 증가치는 1 이다. 즉, 1씩 증가한다. 
+    nomaxvalue      -- 최대값은 없는 무제한. 계속 증가시키겠다는 말이다. 
+    nominvalue      -- 최소값이 없다.
+    nocycle         -- 반복을 안한다.
+    nocache; 
+    -- Sequence SEQ_YEYAKNO_2이(가) 생성되었습니다.
+    
+    create sequence seq_yeyakno_3;  -- cache 메모리 상주한다.
+    -- Sequence SEQ_YEYAKNO_3이(가) 생성되었습니다.
+    
+    ---- **** 생성되어진 시퀀스(sequence)를 조회해 봅니다. **** ----
+    select *
+    from user_sequences
+    where sequence_name in('SEQ_YEYAKNO_1', 'SEQ_YEYAKNO_2', 'SEQ_YEYAKNO_3');
+    
+    
+    
+    create table tbl_board_test_2
+    (boardno        number
+    ,subject        varchar2(100)
+    ,registerdate   date default sysdate
+    );
+    -- Table TBL_BOARD_TEST_2이(가) 생성되었습니다.
+                  
+    insert into tbl_board_test_2(boardno, subject) values(seq_yeyakno_2.nextval, '첫번째 글입니다.');
+    insert into tbl_board_test_2(boardno, subject) values(seq_yeyakno_2.nextval, '두번째 글입니다.');
+    insert into tbl_board_test_2(boardno, subject) values(seq_yeyakno_2.nextval, '세번째 글입니다.');
+    insert into tbl_board_test_2(boardno, subject) values(seq_yeyakno_2.nextval, '네번째 글입니다.');
+    insert into tbl_board_test_2(boardno, subject) values(seq_yeyakno_2.nextval, '다섯번째 글입니다.');
+    insert into tbl_board_test_2(boardno, subject) values(seq_yeyakno_2.nextval, '여섯번째 글입니다.');
+    insert into tbl_board_test_2(boardno, subject) values(seq_yeyakno_2.nextval, '일곱번째 글입니다.');
+    insert into tbl_board_test_2(boardno, subject) values(seq_yeyakno_2.nextval, '여덟번째 글입니다.');
+    insert into tbl_board_test_2(boardno, subject) values(seq_yeyakno_2.nextval, '아홉번째 글입니다.');
+    insert into tbl_board_test_2(boardno, subject) values(seq_yeyakno_2.nextval, '열번째 글입니다.');
+    insert into tbl_board_test_2(boardno, subject) values(seq_yeyakno_2.nextval, '열한번째 글입니다.');
+    
+    commit;        
+    
+    select *
+    from tbl_board_test_2;
+    
+    
+    
