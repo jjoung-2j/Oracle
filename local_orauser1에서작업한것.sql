@@ -52,3 +52,49 @@
     -- 롤백 완료.
     
     
+    
+    
+    
+    -- << orauser1 연결 >>
+    ---------------------------------------------------------------------------
+    create table tbl_sawon
+    (sano     number(4)
+    ,saname   Nvarchar2(20)
+    );
+    -- Table TBL_SAWON이(가) 생성되었습니다.
+    
+    insert into tbl_sawon(sano, saname) values(1001, '홍길동');
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    commit;
+    
+    select *
+    from orauser1.tbl_sawon;
+    -- 원래는 소유주명.테이블명 인데 소유주명을 생략하면 현재 오라클서버에 접속한 사용자 자기자신의 것으로 본다.
+    
+    show user;
+    -- USER이(가) "ORAUSER1"입니다.
+    
+    select *
+    from tbl_sawon; -- 소유주가 orauser1이기 때문에 생략 가능
+    
+    grant select on tbl_sawon to hr;
+    -- Grant을(를) 성공했습니다.
+    
+    create table tbl_buseo
+    (buno    number(2)
+    ,buname  varchar2(20)
+    );
+    -- Table TBL_BUSEO이(가) 생성되었습니다.
+    
+    insert into tbl_buseo(buno, buname) values(10, '관리부');
+    insert into tbl_buseo(buno, buname) values(20, '영업부');
+    commit;
+    
+    select *
+    from tbl_buseo;
+    
+    grant select on tbl_buseo to hr;
+    -- Grant을(를) 성공했습니다.
+    
+    
