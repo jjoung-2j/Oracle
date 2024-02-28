@@ -8034,7 +8034,7 @@ group by department_id;
 
     ---- **** Composite(복합) Primary Key 예제 **** ----
     create table tbl_jumun
-    (gogekId    varchar2(20) primary key
+    (gogekId    varchar2(20) primary key    -- 한번 온 손님 재방문 불가   => 잘못된 코드!!
     ,jepumCode  varchar2(30)
     ,jumunDay   date default sysdate
     ,jumunSu    number(10)
@@ -8054,5 +8054,167 @@ group by department_id;
     
     select *
     from tbl_jumun;
-
-
+    
+    drop table tbl_jumun purge;
+    -- Table TBL_JUMUN이(가) 삭제되었습니다.
+    
+    create table tbl_jumun
+    (gogekId    varchar2(20)    
+    ,jepumCode  varchar2(30) primary key    -- 다른 사람이 구매하지 못함
+    ,jumunDay   date default sysdate
+    ,jumunSu    number(10)
+    );
+    -- Table TBL_JUMUN이(가) 생성되었습니다.
+    
+    insert into tbl_jumun(gogekId, jepumCode, jumunDay, jumunSu)
+    values('leess', '새우깡', default, 20);
+    -- 1 행 이(가) 삽입되었습니다.
+    insert into tbl_jumun(gogekId, jepumCode, jumunDay, jumunSu)
+    values('eomjh', '새우깡', default, 10);
+    -- 오류 보고 -
+    -- ORA-00001: 무결성 제약 조건(HR.SYS_C007358)에 위배됩니다
+    
+    drop table tbl_jumun purge;
+    -- Table TBL_JUMUN이(가) 삭제되었습니다.
+    
+    --   gogekId + jepumCode + jumunDay 3개 컬럼을 묶어서 하나의 primary key 제약을 생성하고자 한다.
+    --   이럴때 아래와 같이 column level primary key 는 안된다.!!!
+    --   왜냐하면 column level primary key 는 각각의 컬럼마다 각각의 primary key 제약을 생성해주기 때문에 
+    --   아래와 같은 오류가 발생하기 때문이다.
+    create table tbl_jumun
+    (gogekId    varchar2(20) primary key
+    ,jepumCode  varchar2(30) primary key    
+    ,jumunDay   date default sysdate primary key
+    ,jumunSu    number(10)
+    );
+    -- 오류 보고 -
+    -- ORA-02260: 테이블에는 하나의 기본 키만 가질 수 있습니다.
+    
+    ---- **** Composite(복합) Primary Key 를 생성하려면 row level primary key 로 해야 한다. **** ----
+    create table tbl_jumun
+    (gogekId    varchar2(20)
+    ,jepumCode  varchar2(30)   
+    ,jumunDay   date default sysdate 
+    ,jumunSu    number(10)
+    ,constraint  PK_tbl_jumun primary key(gogekId, jepumCode, jumunDay)
+    );
+    -- Table TBL_JUMUN이(가) 생성되었습니다.
+    
+    desc tbl_jumun;
+/*
+      이름        널?       유형           
+    --------- -------- ------------ 
+    GOGEKID   NOT NULL VARCHAR2(20) 
+    JEPUMCODE NOT NULL VARCHAR2(30) 
+    JUMUNDAY  NOT NULL DATE         
+    JUMUNSU            NUMBER(10) 
+*/
+    
+    insert into tbl_jumun(gogekId, jepumCode, jumunDay, jumunSu)
+    values('leess', '새우깡', default, 20);
+    -- 1 행 이(가) 삽입되었습니다.
+    insert into tbl_jumun(gogekId, jepumCode, jumunDay, jumunSu)
+    values('eomjh', '새우깡', default, 10);
+    -- 1 행 이(가) 삽입되었습니다.
+    insert into tbl_jumun(gogekId, jepumCode, jumunDay, jumunSu)
+    values('leess', '감자깡', default, 15);
+    -- 1 행 이(가) 삽입되었습니다.
+    insert into tbl_jumun(gogekId, jepumCode, jumunDay, jumunSu)
+    values('leess', '새우깡', default, 20);    -- jumunDay 시간이 다르기 때문에 삽입 가능
+    -- 1 행 이(가) 삽입되었습니다.
+    commit;
+    -- 커밋 완료.
+    
+    select gogekid as 고객명
+       , jepumcode as 제품명
+       , to_char(jumunday, 'yyyy-mm-dd hh24:mi:ss') AS 주문일자 
+       , jumunsu as 주문수
+    from tbl_jumun;
+    
+    
+    ---- **** tbl_gogek 테이블과 tbl_jumun 테이블에 생성되어진 제약조건을 조회해봅니다. **** ----
+    select *
+    from user_constraints
+    where table_name in('TBL_GOGEK', 'TBL_JUMUN');      -- 'tbl_gogek', 'tbl_jumun' 하면 내용이 안나온다.
+    -- constraint_type : c => check or not null 제약 // p => primary key
+    
+    select *
+    from user_cons_columns
+    where table_name in('TBL_GOGEK', 'TBL_JUMUN');      -- table 명을 반드시 대문자로 입력해야 한다!!
+    -- position 은 ',constraint  PK_tbl_jumun primary key(gogekId, jepumCode, jumunDay)' 안에 있는 () 에 있는 순서이다.
+    
+    
+    select A.table_name
+        , A.constraint_name
+        , A.constraint_type
+        , A.search_condition
+        , B.column_name
+        , B.position 
+    from user_constraints A JOIN user_cons_columns B
+    ON A.constraint_name = B.constraint_name
+    WHERE A.table_name in('TBL_GOGEK', 'TBL_JUMUN');        -- table 명을 반드시 대문자로 입력해야 한다!!
+    
+    
+    ---- **** tbl_gogek 테이블과 tbl_jumun 테이블에 생성되어진 primary key 제약조건을 조회해봅니다. **** ----
+    select A.table_name
+        , A.constraint_name
+        , A.constraint_type
+        , A.search_condition
+        , B.column_name
+        , B.position 
+    from user_constraints A JOIN user_cons_columns B
+    ON A.constraint_name = B.constraint_name
+    WHERE A.table_name in('TBL_GOGEK', 'TBL_JUMUN') and     -- table 명을 반드시 대문자로 입력해야 한다!!
+        A.constraint_type = 'P';
+        
+    ---- **** tbl_gogek 테이블에 생성되어진 primary key 제약조건을 조회해봅니다. **** ----
+    select A.table_name
+        , A.constraint_name
+        , A.constraint_type
+        , A.search_condition
+        , B.column_name
+        , B.position 
+    from user_constraints A JOIN user_cons_columns B
+    ON A.constraint_name = B.constraint_name
+    WHERE A.table_name = 'TBL_GOGEK' and    -- table 명을 반드시 대문자로 입력해야 한다!!
+        A.constraint_type = 'P';
+    -- A -> PK_tbl_gogek_gogekId
+    
+    -- *** 제약조건의 이름은 오라클 전체에서 고유해야 한다. *** --
+    create table tbl_gogek_2
+    (gogekId     varchar2(30)
+    ,gogekName   varchar2(30) not null
+    ,gogekPhone  varchar2(30)
+    ,constraint PK_tbl_gogek_gogekId primary key(gogekId)
+    );
+    -- 오류 보고 -
+    -- ORA-02264: 기존의 제약에 사용된 이름입니다
+    
+    create table tbl_gogek_3
+    (gogekId     varchar2(30) primary key
+    ,gogekName   varchar2(30) not null
+    ,gogekPhone  varchar2(30)
+    );
+    -- Table TBL_GOGEK_3이(가) 생성되었습니다.
+    
+    create table tbl_gogek_4
+    (gogekId     varchar2(30) primary key
+    ,gogekName   varchar2(30) not null
+    ,gogekPhone  varchar2(30)
+    );
+    -- Table TBL_GOGEK_4이(가) 생성되었습니다.
+    
+    
+    -- column level 제약조건으로 생성하면 제약조건명은 자동적으로 항상 SYS_C뭐뭐뭐~ 로 되어진 고유한 제약조건명이 되어진다.
+    select A.table_name
+        , A.constraint_name
+        , A.constraint_type
+        , A.search_condition
+        , B.column_name
+        , B.position 
+    from user_constraints A JOIN user_cons_columns B
+    ON A.constraint_name = B.constraint_name
+    WHERE A.table_name in('TBL_GOGEK_3', 'Tbl_Gogek_4');    -- table 명을 반드시 대문자로 입력해야 한다!!
+    
+    
+    
