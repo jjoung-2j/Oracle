@@ -8351,6 +8351,14 @@ group by department_id;
     );
     -- Table TBL_JUMUN_2이(가) 생성되었습니다.
     
+    select *
+    from user_constraints               -- 사용되고 있는 제약조건 모두, 제약조건 타입 확인 가능
+    where table_name = 'TBL_JUMUN_2';   -- 5개 행
+    
+    select *
+    from user_cons_columns              -- 사용되고 있는 제약조건에 대한 내용(EX. 테이블명,컬럼명)
+    where table_name = 'TBL_JUMUN_2';   -- 7개 행 복합 제약조건이 하나하나 나온다.
+    
     -- drop sequence seq_tbl_jumun_2;
     create sequence seq_tbl_jumun_2;
     -- Sequence SEQ_TBL_JUMUN_2이(가) 생성되었습니다.
@@ -8661,11 +8669,7 @@ group by department_id;
     -- 롤백 완료.
     
     
-    
-    
-    
-    
-    
+
     ---- **** tbl_yeyak 테이블에 생성되어진 foreign key 제약조건을 조회해봅니다. **** ----
     select A.table_name, A.constraint_name, A.constraint_type, A.search_condition
        , B.column_name, B.position , A.r_constraint_name as 참조받는부모테이블의식별자제약조건명
@@ -8683,7 +8687,7 @@ group by department_id;
         select B.column_name, A.r_constraint_name
         from user_constraints A JOIN user_cons_columns B
         ON A.constraint_name = B.constraint_name
-        where A.table_name = 'TBL_YEYAK' and A.constraint_type = 'R'
+        where A.table_name = 'TBL_YEYAK' and A.constraint_type = 'R'    -- 제약조건 이름 R => FK
     ) C JOIN user_cons_columns D
     ON C.r_constraint_name = D.constraint_name;     -- PK_TBL_GOGEK_GOGEKID
     /*
@@ -8692,5 +8696,84 @@ group by department_id;
     ------------------------------------------------
     FK_GOGEKID	    TBL_GOGEK	    GOGEKID
     */
+    
+    -- table_yeyak
     select *
-    from user_cons_columns;
+    from user_constraints A JOIN user_cons_columns B
+    ON A.constraint_name = B.constraint_name
+    where A.table_name = 'TBL_YEYAK';
+    
+    select *
+    from user_cons_columns  -- 'PK_TBL_GOGEK_GOGEKID'   부모테이블의 제약조건 => R_CONSTRAINT_NAME
+    where constraint_name = 'PK_TBL_GOGEK_GOGEKID';
+    
+    select *
+    from user_cons_columns; --> constraint_name
+    
+    
+    
+    
+/*    
+    ◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆ 
+    select *
+    from user_constraints;  -- 사용되고 있는 제약조건 모두, 제약조건 타입 확인 가능
+                            -- 복합제약조건이 있을 경우 하나의 constraint_name 으로 나온다.
+    
+    select *
+    from user_cons_columns; -- 사용되고 있는 제약조건에 대한 내용(EX. 테이블명,컬럼명)
+                            -- 복합 제약조건이 있을 경우 하나하나 컬럼별로 나온다.
+    
+    -> user_constraints 와 user_cons_columns JOIN ==> JOIN 조건절 constraint_name 이 같은 경우 ==> 컬럼명, 제약조건명
+    -> user_constraints 의 table_name => 원하는 테이블명과 같은 경우 (where 절)
+    -> user_constraints 의 constraint_type => 원하는 제약조건 타입 (where 절 -> R : F.K // C:check, not null // P : P.K // U : Unique )
+    -> where 절 후 원하는 테이블명에 있는 선택한 제약조건 타입만 보인다. 
+        ==> column_name, r_constraint_name => 부모테이블에 있는 컬럼명, 부모테이블에 있는 제약조건명 => 외래키 컬럼명, 부모테이블에 있는 제약조건명
+    -> ' r_ ' 이 붙으면 부모테이블의 있는 제약조건명이다. 
+    
+    -> 외래키 컬럼명, 부모테이블에 있는 제약조건명 과 user_cons_columns 의 JOIN ==> JOIN 조건절 부모테이블에 있는 제약조건명과 constraint_name 이 같은 경우
+        ==> 테이블명, 컬럼명 ==> 부모테이블명, 참조를 당하는 컬럼명
+    ◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆◆ 
+*/
+
+
+
+
+    --- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ---   
+    --- employees 테이블에 존재하는 foreign key 컬럼명과 부모테이블명과 참조를 당하는 primary key(unique key)에 해당하는 컬럼명을 조회해보세요. ---
+    SELECT C.column_name as "외래키 컬럼명"
+        , D.table_name as "부모테이블명"
+        , D.column_name as "참조를 당하는 컬럼명"
+    FROM
+    (
+        select B.column_name, A.r_constraint_name
+        from user_constraints A JOIN user_cons_columns B
+        ON A.constraint_name = B.constraint_name
+        where A.table_name = 'EMPLOYEES' and A.constraint_type = 'R'    -- 제약조건 이름 R => FK
+    ) C JOIN user_cons_columns D
+    ON C.r_constraint_name = D.constraint_name;   
+
+/*
+    -------------------------------------------------
+    외래키 컬럼명     부모테이블명      참조를 당하는 컬럼명
+    ------------------------------------------------
+    DEPARTMENT_ID	DEPARTMENTS	    DEPARTMENT_ID
+    JOB_ID	            JOBS	    JOB_ID
+    MANAGER_ID	    EMPLOYEES	    EMPLOYEE_ID
+*/
+    select *
+    from employees;
+    
+    select *
+    from jobs;
+    
+    
+    
+    
+    
+    
+    -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! --
+    -- "자식" 테이블(여기서는 tbl_yeyak 테이블)에 입력되어진 데이터가
+    -- "부모" 테이블(여기서는 tbl_gogek 테이블)에 존재하는 경우에
+    -- "부모" 테이블의 행을 삭제할 때 어떻게 되어지는지 알아봅니다.
+    
+    
