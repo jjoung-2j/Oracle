@@ -8776,4 +8776,180 @@ group by department_id;
     -- "부모" 테이블(여기서는 tbl_gogek 테이블)에 존재하는 경우에
     -- "부모" 테이블의 행을 삭제할 때 어떻게 되어지는지 알아봅니다.
     
+    select *
+    from tbl_gogek;  -- "부모" 테이블 
+    
+    select *
+    from tbl_yeyak;  -- "자식" 테이블
+    
+    -- tbl_yeyak 테이블의 fk_gogekid 컬럼에 'hongkd' 는 존재하지 않는다.
+    delete from tbl_gogek
+    where gogekid= 'hongkd';
+    -- 1 행 이(가) 삭제되었습니다.    ==> 예약테이블에 없으므로 바로 회원탈퇴 가능
+    
+    
+    -- tbl_yeyak 테이블의 fk_gogekid 컬럼에 'eomjh' 는 존재한다.
+    delete from tbl_gogek
+    where gogekid= 'eomjh';
+    -- 오류 보고 -
+    -- ORA-02292: 무결성 제약조건(HR.FK_TBL_YEYAK_FK_GOGEKID)이 위배되었습니다- 자식 레코드(record)가 발견되었습니다
+    -- 레코드란? row(행)을 말하는 것이다.
+    
+    rollback;
+    -- 롤백 완료.
+    
+    
+    
+    
+    -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    -- "부모" 테이블에 존재하는 행을 삭제하고자 할때 
+    -- "자식" 테이블에 foreign key 컬럼에 삭제하려는 행의 값이 존재한다라면
+    -- 위와 같이 무결성 제약조건(foreign key 제약)에 의해 삭제가 안된다.!!!!
+    
+    -- ★★★ "회원탈퇴" 처리 ★★★ => update
+    -- "회원탈퇴" 처리는 update 로 할 수 있다.
+    -- 로그인 처리를 하기위해서 tbl_gogek 테이블에 passwd 라는 컬럼을 추가하겠습니다.
+    alter table tbl_gogek
+    add passwd varchar2(20);
+    -- Table TBL_GOGEK이(가) 변경되었습니다.
+    
+    -- 또한 "회원탈퇴" 처리를 위해서 status 라는 컬럼을 추가하겠다.
+    alter table tbl_gogek
+    add status number(1) default 1;
+    -- Table TBL_GOGEK이(가) 변경되었습니다.
+    
+    -- tbl_gogek 테이블에 status 라는 컬럼에는 오로지 0 또는 1 값만 들어오게끔 체크제약을 만들겠다.
+    -- status 라는 컬럼의 값이 1 이면 정상활동중으로 보고, status 라는 컬럼의 값이 0 이면 탈퇴한것으로 본다. 
+    alter table tbl_gogek
+    add constraint CK_tbl_gogek_status check(status in(0,1));
+    -- Table TBL_GOGEK이(가) 변경되었습니다.
+    
+    update tbl_gogek set passwd = 'qwer1234';
+    -- 4개 행 이(가) 업데이트되었습니다.
+    commit;
+    -- 커밋 완료.
+    
+    select *
+    from tbl_gogek;
+    
+    
+    select count(*) -- 1 은 정상로그인
+    from tbl_gogek
+    where status = 1 and gogekid = 'eomjh' and passwd = 'qwer1234';
+    
+    select count(*) -- 0 은 로그인불가
+    from tbl_gogek
+    where status = 1 and gogekid = 'abcd' and passwd = 'qwer1234';
+    
+    select count(*) -- 0 은 로그인불가
+    from tbl_gogek
+    where status = 1 and gogekid = 'eomjh' and passwd = 'abcd';
+    
+    -- "회원탈퇴" 처리
+    delete from tbl_gogek
+    where gogekid= 'eomjh';
+    -- 오류 보고 -
+    -- ORA-02292: 무결성 제약조건(HR.FK_TBL_YEYAK_FK_GOGEKID)이 위배되었습니다- 자식 레코드(record)가 발견되었습니다
+    -- 레코드란? row(행)을 말하는 것이다.
+    
+    update tbl_gogek set status = 0 -- "회원탈퇴" 로 본다!!
+    where status = 1 and gogekid = 'eomjh' and passwd = 'qwer1234';
+    -- 1 행 이(가) 업데이트되었습니다.
+    
+    commit;
+    -- 커밋 완료.
+    
+    select *
+    from tbl_gogek;
+    -- eomjh 엄정화 status = 0 ==> 로그인 불가
+    
+    
+    
+    -----------------------------------------------------------------------------------------------------------
+    
+    
+    
+    -- ★★★ "회원탈퇴" 처리 ★★★ => delete
+    delete from tbl_gogek
+    where gogekid = 'leess';
+    -- 오류 보고 -
+    -- ORA-02292: 무결성 제약조건(HR.FK_TBL_YEYAK_FK_GOGEKID)이 위배되었습니다- 자식 레코드가 발견되었습니다
+    
+    -- tbl_yeyak 테이블에 존재하는 foreign key 제약조건인 FK_TBL_YEYAK_FK_GOGEKID 을 삭제한다. --
+    select *
+    from user_constraints
+    where table_name = 'TBL_YEYAK' and constraint_type = 'R';
+    -- FK_TBL_YEYAK_FK_GOGEKID
+    
+    alter table tbl_yeyak
+    drop constraint FK_TBL_YEYAK_FK_GOGEKID;
+    -- Table TBL_YEYAK이(가) 변경되었습니다.
+    
+    -- 이제부터는 tbl_gogek 테이블과 tbl_yeyak 테이블 사이에는 부모,자식 관계가 끊어진 상태이다.
+    delete from tbl_gogek
+    where gogekid = 'leess';
+    -- 1 행 이(가) 삭제되었습니다.
+    
+    insert into tbl_yeyak(yeyakno, fk_gogekID, ticketCnt) values(seq_tbl_yeyak.nextval, 'batman', 5); 
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    commit;
+    -- 커밋 완료.
+    
+    -- delete 를 사용할 경우 고객테이블과 예약테이블의 연결이 아에 되지 않는다!!
+    -- 고객이 아니여도 예약 가능한 현상이 발생
+    select *
+    from tbl_gogek;
+    
+    select *
+    from tbl_yeyak;
+    
+    
+    
+    
+    
+    
+    
+    /*
+     게시판에서 원글이 있고, 원글에 딸린 댓글이 있다.
+     댓글은 원글이 존재할때만 댓글이 있는 것이다.
+     그러면 "원글" 테이블과 "댓글" 테이블은 부모-자식 관계를 이룰 것이다.
+     이러한 경우 "원글" 테이블에 어떤 한행이 삭제가 되어지면 그 원글행에 딸린 모든 댓글 또한 삭제가 되어져야 할 것이다.
+     이럴때 자식테이블에 해당하는 "댓글" 테이블에는 "on delete cascade" 가 있는 foreign key 로 생성해야 한다. 
+    */
+    
+    
+    create table tbl_original_board     -- "원글" 테이블, 부모 테이블 
+    (boardno     number                 -- 원글번호
+    ,subject     Nvarchar2(50) not null -- 글제목 
+    ,constraint  PK_tbl_original_board_boardno primary key(boardno)
+    );
+    -- Table TBL_ORIGINAL_BOARD이(가) 생성되었습니다.
+    
+    create table tbl_comment     -- "댓글" 테이블, 자식 테이블 
+    (commentno   number          -- 댓글번호
+    ,contents    Nvarchar2(100)  -- 댓글내용
+    ,fk_boardno  number          -- 원글번호    -- 참조이기때문에 동일한 데이터 타입
+    ,constraint  PK_tbl_comment_commentno  primary key(commentno)
+    ,constraint  FK_tbl_comment_fk_boardno foreign key(fk_boardno) references tbl_original_board(boardno) on delete cascade 
+    );
+    -- Table TBL_COMMENT이(가) 생성되었습니다.
+    
+    insert into tbl_original_board(boardno, subject) values(1, '첫번째 원글입니다.');
+    insert into tbl_original_board(boardno, subject) values(2, '두번째 원글입니다.');
+    insert into tbl_original_board(boardno, subject) values(3, '세번째 원글입니다.');
+    
+    commit;
+    
+    select *
+    from tbl_original_board;  -- 원글 테이블 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
