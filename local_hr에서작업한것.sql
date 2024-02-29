@@ -8944,6 +8944,175 @@ group by department_id;
     select *
     from tbl_original_board;  -- 원글 테이블 
     
+    -- 1번글 댓글 --
+    insert into tbl_comment(commentno, contents, fk_boardno)
+    values(101, '좋은 글 이네요', 1);
+    insert into tbl_comment(commentno, contents, fk_boardno)
+    values(102, '공감입니다.', 1);
+    insert into tbl_comment(commentno, contents, fk_boardno)
+    values(103, '감동입니다', 1);
+    commit;
+    -- 커밋 완료.
+    
+    -- 2번글 댓글 --
+    insert into tbl_comment(commentno, contents, fk_boardno)
+    values(104, '좋은 하루되세요~', 2);
+    commit;
+    -- 커밋 완료.
+    
+    select *
+    from tbl_comment; -- 댓글 테이블 (자식 테이블)
+    
+    select *
+    from tbl_original_board;  -- 원글 테이블 (부모 테이블)
+    
+    
+    -- "부모" 테이블인 tbl_original_board 테이블에서 자식레코드가 존재하는 행을 삭제하겠습니다.
+    delete from tbl_original_board
+    where boardno = 1;
+    -- 1 행 이(가) 삭제되었습니다.
+    -- 자식 테이블에 "on delete cascade"이 붙어있기 때문에 참조하고 있는 자식 테이블을 모두 지우고 부모 테이블에 있는 행을 삭제한다.
+    
+    rollback;
+    -- 롤백 완료.
+    
+    
+    /*
+     == foreign key 생성시 on delete cascade 를 안주어야 할 경우 ==
+
+     "부서" 테이블 ==> 부서번호(P.K)  부서명   부서장사원번호
+                        10         마케팅    1001
+                        20         영업부    2001  --> "사원" 테이블에서 부서번호 20 인 사원들을 모두 10 으로 변경(update)한 후 delete 하면 된다.
+                        
+     "사원" 테이블 ==> 사원번호(P.K)  사원명   직급명  부서번호(F.K) 
+                       1001        나기획   부장      10
+                       1002        김길동   과장      10
+                       2001        나영업   부장      20 --> 10
+                       2002        나세일   과장      20 --> 10
+                       2003        너판매   사원      20 --> 10 
+
+     update "사원" set 부서번호 = 10 
+     where 부서번호 = 20;
+
+     delete from "부서" 
+     where 부서번호 = 20;
+  */
+  
+  
+  
+  
+  
+    ------------------------------------------------------------------------------------------------------------------------------------
+
+    -- ★ on delete set null ★
+
+    /*
+     게시판에서 원글이 있고, 원글에 딸린 댓글이 있다.
+     댓글은 원글이 존재할때만 댓글이 있는 것이다.
+     그러면 "원글" 테이블과 "댓글" 테이블은 부모-자식 관계를 이룰 것이다.
+     이러한 경우 "원글" 테이블에 어떤 한행이 삭제가 되어지기 위해서 그 원글행에 딸린 모든 댓글은 부모-자식 관계를 끊기 위해서 먼저 foreign key 컬럼에 해당하는 값을 null 변경시킨다.
+     그런 다음에 "원글" 테이블에 어떤 한행을 삭제한다.
+     이럴때 자식테이블에 해당하는 "댓글" 테이블에는 on delete set null 이 있는 foreign key 로 생성해야 한다. 
+     주의해야할 사항은 자식테이블에 foreign key 에 해당하는 컬럼은 반드시 null 을 허락해주어야 한다.!!!
+    */
+    create table tbl_original_board_2   -- "원글" 테이블, 부모 테이블 
+    (boardno     number                 -- 원글번호
+    ,subject     Nvarchar2(50) not null -- 글제목 
+    ,constraint  PK_tbl_original_board_2_boardno primary key(boardno)
+    );
+    -- Table TBL_ORIGINAL_BOARD_2이(가) 생성되었습니다.
+    
+    create table tbl_comment_2   -- "댓글" 테이블, 자식 테이블 
+    (commentno   number          -- 댓글번호
+    ,contents    Nvarchar2(100)  -- 댓글내용
+    ,fk_boardno  number          -- 원글번호
+    ,constraint  PK_tbl_comment_2_commentno  primary key(commentno)
+    ,constraint  FK_tbl_comment_2_fk_boardno foreign key(fk_boardno) references tbl_original_board_2(boardno) on delete set null 
+    );
+    -- Table TBL_COMMENT_2이(가) 생성되었습니다.
+    
+    -- 원글 테이블 --
+    insert into tbl_original_board_2(boardno, subject) values(1, '첫번째 원글입니다.');
+    insert into tbl_original_board_2(boardno, subject) values(2, '두번째 원글입니다.');
+    insert into tbl_original_board_2(boardno, subject) values(3, '세번째 원글입니다.');
+    commit;
+    -- 커밋 완료.
+    
+    -- 1번 글 댓글 테이블 --
+    insert into tbl_comment_2(commentno, contents, fk_boardno)
+    values(101, '좋은 글 이네요', 1);
+    insert into tbl_comment_2(commentno, contents, fk_boardno)
+    values(102, '공감입니다.', 1);
+    insert into tbl_comment_2(commentno, contents, fk_boardno)
+    values(103, '감동입니다', 1);
+    commit;
+    -- 커밋 완료.
+    
+    -- 2번 글 댓글 테이블 --
+    insert into tbl_comment_2(commentno, contents, fk_boardno)
+    values(104, '좋은 하루되세요~', 2);
+    commit;
+    -- 커밋 완료.
+    
+    
+    select *
+    from tbl_comment_2; -- 댓글 테이블
+    
+    select *
+    from tbl_original_board_2;  -- 원글 테이블
+    
+    
+    delete from tbl_original_board_2
+    where boardno = 1;
+    -- 1 행 이(가) 삭제되었습니다.
+    
+    select *
+    from tbl_original_board_2;  -- 원글 테이블
+    
+    select *
+    from tbl_comment_2; -- 댓글 테이블
+    
+    rollback;
+    -- 롤백 완료.
+    
+    
+    
+    
+    
+    
+     create table tbl_emp
+    (empno    number(4)     
+    ,ename    nvarchar2(10) not null
+    ,jik      nvarchar2(10) not null 
+    ,mgr_no   number(4)     -- 직속상관번호 => 사장이 있으므로 null 값 허용
+    ,constraint  PK_tbl_emp_empno primary key(empno)    -- 식별자!!
+    ,constraint  FK_tbl_emp_mgr_no foreign key(mgr_no) references tbl_emp(empno)    -- 직속상관번호가 우리회사 내 여야 한다!! 
+    );                                                                              -- 자신의 테이블에 있는 컬럼을 참조할 수 있다.
+    -- Table TBL_EMP이(가) 생성되었습니다.
+    
+    insert into tbl_emp(empno, ename, jik, mgr_no)
+    values(1001, '나사장', '사장', null);
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    insert into tbl_emp(empno, ename, jik, mgr_no)
+    values(1002, '나부장', '부장', 1001);
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    insert into tbl_emp(empno, ename, jik, mgr_no)
+    values(1003, '나과장', '과장', 2001);
+    /*
+    오류 보고 -
+    ORA-02291: 무결성 제약조건(HR.FK_TBL_EMP_MGR_NO)이 위배되었습니다- 부모 키가 없습니다
+    */
+    
+    insert into tbl_emp(empno, ename, jik, mgr_no)
+    values(1003, '나과장', '과장', 1002);
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    commit;
+  
+    select * 
+    from tbl_emp;
     
     
     
@@ -8952,4 +9121,111 @@ group by department_id;
     
     
     
+    ---- *** >>> NOT NULL 제약에 대해서 알아봅니다. <<< *** ----
+    -- 하나의 테이블당 여러개를 생성할 수 있다.
+    -- 특정 컬럼에 NOT NULL 제약을 주면 그 컬럼에는 반드시 데이터값을 주어야 한다는 말이다. 
     
+    --- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ---   
+    --- employees 테이블에 존재하는 제약조건이 무엇이 있는지 조회해보세요. ---
+    select *
+    from user_constraints
+    where table_name = 'EMPLOYEES';
+    
+    select *
+    from user_cons_columns
+    where table_name = 'EMPLOYEES';
+    
+    select B.column_name, B.position,
+         A.constraint_name, A.constraint_type, A.search_condition, A.r_constraint_name 
+    from user_constraints A JOIN user_cons_columns B
+    ON A.constraint_name = B.constraint_name
+    where A.table_name = 'EMPLOYEES';
+    
+    
+    --- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ---   
+    --- tbl_yeyak 테이블에 존재하는 foreign key 컬럼명과 부모테이블명과 참조를 당하는 primary key(unique key)에 해당하는 컬럼명을 조회해보세요. ---
+    SELECT C.column_name as "외래키 컬럼명"
+        , D.table_name as "부모테이블명"
+        , D.column_name as "참조를 당하는 컬럼명"
+    FROM
+    (
+        select B.column_name, A.r_constraint_name
+        from user_constraints A JOIN user_cons_columns B
+        ON A.constraint_name = B.constraint_name
+        where A.table_name = 'EMPLOYEES' and A.constraint_type = 'R'    -- 제약조건 이름 R => FK
+    ) C JOIN user_cons_columns D
+    ON C.r_constraint_name = D.constraint_name;     -- PK_TBL_GOGEK_GOGEKID
+    /*
+    -------------------------------------------------
+    외래키 컬럼명     부모테이블명      참조를 당하는 컬럼명
+    ------------------------------------------------
+    FK_GOGEKID	    TBL_GOGEK	    GOGEKID
+    */
+    
+    
+    
+    
+    
+    
+    
+     --------- **** 어떤 테이블에 제약조건을 추가하기 **** -----------
+  /*
+       제약조건 추가시 NOT NULL 제약을 제외한 나머지 4개는 아래와 같이한다.
+       
+       alter table 테이블명 add constraint 제약조건명 primary key(컬럼명);
+       alter table 테이블명 add constraint 제약조건명 unique(컬럼명);
+       alter table 테이블명 add constraint 제약조건명 check( ... );
+       
+       alter table 테이블명 add constraint 제약조건명 foreign key(컬럼명) references 부모테이블명(식별자컬럼명);
+       alter table 테이블명 add constraint 제약조건명 foreign key(컬럼명) references 부모테이블명(식별자컬럼명) on delete casecade;
+       alter table 테이블명 add constraint 제약조건명 foreign key(컬럼명) references 부모테이블명(식별자컬럼명) on delete set null;
+ */
+ 
+ /*
+       NOT NULL 제약을 추가할 때는 아래와 같이 한다.
+       
+       alter table 테이블명 modify 컬럼명 [constraint 제약조건명] not null;
+ */
+ 
+    create table tbl_employees_backup_20240229
+    as
+    select *
+    from employees;
+    -- Table TBL_EMPLYEES_BACKUP_20240229이(가) 생성되었습니다.
+    
+    
+    -- !!!! 서브쿼리를 사용한 테이블 생성은 원래 테이블에 있던 NOT NULL 제약만 
+    --      새로운 이름(SYS_C뭐뭐뭐~~)으로 생성되어지고, 나머지 제약은 생성되어지지 않는다. !!!!
+    
+    select *
+    from tbl_employees_backup_20240229;
+    
+    select B.column_name, B.position,
+         A.constraint_name, A.constraint_type, A.search_condition, A.r_constraint_name 
+    from user_constraints A JOIN user_cons_columns B
+    ON A.constraint_name = B.constraint_name
+    where A.table_name = 'EMPLOYEES';
+    
+    select B.column_name, B.position,
+         A.constraint_name, A.constraint_type, A.search_condition, A.r_constraint_name 
+    from user_constraints A JOIN user_cons_columns B
+    ON A.constraint_name = B.constraint_name
+    where A.table_name = 'TBL_EMPLOYEES_BACKUP_20240229';
+    
+    
+    -- 1. primary key 추가하기 EMP_EMP_ID_PK
+    alter table TBL_EMPLOYEES_BACKUP_20240229 add constraint EMP_EMP_ID_PK primary key(employee_id);
+    -- 오류 보고 -
+    -- ORA-02264: 기존의 제약에 사용된 이름입니다
+    
+    alter table TBL_EMPLOYEES_BACKUP_20240229 add constraint TBL_EMPLYEES_BACKUP_20240229_EMP_EMP_ID_PK primary key(employee_id);
+    -- Table TBL_EMPLYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    /*
+        !!! 주의사항 !!!
+        만약에 사용하고자 하는 오라클 DB 서버의 버전이 11g 이라면 (현재는 18g 사용중)
+        테이블명 또는 컬럼명 또는 제약조건명 등등 최대길이가 30글자 이므로 30글자가 넘으면 오류이다.!!!
+    */
+    
+    
+   
