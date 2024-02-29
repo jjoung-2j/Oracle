@@ -9599,4 +9599,518 @@ group by department_id;
     
     
     ------------------------------------------------------------------------------
-   ---- *** >>> 데이터 백업 없이 drop 되어진 테이블 복구하기 <<< *** ----
+    ---- *** >>> 데이터 백업 없이 drop 되어진 테이블 복구하기 <<< *** ----
+   
+    --  flashback drop ==> drop 되어진 테이블을 복구가 가능하도록 만들어 주는 것이다.
+    
+    ---- !!!! 테이블을 삭제시 휴지통에 버리기 !!!! ----
+    
+    create table tbl_exam_01(name  varchar2(20));
+    insert into tbl_exam_01(name) values('연습1');
+    commit;
+    
+    create table tbl_exam_02(name  varchar2(20));
+    insert into tbl_exam_02(name) values('연습2');
+    commit;
+    
+    create table tbl_exam_03(name  varchar2(20));
+    insert into tbl_exam_03(name) values('연습3');
+    commit;
+    
+    create table tbl_exam_04(name  varchar2(20));
+    insert into tbl_exam_04(name) values('연습4');
+    commit;
+    
+    create table tbl_exam_05(name  varchar2(20));
+    insert into tbl_exam_05(name) values('연습5');
+    commit;
+      
+    create table tbl_exam_06(name  varchar2(20));
+    insert into tbl_exam_06(name) values('연습6');
+    commit;
+    
+    drop table tbl_exam_01;  --> tbl_exam_01 테이블을 영구히 삭제하는 것이 아니라 휴지통에 버리는 것이다. 
+    -- Table TBL_EXAM_01이(가) 삭제되었습니다.
+    
+    select * from tab; 
+    -- 결과물에서 tname 컬럼에 BIN$로 시작하는 것은 휴지통에 버려진 테이블이다.    --> BIN$pZH2GUUwRCSRUIuF8Mqe6w==$0
+    
+    drop table tbl_exam_02;  --> tbl_exam_02 테이블을 영구히 삭제하는 것이 아니라 휴지통에 버리는 것이다. 
+    -- Table TBL_EXAM_02이(가) 삭제되었습니다.
+    
+    select * from tab; 
+    -- 결과물에서 tname 컬럼에 BIN$로 시작하는 것은 휴지통에 버려진 테이블이다.    --> BIN$46ahQxDnQVKAnX8vXuBv8A==$0
+    
+    select * 
+    from tbl_exam_01;
+    -- ORA-00942: 테이블 또는 뷰가 존재하지 않습니다
+    
+    select * 
+    from tbl_exam_02;
+    -- ORA-00942: 테이블 또는 뷰가 존재하지 않습니다
+   
+    select *
+    from "BIN$pZH2GUUwRCSRUIuF8Mqe6w==$0";  -- 반드시 "" 붙이기
+    select *
+    from "BIN$46ahQxDnQVKAnX8vXuBv8A==$0";  -- 반드시 "" 붙이기
+    
+    ------ ===== **** 휴지통 조회하기 **** ===== ------
+    select *
+    from user_recyclebin;
+    
+    ------ ===== **** 휴지통에 있던 테이블을 복원하기 **** ===== ------
+    flashback table TBL_EXAM_01 to before drop;
+    -- Flashback을(를) 성공했습니다.
+    -- TBL_EXAM_01 은 user_recyclebin 에서 보여지는 original_name 컬럼에 나오는 것이다.
+    
+    select *
+    from tbl_exam_01;
+    -- 복원됨.
+    
+    ------ ===== **** 휴지통에 있던 테이블을 영구히 삭제하기 **** ===== ------
+    purge table TBL_EXAM_02;
+    -- Table이(가) 비워졌습니다.
+    -- TBL_EXAM_02 은 user_recyclebin 에서 보여지는 original_name 컬럼에 나오는 것이다.
+    
+    ------ ===== **** 휴지통에 있던 모든 테이블을 영구히 삭제하기 **** ===== ------
+    
+    -- 휴지통에 넣기
+    drop table tbl_exam_03;  --> tbl_exam_03 테이블을 영구히 삭제하는 것이 아니라 휴지통에 버리는 것이다. 
+    -- Table TBL_EXAM_03이(가) 삭제되었습니다.
+    drop table tbl_exam_04;  --> tbl_exam_04 테이블을 영구히 삭제하는 것이 아니라 휴지통에 버리는 것이다. 
+    -- Table TBL_EXAM_04이(가) 삭제되었습니다.
+    
+    -- 휴지통 조회
+    select *
+    from user_recyclebin;
+    
+    -- 휴지통 비우기
+    purge recyclebin;   -- 휴지통에 있던 모든 테이블을 영구히 삭제하기
+    -- Recyclebin이(가) 비워졌습니다.
+    -- << 확인 >> => bin$~~ 없다.
+    select * from tab;  -- BIN$로 시작하는 것이 아무것도 없다.
+    
+    
+    
+    --- *** 테이블을 영구히 삭제하기 ==> drop 되어진 테이블은 복원이 불가하다. *** ---
+    select *
+    from tbl_exam_05;
+    
+    -- drop table tbl_exam_05;      -- 휴지통
+    drop table tbl_exam_05 purge;   -- 영구히 삭제
+    -- Table TBL_EXAM_05이(가) 삭제되었습니다.
+    
+    
+    
+    
+    
+    --★-------------- ============== ★★★★★★ INDEX(인덱스, 색인) ★★★★★★ ============== --------------★--
+    
+    
+    
+    
+    
+    
+    
+    
+    -------------------------------------------------------------------------------------------------------------
+        --- **** PL/SQL(Procedure Language / Structured Query Language) **** ---
+    
+    -- *** PL/SQL 구문에서 변수의 사용법 첫번째 *** --
+    exec pcd_empInfo(101);    -- pcd : procedure 약어
+    /*
+        <결과물>
+        ------------------------------------
+        사원번호    사원명     성별      월급
+        ------------------------------------
+          101       ..       ..        ..
+    */
+    exec pcd_empInfo(102);    -- pcd : procedure 약어
+    /*
+        <결과물>
+        ------------------------------------
+        사원번호    사원명     성별      월급
+        ------------------------------------
+          102       ..       ..        ..
+    */
+    
+    create or replace procedure pcd_empInfo
+    (p_employee_id in number)               -- p_ 파라미터 라는 뜻 컬럼명 X, 매개변수명 // in 은 입력모드를 말한다. number(5)와 같이 자리수를 넣어주면 오류이다.
+    is
+        -- 변수의 선언부
+        v_employee_id number(5);    -- 자리수를 사용한다.
+        v_ename       varchar2(50); -- 자리수를 사용한다.
+        v_gender      varchar2(10); -- 자리수를 사용한다.
+        v_monthsal    varchar2(15); -- 자리수를 사용한다.
+    begin
+        -- 명령어를 실행해주는 실행부
+        select employee_id, first_name || ' ' || last_name,
+            case when substr(jubun, 7, 1) in('1','3') then '남' else '여' end,
+            to_char( nvl(salary + (salary * commission_pct), salary), '9,999,999')
+            INTO 
+            v_employee_id, v_ename, v_gender, v_monthsal 
+         from employees
+         where employee_id = p_employee_id;
+    
+        dbms_output.put_line( lpad('-',40,'-') );
+        dbms_output.put_line( '사원번호    사원명   성별   월급' );
+        dbms_output.put_line( lpad('-',40,'-') );
+        dbms_output.put_line(v_employee_id || ' '
+                            || v_ename || ' '
+                            || v_gender || ' '
+                            || v_monthsal);
+    end pcd_empInfo;
+    -- Procedure PCD_EMPINFO이(가) 컴파일되었습니다.
+    
+    /* === SQL Developer 의 메뉴의 보기를 클릭하여 DBMS 출력을 클릭해주어야 한다. ===
+      === 이어서 하단부에 나오는 DBMS 출력 부분의 녹색 + 기호를 클릭하여 local_hr 로 연결을 해준다. === 
+    */
+    exec pcd_empInfo(101);  -- 블록잡고 실행하기!
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    /*
+        ----------------------------------------
+        사원번호    사원명   성별   월급
+        ----------------------------------------
+        101 Neena Kochhar 남     17,000
+    */
+    exec pcd_empInfo(102);
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    /*
+        ----------------------------------------
+        사원번호    사원명   성별   월급
+        ----------------------------------------
+        102 Lex De Haan 여     17,000
+    */
+    
+    
+    
+    --- *** 생성되어진 Procedure 인 pcd_empInfo 의 소스 알아보기 *** ---
+    select *
+    from user_source
+    where type = 'PROCEDURE' and name = 'PCD_EMPINFO';    -- 대문자로 쓰기!!
+    
+    
+    select employee_id, first_name || ' ' || last_name,
+            case when substr(jubun, 7, 1) in('1','3') then '남' else '여' end,
+            to_char( nvl(salary + (salary * commission_pct), salary), '9,999,999')
+    from employees
+    where employee_id = 101;    -- 이렇게 보는것보다 프로시저로 보는것이 실행속도가 더 빠르다.
+    
+    
+    
+    
+    
+    
+    
+    
+    -- *** PL/SQL 구문에서 변수의 사용법 두번째 *** --
+    desc employees;
+    -- EMPLOYEE_ID    NOT NULL NUMBER(6)
+    
+    create or replace procedure pcd_empInfo
+    (p_employee_id in employees.employee_id%type)   -- p_employee_id 매개변수의 데이터타입은 employees.employee_id%type 이다.
+    -- employees.employee_id%type 는 employees 테이블의 employee_id 컬럼의 데이터타입을 그대로 사용하겠다는 말이다.
+    is
+        v_employee_id employees.employee_id%type;    
+        v_ename       varchar2(50); 
+        v_gender      varchar2(10); 
+        v_monthsal    varchar2(15);
+    begin
+        select employee_id, first_name || ' ' || last_name,
+            case when substr(jubun, 7, 1) in('1','3') then '남' else '여' end,
+            to_char( nvl(salary + (salary * commission_pct), salary), '9,999,999')
+            INTO 
+            v_employee_id, v_ename, v_gender, v_monthsal 
+         from employees
+         where employee_id = p_employee_id;
+    
+        dbms_output.put_line( lpad('-',40,'-') );
+        dbms_output.put_line( '사원번호    사원명   성별   월급' );
+        dbms_output.put_line( lpad('-',40,'-') );
+        dbms_output.put_line(v_employee_id || ' '
+                            || v_ename || ' '
+                            || v_gender || ' '
+                            || v_monthsal);
+    end pcd_empInfo;
+    -- Procedure PCD_EMPINFO이(가) 컴파일되었습니다.
+    
+    exec pcd_empInfo(101);  -- 블록잡고 실행하기!
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.  ==> 결과는 동일
+    
+    
+    
+    
+    
+    
+    
+    -- *** PL/SQL 구문에서 변수의 사용법 세번째 *** --
+    create or replace procedure pcd_empInfo
+    (p_employee_id in employees.employee_id%type)   
+    is
+        --- record 타입 생성 ---
+        type myEmpType is record
+        (emp_id     employees.employee_id%type
+        ,ename      varchar2(50)
+        ,gender     varchar2(10)
+        ,monthsal   varchar2(15)
+        ,age        number(3)
+        );
+        
+        -- 변수 생성 --
+        v_rcd myEmpType;
+           
+    begin
+        select employee_id, first_name || ' ' || last_name
+            , case when substr(jubun, 7, 1) in('1','3') then '남' else '여' end
+            , to_char( nvl(salary + (salary * commission_pct), salary), '9,999,999')
+            , case when to_date(to_char(sysdate, 'yyyy') || substr(jubun, 3, 4), 'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'), 'yyyymmdd') > 0 
+                  then extract(year from sysdate) - ( to_number(substr(jubun,1,2)) + case when substr(jubun,7,1) in('1','2') then 1900 else 2000 end ) - 1
+                  else extract(year from sysdate) - ( to_number(substr(jubun,1,2)) + case when substr(jubun,7,1) in('1','2') then 1900 else 2000 end )
+             end
+            INTO 
+            v_rcd
+         from employees
+         where employee_id = p_employee_id;
+    
+        dbms_output.put_line( lpad('-',40,'-') );
+        dbms_output.put_line( '사원번호    사원명   성별   월급    나이' );
+        dbms_output.put_line( lpad('-',40,'-') );
+        dbms_output.put_line(v_rcd.emp_id || ' '
+                            || v_rcd.ename || ' '
+                            || v_rcd.gender || ' '
+                            || v_rcd.monthsal || ' '
+                            || v_rcd.age);
+    end pcd_empInfo;
+    -- Procedure PCD_EMPINFO이(가) 컴파일되었습니다.
+    
+    exec pcd_empInfo(101);  -- 블록잡고 실행하기!
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    /*
+        ----------------------------------------
+        사원번호    사원명   성별   월급    나이
+        ----------------------------------------
+        101 Neena Kochhar 남     17,000 38
+    */
+    
+    exec pcd_empInfo(102);  -- 블록잡고 실행하기!
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    /*
+        ----------------------------------------
+        사원번호    사원명   성별   월급    나이
+        ----------------------------------------
+        102 Lex De Haan 여     17,000 58
+    */
+    
+    
+    
+    
+    
+    
+    -- *** PL/SQL 구문에서 변수의 사용법 네번째 *** --
+    create or replace procedure pcd_empInfo
+    (p_employee_id in employees.employee_id%type)   
+    is
+        v_all   employees%rowtype;
+        -- v_all 변수의 타입은 employees 테이블의 모든 컬럼을 받아주는 행타입이다.           
+        
+        -- 변수 생성
+        v_result    varchar2(1000);
+    begin
+        select * INTO v_all
+         from employees
+         where employee_id = p_employee_id;
+    
+        v_result := v_all.employee_id || ' '
+                || v_all.first_name || ' ' || v_all.last_name || ' '
+                || case when substr(v_all.jubun, 7, 1) in('1','3') then '남' else '여' end || ' '
+                || to_char( nvl(v_all.salary + (v_all.salary * v_all.commission_pct), v_all.salary), '9,999,999') || ' '
+                || case when to_date(to_char(sysdate, 'yyyy') || substr(v_all.jubun, 3, 4), 'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'), 'yyyymmdd') > 0 
+                        then extract(year from sysdate) - ( to_number(substr(v_all.jubun,1,2)) + case when substr(v_all.jubun,7,1) in('1','2') then 1900 else 2000 end ) - 1 
+                        else extract(year from sysdate) - ( to_number(substr(v_all.jubun,1,2)) + case when substr(v_all.jubun,7,1) in('1','2') then 1900 else 2000 end ) 
+                        end || ' '
+                || nvl(to_char(v_all.department_id), '부서없음');
+    
+        dbms_output.put_line( lpad('-',50,'-') );
+        dbms_output.put_line( '사원번호    사원명   성별   월급    나이  부서번호' );
+        dbms_output.put_line( lpad('-',50,'-') );
+        dbms_output.put_line(v_result);
+    end pcd_empInfo;
+    -- Procedure PCD_EMPINFO이(가) 컴파일되었습니다.
+    
+    exec pcd_empInfo(101);  -- 블록잡고 실행하기!
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    /*
+        --------------------------------------------------
+        사원번호    사원명   성별   월급    나이  부서번호
+        --------------------------------------------------
+        101 Neena Kochhar 남     17,000 38 90
+    */
+    
+    exec pcd_empInfo(178);  -- 블록잡고 실행하기!   => 부서없는 Kimberely Grant
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    /*
+        --------------------------------------------------
+        사원번호    사원명   성별   월급    나이  부서번호
+        --------------------------------------------------
+        178 Kimberely Grant 여      8,050 25 부서없음
+    */
+    
+    
+    -- 프로시저 소스 보기
+    select *
+    from user_source
+    where type = 'PROCEDURE' and name = 'PCD_EMPINFO';    -- 대문자로 쓰기!!
+    
+    
+    
+    
+    
+    
+    ----------------------------------------------------------------------------------------------------
+                            ----- ***** 사용자 정의 함수 (Function) **** -----
+    ----------------------------------------------------------------------------------------------------
+    
+    ----  주민번호를 입력받아서 성별을 알려주는 함수 func_gender(주민번호)을 생성해보겠습니다. ----
+   /*
+      [문법]
+      create or replace function 함수명 
+      (파라미터변수명  IN  파라미터변수의타입)
+      return 리턴되어질타입
+      is
+         변수선언;
+      begin
+         실행문;
+         return 리턴되어질값;
+      end 함수명;
+   */ 
+   
+    create or replace function func_gender
+    (p_jubun in varchar2)   -- varchar2(13) 와 같이 자리수를 쓰면 오류이다.!!!
+    return varchar2         -- varchar2(6) 와 같이 자리수를 쓰면 오류이다.!!!
+    is
+        v_result    varchar2(6);
+    begin
+        select case when substr(p_jubun,7,1) in('1','3') then '남' else '여' end
+            INTO
+            v_result
+        from dual;
+        return v_result;
+    end func_gender;
+    
+    select func_gender('9010201234567')
+        , func_gender('9010202234567')
+        , func_gender('0110203234567')
+        , func_gender('0110204234567')
+    from dual;
+    
+    select employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , jubun as 주민번호
+        , func_gender(jubun) as 성별
+    from employees
+    order by 1;
+    
+    select *
+    from employees
+    where func_gender(jubun) = '여';
+    
+    
+    
+    create or replace function func_gender_2
+    (p_jubun in varchar2)   -- varchar2(13) 와 같이 자리수를 쓰면 오류이다.!!!
+    return varchar2         -- varchar2(6) 와 같이 자리수를 쓰면 오류이다.!!!
+    is
+        v_result    varchar2(6);
+    begin
+        v_result := case when substr(p_jubun,7,1) in('1','3') then '남' else '여' end;
+        return v_result;
+    end func_gender_2;
+    
+    select func_gender('9010201234567')
+        , func_gender('9010202234567')
+        , func_gender('0110203234567')
+        , func_gender('0110204234567')
+    from dual;
+    
+    select employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , jubun as 주민번호
+        , func_gender(jubun) as 성별1
+        , func_gender_2(jubun) as 성별2
+    from employees
+    order by 1;
+    
+    select *
+    from employees
+    where func_gender_2(jubun) = '남';
+    
+    
+    
+    
+    ----  주민번호를 입력받아서 나이를 알려주는 함수 func_age(주민번호)을 생성해보세요. ----
+    create or replace function func_age
+    (p_jubun in varchar2)   -- varchar2(13) 와 같이 자리수를 쓰면 오류이다.!!!
+    return number         -- 타입이 달라도 가능하다. number(6) 와 같이 자리수를 쓰면 오류이다.!!!
+    is
+        v_age    varchar2(6);
+    begin
+        select case when to_date(to_char(sysdate, 'yyyy') || substr(p_jubun, 3, 4), 'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'), 'yyyymmdd') > 0 
+                        then extract(year from sysdate) - ( to_number(substr(p_jubun,1,2)) + case when substr(p_jubun,7,1) in('1','2') then 1900 else 2000 end ) - 1 
+                        else extract(year from sysdate) - ( to_number(substr(p_jubun,1,2)) + case when substr(p_jubun,7,1) in('1','2') then 1900 else 2000 end ) 
+                        end
+        INTO
+            v_age
+        from dual;
+        return v_age;
+    end func_age;
+    -- Function FUNC_AGE이(가) 컴파일되었습니다.
+    
+    create or replace function func_age_2
+    (p_jubun in varchar2)   -- varchar2(13) 와 같이 자리수를 쓰면 오류이다.!!!
+    return varchar2         -- varchar2(6) 와 같이 자리수를 쓰면 오류이다.!!!
+    is
+        v_age    varchar2(6);
+    begin
+        v_age :=  case when to_date(to_char(sysdate, 'yyyy') || substr(p_jubun, 3, 4), 'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'), 'yyyymmdd') > 0 
+                        then extract(year from sysdate) - ( to_number(substr(p_jubun,1,2)) + case when substr(p_jubun,7,1) in('1','2') then 1900 else 2000 end ) - 1 
+                        else extract(year from sysdate) - ( to_number(substr(p_jubun,1,2)) + case when substr(p_jubun,7,1) in('1','2') then 1900 else 2000 end ) 
+                        end;
+        return v_age;
+    end func_age_2;
+    -- Function FUNC_AGE_2이(가) 컴파일되었습니다.
+    
+    select employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , jubun as 주민번호
+        , func_gender(jubun) as 성별1
+        , func_gender_2(jubun) as 성별2
+        , func_age(jubun) as 나이1
+        , func_age_2(jubun) as 나이2
+    from employees
+    order by 1;
+    
+    
+    -- employees 테이블에서 나이가 20대 여자와 40대인 남자 사원들만 
+    -- 사원번호, 사원명, 주민번호, 성별, 나이를 나타내세요.
+    select employee_id as 사원번호
+        , first_name || ' ' || last_name as 사원명
+        , jubun as 주민번호
+        , func_gender(jubun) as 성별1
+        , func_gender_2(jubun) as 성별2
+        , func_age(jubun) as 나이1
+        , func_age_2(jubun) as 나이2
+    from employees
+    where (trunc(func_age(jubun),-1) = 20 and func_gender(jubun) = '여')
+        or  (trunc(func_age_2(jubun),-1) = 40 and func_gender_2(jubun) = '남')   -- and 가 먼저 처리되기 때문에 () 해주기!!
+    order by 성별1,나이1;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
