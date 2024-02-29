@@ -9487,11 +9487,116 @@ group by department_id;
     
     
     
+    ----- **** 어떤 테이블에 존재하는 default 값 알아보기 **** -----
+    select column_name, data_type, data_length, nullable, data_default
+    from user_tab_columns
+    where table_name = 'TBL_EMPLOYEES_BACKUP_20240229';
+    
+    ----- **** 어떤 테이블의 어떤 컬럼에 default 값 넣어주기 **** -----
+    -- alter table 테이블명 modify 컬럼명 default 디폴트값;
+    
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    modify HIRE_DATE default sysdate;
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    ----- **** 어떤 테이블의 어떤 컬럼에 default 값 삭제하기 **** -----
+    -- alter table 테이블명 modify 컬럼명 default null;
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    modify HIRE_DATE default null;
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    
+    ---- *** 어떤 테이블에 존재하는 컬럼명을 변경하기 *** ----
+   /*
+       alter table 테이블명
+       rename column 현재컬럼명 to 새로이변경할컬럼명;
+   */
+    
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    rename column salary to pay;
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    -- << 확인 >>
+    desc TBL_EMPLOYEES_BACKUP_20240229;
+    -- 원상복구
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    rename column pay to salary;
+    
+    
+    
+    -- << 확인 >>
+    desc TBL_EMPLOYEES_BACKUP_20240229;
+    
+    ---- *** 어떤 테이블에 존재하는 컬럼의 데이터타입 변경하기 *** ----
+   /*
+        alter table 테이블명 
+        modify 컬럼명 새로운데이터타입;
+   */
+    alter table TBL_EMPLOYEES_BACKUP_20240229 
+    modify salary NUMBER(10,2);
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    
+    
+    ---- *** 어떤 테이블의 테이블명 변경하기 *** ----
+    -- rename 현재테이블명 to 새로운테이블명;
+    rename TBL_EMPLOYEES_BACKUP_20240229 to TBL_EMPLOYEES_COPY_20240229;
+    -- 테이블 이름이 변경되었습니다.
+    
+    -- << 확인 >>
+    select *
+    from TBL_EMPLOYEES_BACKUP_20240229;
+    -- ORA-00942: 테이블 또는 뷰가 존재하지 않습니다
+    select *
+    from TBL_EMPLOYEES_COPY_20240229;
+    -- 결과가 나온다.
+    
+    
+    
+    -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ---- !!!! 테이블을 생성한 이후에 웬만하면 테이블명에 대한 주석문을 달아주도록 합시다.!!!! ----
+    
+    --- *** 테이블명에 달려진 주석문 조회하기 *** --
+    select *
+    from user_tab_comments; 
+    
+    
+    create table tbl_jikwon
+    (sano    number
+    ,saname  Nvarchar2(10) not null
+    ,salary  number(6) default 100 not null
+    ,comm    number(5)
+    ,constraint PK_tbl_jikwon_sano primary key(sano)
+    );
+    -- Table TBL_JIKWON이(가) 생성되었습니다.
+    
+    COMMENT ON TABLE tbl_jikwon
+    IS '우리회사 사원들의 정보가 들어있는 테이블';
+    -- Comment이(가) 생성되었습니다.
     
     
     
     
+    ---- !!!! 테이블을 생성한 이후에 웬만하면 컬럼명에 대한 주석문을 달아주도록 합시다.!!!! ----
+    select *
+    from user_col_comments
+    where table_name = 'EMPLOYEES';
+    
+    select *
+    from user_col_comments
+    where table_name = 'TBL_JIKWON';    -- 대문자로 적기
+    
+    COMMENT ON COLUMN tbl_jikwon.SANO
+    IS '사원번호 primary key';
+    -- Comment이(가) 생성되었습니다.
+    
+    comment on column tbl_jikwon.saname is '사원명'; -- Comment이(가) 생성되었습니다.
+    comment on column tbl_jikwon.salary is '기본급여 기본값은 100'; -- Comment이(가) 생성되었습니다.
+    comment on column tbl_jikwon.comm is '수당 null 허락함'; -- Comment이(가) 생성되었습니다.
+    
+    select column_name, comments
+    from user_col_comments
+    where table_name = 'TBL_JIKWON';
     
     
-    
-    
+    ------------------------------------------------------------------------------
+   ---- *** >>> 데이터 백업 없이 drop 되어진 테이블 복구하기 <<< *** ----
