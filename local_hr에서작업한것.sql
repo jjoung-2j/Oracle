@@ -9147,22 +9147,64 @@ group by department_id;
     SELECT C.column_name as "외래키 컬럼명"
         , D.table_name as "부모테이블명"
         , D.column_name as "참조를 당하는 컬럼명"
+        , C.delete_rule as "CASCADE 옵션"
     FROM
     (
-        select B.column_name, A.r_constraint_name
+        select B.column_name, A.r_constraint_name, A.delete_rule
         from user_constraints A JOIN user_cons_columns B
         ON A.constraint_name = B.constraint_name
         where A.table_name = 'EMPLOYEES' and A.constraint_type = 'R'    -- 제약조건 이름 R => FK
     ) C JOIN user_cons_columns D
-    ON C.r_constraint_name = D.constraint_name;     -- PK_TBL_GOGEK_GOGEKID
+    ON C.r_constraint_name = D.constraint_name;     
     /*
-    -------------------------------------------------
-    외래키 컬럼명     부모테이블명      참조를 당하는 컬럼명
-    ------------------------------------------------
-    FK_GOGEKID	    TBL_GOGEK	    GOGEKID
+    -------------------------------------------------------------------
+    외래키 컬럼명     부모테이블명      참조를 당하는 컬럼명     CASCADE 옵션
+    -------------------------------------------------------------------
+    DEPARTMENT_ID	DEPARTMENTS	      DEPARTMENT_ID	       NO ACTION
+    JOB_ID	           JOBS	            JOB_ID	           NO ACTION
+    MANAGER_ID	    EMPLOYEES	       EMPLOYEE_ID	       NO ACTION
     */
     
     
+    SELECT C.column_name as "외래키 컬럼명"
+        , D.table_name as "부모테이블명"
+        , D.column_name as "참조를 당하는 컬럼명"
+        , C.delete_rule as "CASCADE 옵션"
+    FROM
+    (
+        select B.column_name, A.r_constraint_name, A.delete_rule
+        from user_constraints A JOIN user_cons_columns B
+        ON A.constraint_name = B.constraint_name
+        where A.table_name = 'TBL_COMMENT' and A.constraint_type = 'R'    -- 제약조건 이름 R => FK
+    ) C JOIN user_cons_columns D
+    ON C.r_constraint_name = D.constraint_name;     -- PK_TBL_GOGEK_GOGEKID
+    /*
+    -------------------------------------------------------------------
+    외래키 컬럼명     부모테이블명      참조를 당하는 컬럼명     CASCADE 옵션
+    -------------------------------------------------------------------
+    FK_BOARDNO	TBL_ORIGINAL_BOARD	    BOARDNO	            CASCADE
+    */
+    
+    
+    
+    SELECT C.column_name as "외래키 컬럼명"
+        , D.table_name as "부모테이블명"
+        , D.column_name as "참조를 당하는 컬럼명"
+        , C.delete_rule as "CASCADE 옵션"
+    FROM
+    (
+        select B.column_name, A.r_constraint_name, A.delete_rule
+        from user_constraints A JOIN user_cons_columns B
+        ON A.constraint_name = B.constraint_name
+        where A.table_name = 'TBL_COMMENT_2' and A.constraint_type = 'R'    -- 제약조건 이름 R => FK
+    ) C JOIN user_cons_columns D
+    ON C.r_constraint_name = D.constraint_name;     -- PK_TBL_GOGEK_GOGEKID
+    /*
+    -------------------------------------------------------------------
+    외래키 컬럼명     부모테이블명      참조를 당하는 컬럼명     CASCADE 옵션
+    -------------------------------------------------------------------
+    FK_BOARDNO	TBL_ORIGINAL_BOARD_2	BOARDNO	           SET NULL
+    */
     
     
     
@@ -9213,6 +9255,8 @@ group by department_id;
     where A.table_name = 'TBL_EMPLOYEES_BACKUP_20240229';
     
     
+    
+    
     -- 1. primary key 추가하기 EMP_EMP_ID_PK
     alter table TBL_EMPLOYEES_BACKUP_20240229 add constraint EMP_EMP_ID_PK primary key(employee_id);
     -- 오류 보고 -
@@ -9225,7 +9269,229 @@ group by department_id;
         !!! 주의사항 !!!
         만약에 사용하고자 하는 오라클 DB 서버의 버전이 11g 이라면 (현재는 18g 사용중)
         테이블명 또는 컬럼명 또는 제약조건명 등등 최대길이가 30글자 이므로 30글자가 넘으면 오류이다.!!!
+    */  
+    
+    
+    -- 2. unique 제약 추가하기 EMP_EMAIL_UK
+    alter table TBL_EMPLOYEES_BACKUP_20240229 add constraint TBL_EMPLYEES_BACKUP_20240229_EMP_EMAIL_UK unique(email);
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    -- 3. check 제약 추가하기 EMP_SALARY_MIN
+    alter table TBL_EMPLOYEES_BACKUP_20240229 add constraint TBL_EMPLYEES_BACKUP_20240229_EMP_SALARY_MIN check(salary > 0);
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    -- 4. foreign key 제약 추가하기 EMP_DEPT_FK, EMP_JOB_FK, EMP_MANAGER_FK
+    /*
+    [참조]
+    SELECT C.column_name as "외래키 컬럼명"
+        , D.table_name as "부모테이블명"
+        , D.column_name as "참조를 당하는 컬럼명"
+        , C.delete_rule as "CASCADE 옵션"
+    FROM
+    (
+        select B.column_name, A.r_constraint_name, A.delete_rule
+        from user_constraints A JOIN user_cons_columns B
+        ON A.constraint_name = B.constraint_name
+        where A.table_name = 'EMPLOYEES' and A.constraint_type = 'R'    -- 제약조건 이름 R => FK
+    ) C JOIN user_cons_columns D
+    ON C.r_constraint_name = D.constraint_name;
+    
+    -- delete_rule => no action => 없다 / set null / cascade
     */
     
+    -- alter table 테이블명 add constraint 제약조건명 foreign key(컬럼명) references 부모테이블명(식별자컬럼명);
     
-   
+    alter table TBL_EMPLOYEES_BACKUP_20240229 
+    add constraint TBL_EMPLYEES_BACKUP_20240229_EMP_DEPT_FK foreign key(DEPARTMENT_ID) references DEPARTMENTS(DEPARTMENT_ID);
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    alter table TBL_EMPLOYEES_BACKUP_20240229 
+    add constraint TBL_EMPLYEES_BACKUP_20240229_EMP_JOB_FK foreign key(JOB_ID) references JOBS(JOB_ID);
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    alter table TBL_EMPLOYEES_BACKUP_20240229 
+    add constraint TBL_EMPLYEES_BACKUP_20240229_EMP_MANAGER_FK foreign key(MANAGER_ID) references EMPLOYEES(EMPLOYEE_ID);
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    
+    -- >> NOT NULL 제약 이름 변경
+    ---- **** >>>> SYS ~~ 제약조건명 이름변경하기 <<<< **** -----
+     /*
+       alter table 테이블명
+       rename constraint 현재제약조건이름 to 새로운제약조건이름;
+     */
+     
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    rename constraint SYS_C007400 to TBL_EMPLOYEES_BACKUP_20240229_EMP_EMAIL_NN;
+    
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    rename constraint SYS_C007401 to TBL_EMPLOYEES_BACKUP_20240229_EMP_HIRE_DATE_NN;
+    
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    rename constraint SYS_C007402 to TBL_EMPLOYEES_BACKUP_20240229_EMP_JOB_NN;
+    
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    rename constraint SYS_C007399 to TBL_EMPLOYEES_BACKUP_20240229_EMP_LAST_NAME_NN;
+    
+    
+    -- 만든 후 확인하기
+    select B.column_name, B.position,
+         A.constraint_name, A.constraint_type, A.search_condition, A.r_constraint_name 
+    from user_constraints A JOIN user_cons_columns B
+    ON A.constraint_name = B.constraint_name
+    where A.table_name = 'TBL_EMPLOYEES_BACKUP_20240229';
+    
+    
+    -- 5. not null 제약 추가하기
+    --- **** >>> salary 컬럼에 NOT NULL 제약을 추가하겠다. <<< **** ---
+    desc TBL_EMPLOYEES_BACKUP_20240229;
+    -- alter table 테이블명 modify 컬럼명 [constraint 제약조건명] not null;
+
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    add constraint TBL_EMPLOYEES_BACKUP_20240229_SALARY_NN salary not null;
+    -- 문법오류!!!
+    
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    modify salary constraint TBL_EMPLOYEES_BACKUP_20240229_SALARY_NN not null;
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    
+    
+    
+    
+    ---- *** >>>> 어떤 테이블에 제약조건을 삭제하기 <<<< *** ----
+  /*
+      alter table 테이블명 drop constraint 제약조건명;
+        
+      그런데 NOT NULL 제약은 위의 것처럼 해도 되고, 또는 아래처럼 해도 된다.
+      alter table 테이블명 modify 컬럼명 null;
+        
+      어떤 테이블에 primary key 제약조건을 삭제할 경우에는 위의 것처럼 해도 되고, 또는 아래처럼 해도 된다.
+      alter table 테이블명 drop primary key;    -- primary key 는 하나밖에 없으므로!!
+  */  
+  
+    -- TBL_EMPLOYEES_BACKUP_20240229 테이블 check
+    select B.column_name, B.position,
+         A.constraint_name, A.constraint_type, A.search_condition, A.r_constraint_name 
+    from user_constraints A JOIN user_cons_columns B
+    ON A.constraint_name = B.constraint_name
+    where A.table_name = 'TBL_EMPLOYEES_BACKUP_20240229';
+    
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    drop constraint TBL_EMPLYEES_BACKUP_20240229_EMP_SALARY_MIN;
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    drop constraint TBL_EMPLYEES_BACKUP_20240229_EMP_JOB_FK;    -- , 으로 한번에 불가!
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    drop constraint TBL_EMPLYEES_BACKUP_20240229_EMP_MANAGER_FK;
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    drop constraint TBL_EMPLYEES_BACKUP_20240229_EMP_DEPT_FK;
+    
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    drop primary key;   -- primary key
+    
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    drop constraint TBL_EMPLYEES_BACKUP_20240229_EMP_EMAIL_UK;
+    
+    -- null 제약
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    modify HIRE_DATE null;
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    modify JOB_ID null;
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    modify LAST_NAME null;
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    modify EMAIL null;
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    modify SALARY null;
+    
+    desc TBL_EMPLOYEES_BACKUP_20240229;
+    -- NOT NULL 이 없고 모두 NULL 이다!
+    
+    
+    ---- *** 어떤 테이블에 생성되어진 제약조건의 내용을 변경하기 *** ----
+    --->     기존 제약조건을 삭제하고서 내용이 변경되어진 제약조건을 추가하는 것이다. 
+    
+    -- 잘못 주는 경우 => salary 를 0원가능하게 해버렸다.
+    alter table TBL_EMPLOYEES_BACKUP_20240229 add constraint TBL_EMPLYEES_BACKUP_20240229_EMP_SALARY_MIN check(salary >= 0);
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    -- 기존 제약조건 삭제
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    drop constraint TBL_EMPLYEES_BACKUP_20240229_EMP_SALARY_MIN;
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    -- 제약조건 추가
+    alter table TBL_EMPLOYEES_BACKUP_20240229 add constraint TBL_EMPLYEES_BACKUP_20240229_EMP_SALARY_MIN check(salary > 0);
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    
+    
+    
+    -- << 확인 >> --
+    select B.column_name, B.position,
+         A.constraint_name, A.constraint_type, A.search_condition, A.r_constraint_name 
+         , A.status
+    from user_constraints A JOIN user_cons_columns B
+    ON A.constraint_name = B.constraint_name
+    where A.table_name = 'TBL_EMPLOYEES_BACKUP_20240229';
+    
+    ---- *** >>> 어떤 테이블에 존재하는 제약조건을 비활성화 시키기 <<< *** ----
+    -- alter table 테이블명 disable constraint 제약조건명;
+    
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    disable constraint TBL_EMPLYEES_BACKUP_20240229_EMP_SALARY_MIN;
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+   ---- *** >>> 어떤 테이블에 존재하는 제약조건을 활성화 시키기 <<< *** ----
+    -- alter table 테이블명 enable constraint 제약조건명;
+
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    enable constraint TBL_EMPLYEES_BACKUP_20240229_EMP_SALARY_MIN;
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    
+    
+    
+    
+    -- << 확인 >> --
+    desc TBL_EMPLOYEES_BACKUP_20240229;
+    select *
+    from TBL_EMPLOYEES_BACKUP_20240229;
+    
+    ---- *** 어떤 테이블에 새로운 컬럼 추가하기 *** ----
+    -- alter table 테이블명 add 추가할컬럼명 데이터타입;
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    add school Nvarchar2(10);
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    ---- *** 어떤 테이블에 존재하는 컬럼을 삭제하기 *** ----
+    -- alter table 테이블명 drop column 삭제할컬럼명;
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    drop column school;
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    ---- *** 어떤 테이블에 새로운 컬럼 추가하는데 NOT NULL 이어야 한다. *** ----
+    -- alter table 테이블명 add 추가할컬럼명 데이터타입 not null;      <-- 테이블명에 insert 되어진 행이 없을 경우에만 가능함.!!
+    -- => 테이블에 데이터가 없으면 가능 // 테이블에 이미 데이터가 존재하면 오류!!
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    add school Nvarchar2(10) not null;
+    -- 오류 보고 -
+    -- ORA-01758: 테이블은 필수 열을 추가하기 위해 (NOT NULL) 비어 있어야 합니다.
+    
+    -- 테이블에 데이터가 존재할 경우 => default 를 넣어준다.
+    alter table TBL_EMPLOYEES_BACKUP_20240229
+    add school Nvarchar2(10) default ' ' not null;
+    -- Table TBL_EMPLOYEES_BACKUP_20240229이(가) 변경되었습니다.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
