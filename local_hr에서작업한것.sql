@@ -10514,7 +10514,7 @@ group by department_id;
       , func_gender(jubun) AS 성별
       , func_age(jubun) AS 나이1 
       , func_age_2(jubun) AS 나이2 
-      -- , func_age_3(jubun) AS 나이3 
+      , func_age_3(jubun) AS 나이3 
  from employees;
     
     
@@ -10718,6 +10718,198 @@ group by department_id;
     rollback;
     -- 롤백 완료.
   
+  
+  
+  
+  
+  
+    -- 주민번호가 올바르지 못해도 나이가 나온다.
     select func_age_3('900101123456a'), func_age_3('90102012345b7')
         , func_age_3('0001014234c67'), func_age_3('001020423d567')
     from dual;
+    -- 34	33	24	23
+    
+    ----- [LOOP] 주민번호를 입력받아서 만나이를 알려주는 함수 func_age_3(주민번호)을 생성하세요. ----
+    create or replace function func_age_3
+    (p_jubun IN varchar2)
+    return number
+    IS
+        error_jubun  exception; -- error_jubun은 개발자가 정의하는 exception(예외절)임을 선언한다는 뜻이다.
+        v_gender_num varchar2(1) := substr(p_jubun,7,1); -- := 초기값을 넣어주는 것
+                                                         -- v_gender_num 에는 입력받은 p_jubun 에서 7번째 부터 1개 글자만 넣어준다.
+                                                         -- 즉, v_gender_num 에는 '1' 또는 '2' 또는 '3' 또는 '4' 가 들어올 것이다.
+        v_year      number(4);
+        v_age       number(3);
+        i           number(2) := 0;
+    BEGIN
+        if length(p_jubun) != 13 then raise error_jubun;
+        end if;
+        
+        LOOP
+            i := i+1;
+            EXIT WHEN i > 13;
+            if not(substr(p_jubun,i,1) between '0' and '9') then raise error_jubun; -- jubun 이 문자열 타입이므로 '' 타입!
+            end if; -- end if 꼭 쓰기!!
+        END LOOP;
+        
+        if    v_gender_num in ('1','2') then v_year := 1900;
+        elsif v_gender_num in ('3','4') then v_year := 2000;
+        else raise error_jubun;
+        end if;
+        
+        if to_date(to_char(sysdate,'yyyy')||substr(p_jubun,3,4),'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') > 0 
+             then v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2))) - 1;
+        else v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2)));
+        end if;
+        
+        return v_age;
+        
+        EXCEPTION 
+        WHEN error_jubun 
+        then raise_application_error(-20001, '잘못된 주민등록번호입니다.'); -- raise_application_error() 는 dbms가 아닌 스크립트 출력창에 오류를 띄워준다.
+                              --     -20001 은 오류번호로써, 사용자가 정의해주는 EXCEPTION 에 대해서는 오류번호를 -20001 부터 -20999 까지만 가능하다. 그 이외의 오류번호는 사용할 수 없다.
+    END func_age_3;
+    -- Function FUNC_AGE_3이(가) 컴파일되었습니다.
+    
+    
+    
+     ----- [FOR LOOP] 주민번호를 입력받아서 만나이를 알려주는 함수 func_age_4(주민번호)을 생성하세요. ----
+     create or replace function func_age_4
+    (p_jubun IN varchar2)
+    return number
+    IS
+        error_jubun  exception; -- error_jubun은 개발자가 정의하는 exception(예외절)임을 선언한다는 뜻이다.
+        v_gender_num varchar2(1) := substr(p_jubun,7,1); -- := 초기값을 넣어주는 것
+                                                         -- v_gender_num 에는 입력받은 p_jubun 에서 7번째 부터 1개 글자만 넣어준다.
+                                                         -- 즉, v_gender_num 에는 '1' 또는 '2' 또는 '3' 또는 '4' 가 들어올 것이다.
+        v_year      number(4);
+        v_age       number(3);
+    BEGIN
+        if length(p_jubun) != 13 then raise error_jubun;
+        end if;
+        
+        for i  in  1..13  loop
+            if not(substr(p_jubun,i,1) between '0' and '9') then raise error_jubun; 
+            end if; 
+        end loop;
+        
+        if    v_gender_num in ('1','2') then v_year := 1900;
+        elsif v_gender_num in ('3','4') then v_year := 2000;
+        else raise error_jubun;
+        end if;
+        
+        if to_date(to_char(sysdate,'yyyy')||substr(p_jubun,3,4),'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') > 0 
+             then v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2))) - 1;
+        else v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2)));
+        end if;
+        
+        return v_age;
+        
+        EXCEPTION 
+        WHEN error_jubun 
+        then raise_application_error(-20001, '잘못된 주민등록번호입니다.'); -- raise_application_error() 는 dbms가 아닌 스크립트 출력창에 오류를 띄워준다.
+                              --     -20001 은 오류번호로써, 사용자가 정의해주는 EXCEPTION 에 대해서는 오류번호를 -20001 부터 -20999 까지만 가능하다. 그 이외의 오류번호는 사용할 수 없다.
+    END func_age_4;
+    -- Function FUNC_AGE_4이(가) 컴파일되었습니다.
+    
+    
+    
+    ----- [WHILE LOOP] 주민번호를 입력받아서 만나이를 알려주는 함수 func_age_5(주민번호)을 생성하세요. ----
+    create or replace function func_age_5
+    (p_jubun IN varchar2)
+    return number
+    IS
+        error_jubun  exception; -- error_jubun은 개발자가 정의하는 exception(예외절)임을 선언한다는 뜻이다.
+        v_gender_num varchar2(1) := substr(p_jubun,7,1); -- := 초기값을 넣어주는 것
+                                                         -- v_gender_num 에는 입력받은 p_jubun 에서 7번째 부터 1개 글자만 넣어준다.
+                                                         -- 즉, v_gender_num 에는 '1' 또는 '2' 또는 '3' 또는 '4' 가 들어올 것이다.
+        v_year      number(4);
+        v_age       number(3);
+        i           number(2) := 0;
+    BEGIN
+        if length(p_jubun) != 13 then raise error_jubun;
+        end if;
+        
+        WHILE NOT( i > 13 ) LOOP
+            i := i+1;
+            if not(substr(p_jubun,i,1) between '0' and '9') then raise error_jubun; -- jubun 이 문자열 타입이므로 '' 타입!
+            end if;
+        END LOOP;
+        
+        if    v_gender_num in ('1','2') then v_year := 1900;
+        elsif v_gender_num in ('3','4') then v_year := 2000;
+        else raise error_jubun;
+        end if;
+        
+        if to_date(to_char(sysdate,'yyyy')||substr(p_jubun,3,4),'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') > 0 
+             then v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2))) - 1;
+        else v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2)));
+        end if;
+        
+        return v_age;
+        
+        EXCEPTION 
+        WHEN error_jubun 
+        then raise_application_error(-20001, '잘못된 주민등록번호입니다.'); -- raise_application_error() 는 dbms가 아닌 스크립트 출력창에 오류를 띄워준다.
+                              --     -20001 은 오류번호로써, 사용자가 정의해주는 EXCEPTION 에 대해서는 오류번호를 -20001 부터 -20999 까지만 가능하다. 그 이외의 오류번호는 사용할 수 없다.
+    END func_age_5;
+    -- Function FUNC_AGE_5이(가) 컴파일되었습니다.
+    
+    -- 강사님
+    create or replace function func_age_5
+    (p_jubun IN varchar2)
+    return number
+    IS
+        error_jubun  exception; -- error_jubun은 개발자가 정의하는 exception(예외절)임을 선언한다는 뜻이다.
+        v_gender_num varchar2(1) := substr(p_jubun,7,1); -- := 초기값을 넣어주는 것
+                                                         -- v_gender_num 에는 입력받은 p_jubun 에서 7번째 부터 1개 글자만 넣어준다.
+                                                         -- 즉, v_gender_num 에는 '1' 또는 '2' 또는 '3' 또는 '4' 가 들어올 것이다.
+        v_year      number(4);
+        v_age       number(3);
+        i           number(2) := 1;
+    BEGIN
+        if length(p_jubun) != 13 then raise error_jubun;
+        end if;
+        
+        WHILE NOT(not(substr(p_jubun,i,1) between '0' and '9') or i = 14) LOOP  -- 13까지 검사해야되니까 14이면 빠져나와야한다.
+            i := i+1;
+        END LOOP;
+        
+        IF i != 14 THEN raise error_jubun;
+        END IF;
+        
+        if    v_gender_num in ('1','2') then v_year := 1900;
+        elsif v_gender_num in ('3','4') then v_year := 2000;
+        else raise error_jubun;
+        end if;
+        
+        if to_date(to_char(sysdate,'yyyy')||substr(p_jubun,3,4),'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') > 0 
+             then v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2))) - 1;
+        else v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2)));
+        end if;
+        
+        return v_age;
+        
+        EXCEPTION 
+        WHEN error_jubun 
+        then raise_application_error(-20001, '잘못된 주민등록번호입니다.'); -- raise_application_error() 는 dbms가 아닌 스크립트 출력창에 오류를 띄워준다.
+                              --     -20001 은 오류번호로써, 사용자가 정의해주는 EXCEPTION 에 대해서는 오류번호를 -20001 부터 -20999 까지만 가능하다. 그 이외의 오류번호는 사용할 수 없다.
+    END func_age_5;
+    -- Function FUNC_AGE_5이(가) 컴파일되었습니다.
+    
+    -- 결과확인
+    select func_age_3('9001011234567'), func_age_4('9001011234567'), func_age_5('9001011234567')
+    from dual;
+    -- 34	34	34
+    select func_age_3('900101123456a')
+    from dual;
+    -- ORA-20001: 잘못된 주민등록 번호입니다.
+    -- ORA-06512: "HR.FUNC_AGE_3",  38행
+    select func_age_4('90102012345b7')
+    from dual;
+    -- ORA-20001: 잘못된 주민등록번호입니다.
+    -- ORA-06512: "HR.FUNC_AGE_4",  34행
+    select func_age_5('000101423467C')
+    from dual;
+    -- ORA-20001: 잘못된 주민등록번호입니다.
+    -- ORA-06512: "HR.FUNC_AGE_5",  36행
