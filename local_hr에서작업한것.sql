@@ -10198,13 +10198,18 @@ group by department_id;
         101       .....    ......   .......   ....     ...   ...
    */
     
-    -- 수정중 --
+    -- 내방법 --
     create or replace procedure pcd_employees_info 
-    
       (p_employee_id  IN  number)
-      return varchar2
       is
-        v_result varchar2(1000);
+        -- v_result varchar2(1000);
+        v_employee_id   employees.employee_id%type;
+        v_deptname      departments.department_name%type;
+        v_mgrname       varchar2(30);
+        v_empname       varchar2(30);
+        v_hire_date     varchar2(10);
+        v_gender        varchar2(6);
+        v_age           number(3);
       begin
         WITH
         M AS
@@ -10231,18 +10236,27 @@ group by department_id;
             , hire_date
             , gender
             , age
-            into v_result
+            INTO
+            v_employee_id, v_deptname, v_mgrname, v_empname, v_hire_date, v_gender, v_age
         FROM E LEFT JOIN M
-        ON E.manager_id = M.employee_id;
-         return v_result;
+        ON E.manager_id = M.employee_id
+        WHERE E.employee_id = p_employee_id;
+
+        dbms_output.put_line( lpad('-',60,'-') );
+        dbms_output.put_line( '사원번호    부서명    부서장명   사원명    입사일자   성별   나이' );
+        dbms_output.put_line( lpad('-',60,'-') );
+        
+        dbms_output.put_line( v_employee_id || ' ' || 
+                            v_deptname || ' ' ||
+                            v_mgrname || ' ' ||
+                            v_empname || ' ' ||
+                            v_hire_date || ' ' || 
+                            v_gender || ' ' ||
+                            v_age );
       end pcd_employees_info;
+    -- Procedure PCD_EMPLOYEES_INFO이(가) 컴파일되었습니다.   
     
-    
-    
-    
-    
-    
-    
+    exec pcd_employees_info(101);
     
     
     -- 강사님
@@ -10341,16 +10355,13 @@ group by department_id;
     178                          Kimberely Grant 2007-05-24 여 24
 */
     
-    
-    
-    
-    
-    
     exec pcd_employees_info(337);
     /*
-    오류~~
-    ===> 프로시저에서 데이터(행)가 없으면 no data found 라는 오류가 발생한다.!!!!!!
+    오류 보고 -
+    ORA-01403: 데이터를 찾을 수 없습니다.  ===> 프로시저에서 데이터(행)가 없으면 no data found 라는 오류가 발생한다.!!!!!!
     */
+    
+    
     
     
     ---- *** [데이터(행)가 없을 경우 해결책] *** ----
@@ -11492,7 +11503,6 @@ group by department_id;
     exec pcd_employees_deptid_cursor(8888);
     -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
     -- >> 부서번호 8888은 존재하지 않습니다. <<
-    
     
     -------------- *****  FOR LOOP CURSOR 만들기 ***** -----------------
     /*
