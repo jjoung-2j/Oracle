@@ -10913,3 +10913,174 @@ group by department_id;
     from dual;
     -- ORA-20001: 잘못된 주민등록번호입니다.
     -- ORA-06512: "HR.FUNC_AGE_5",  36행
+    
+    
+    
+    
+    
+    
+    
+    create table tbl_member_test1
+    (userid      varchar2(20)
+    ,passwd      varchar2(20) not null
+    ,name        varchar2(30) not null
+    ,constraint  PK_tbl_member_test1_userid primary key(userid)
+    );
+    -- Table TBL_MEMBER_TEST1이(가) 생성되었습니다.
+ 
+
+    -- [퀴즈] tbl_member_test1 테이블에 insert 해주는 pcd_tbl_member_test1_insert 라는 프로시저를 작성하세요.  
+    exec pcd_tbl_member_test1_insert('hongkd','qwer1234$','홍길동'); --> 정상적으로 insert 되어진다.
+    
+    exec pcd_tbl_member_test1_insert('eomjh','a3$','유관순');       --> 오류메시지 -20002  '암호는 최소 5글자 이상이면서 영문자 및 숫자 및 특수기호가 혼합되어져야 합니다.' 이 뜬다. 그러므로 insert 가 안되어진다. 
+    exec pcd_tbl_member_test1_insert('eomjh','abc1234','유관순');   --> 오류메시지 -20002  '암호는 최소 5글자 이상이면서 영문자 및 숫자 및 특수기호가 혼합되어져야 합니다.' 이 뜬다. 그러므로 insert 가 안되어진다.  
+    
+    
+    create or replace procedure pcd_tbl_member_test1_insert
+    (p_userid IN tbl_member_test1.userid%type
+    ,p_passwd IN tbl_member_test1.passwd%type
+    ,p_name IN tbl_member_test1.name%type
+    )
+    is
+        v_passwd_length number(2);
+        error_insert    exception;      -- error 변수 선언
+        v_ch            varchar2(1);    -- passwd 글자 한개
+        v_flag_alphabet number(1) := 0; -- 영문자 확인 용도
+        v_flag_number   number(1) := 0; -- 숫자 확인 용도
+        v_flag_special  number(1) := 0; -- 특수문자 확인 용도
+    begin
+        v_passwd_length := length(p_passwd);
+        if(v_passwd_length < 5 or v_passwd_length > 20) then raise error_insert;    -- 사용자가 정의하는 예외절(Exception)을 구동시켜라.
+        else
+            For i in 1..v_passwd_length LOOP
+                v_ch := substr(p_passwd,i,1);
+                
+                if(v_ch between 'A' and 'Z') or (v_ch between 'a' and 'z') then     -- 영문자 이라면
+                    v_flag_alphabet := 1;
+                elsif(v_ch between '0' and '9') then    -- 숫자 이라면
+                    v_flag_number := 1;
+                else    -- 특수문자 이라면
+                    v_flag_special := 1;
+                end if;
+            END LOOP;   -- end of for loop-------------------------------------------------------------
+            
+            if(v_flag_alphabet * v_flag_number * v_flag_special = 1) then
+                insert into tbl_member_test1(userid,passwd,name) values(p_userid,p_passwd,p_name);
+            else raise error_insert;     -- 사용자가 정의하는 예외절(Exception)을 구동시켜라.
+            end if;
+        end if;
+        
+        Exception   -- 정의내리기
+            WHEN error_insert THEN raise_application_error(-20002,'>> 암호는 최소 5글자 이상이면서 영문자 및 숫자 및 특수기호가 혼합되어져야 합니다. <<');
+    end pcd_tbl_member_test1_insert;
+    -- Procedure PCD_TBL_MEMBER_TEST1_INSERT이(가) 컴파일되었습니다.
+    
+    exec pcd_tbl_member_test1_insert('hongkd','qwer1234$','홍길동');
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    
+    select *
+    from tbl_member_test1;
+    -- hongkd	qwer1234$	홍길동
+    
+    commit;
+    -- 커밋 완료.
+    
+    exec pcd_tbl_member_test1_insert('eomjh','a3$','유관순');
+    /*
+    오류 보고 -
+    ORA-20002: >> 암호는 최소 5글자 이상이면서 영문자 및 숫자 및 특수기호가 혼합되어져야 합니다. <<
+    ORA-06512: "HR.PCD_TBL_MEMBER_TEST1_INSERT",  36행
+    */
+    exec pcd_tbl_member_test1_insert('eomjh','abc1234','유관순');
+    /*
+    오류 보고 -
+    ORA-20002: >> 암호는 최소 5글자 이상이면서 영문자 및 숫자 및 특수기호가 혼합되어져야 합니다. <<
+    ORA-06512: "HR.PCD_TBL_MEMBER_TEST1_INSERT",  36행
+    */
+    
+    
+    
+    
+    ------------ ***** 사용자 정의 예외절(EXCEPTION) ***** ----------------
+     예외절 = 오류절
+     
+     ※ 형식
+     
+     exception
+          when  익셉션이름1  [or 익셉션이름2]  then
+                실행문장1;
+                실행문장2;
+                실행문장3;
+                
+          when  익셉션이름3  [or 익셉션이름4]  then
+                실행문장4;
+                실행문장5;
+                실행문장6; 
+                
+          when  others  then  
+                실행문장7;
+                실행문장8;
+                실행문장9; 
+   ------------------------------------------------------------------    
+   
+   
+   /*
+      === tbl_member_test1 테이블에 insert 할 수 있는 요일명과 시간을 제한해 두겠습니다. ===
+        
+          tbl_member_test1 테이블에 insert 할 수 있는 요일명은 월,화,수,목,금 만 가능하며
+          또한 월,화,수,목,금 중에 오후 2시 부터 오후 5시 이전까지만(오후 5시 정각은 안돼요) insert 가 가능하도록 하고자 한다.
+          만약에 insert 가 불가한 요일명(토,일)이거나 불가한 시간대에 insert 를 시도하면 
+          '영업시간(월~금 14:00 ~ 16:59:59 까지) 아니므로 입력불가함!!' 이라는 오류메시지가 뜨도록 한다. 
+   */ 
+   
+    select to_char(sysdate,'d') -- sysdate의 주의 일요일 부터(지금은 2024년 3월 4일) sysdate(지금은 2024년 3월 4일) 까지 며칠째 인지를 알려주는 것이다.
+                                -- '1'(일요일) '2'(월요일) '3'(화요일) '4'(수요일) '5'(목요일) '6'(금요일) '7'(토요일)
+    from dual;
+   
+   
+   
+   create or replace procedure pcd_tbl_member_test1_insert
+    (p_userid IN tbl_member_test1.userid%type
+    ,p_passwd IN tbl_member_test1.passwd%type
+    ,p_name IN tbl_member_test1.name%type
+    )
+    is
+        error_dayTime   exception;      -- error 변수 선언
+        v_passwd_length number(2);
+        error_insert    exception;      -- error 변수 선언
+        v_ch            varchar2(1);    -- passwd 글자 한개
+        v_flag_alphabet number(1) := 0; -- 영문자 확인 용도
+        v_flag_number   number(1) := 0; -- 숫자 확인 용도
+        v_flag_special  number(1) := 0; -- 특수문자 확인 용도
+    begin
+        -- 입력(insert)이 불가한 요일명과 시간대를 알아봅니다. --
+        if(to_char(sysdate,'d') in ('1','7') or to_number(to_char(sysdate,'hh24')) < 14 or to_number(to_char(sysdate,'hh24')) > 16) 
+            then raise error_dayTime;
+        else    -- 입력(insert)이 가능한 요일명과 시간대 이라면 암호를 검사하겠다.
+    
+            v_passwd_length := length(p_passwd);
+            if(v_passwd_length < 5 or v_passwd_length > 20) then raise error_insert;    -- 사용자가 정의하는 예외절(Exception)을 구동시켜라.
+            else
+                For i in 1..v_passwd_length LOOP
+                    v_ch := substr(p_passwd,i,1);
+                    
+                    if(v_ch between 'A' and 'Z') or (v_ch between 'a' and 'z') then     -- 영문자 이라면
+                        v_flag_alphabet := 1;
+                    elsif(v_ch between '0' and '9') then    -- 숫자 이라면
+                        v_flag_number := 1;
+                    else    -- 특수문자 이라면
+                        v_flag_special := 1;
+                    end if;
+                END LOOP;   -- end of for loop-------------------------------------------------------------
+                
+                if(v_flag_alphabet * v_flag_number * v_flag_special = 1) then
+                    insert into tbl_member_test1(userid,passwd,name) values(p_userid,p_passwd,p_name);
+                else raise error_insert;     -- 사용자가 정의하는 예외절(Exception)을 구동시켜라.
+                end if;
+            end if;
+        end if;
+        Exception   -- 정의내리기
+            WHEN error_dayTime THEN raise_application_error(-20003,'>> 영업시간(월~금 14:00 ~ 16:59:59 까지)이 아니므로 입력불가함 <<');
+            WHEN error_insert THEN raise_application_error(-20002,'>> 암호는 최소 5글자 이상이면서 영문자 및 숫자 및 특수기호가 혼합되어져야 합니다. <<');
+    end pcd_tbl_member_test1_insert;
+    -- Procedure PCD_TBL_MEMBER_TEST1_INSERT이(가) 컴파일되었습니다.
