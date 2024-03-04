@@ -10106,6 +10106,136 @@ group by department_id;
     
     
     
+    ----- *** 정년퇴직일을 구해주는 함수 만들기 *** -----
+    /*
+    여기서 정년퇴직일이라 함은 
+        해당 사원의 생월이 3월에서 8월에 태어난 사람은 
+        해당사원의 나이가 63세가 되는 년도의 8월말일(8월 31일)로 하고,
+        해당사원의 생월이 9월에서 2월에 태어난 사람은 
+        해당사원의 나이가 63세가 되는 년도의 2월말일(2월 28일 또는 2월 29일)로 한다.
+    */
+    
+    create or replace function func_retirement_day
+    (p_jubun  IN  varchar2)
+    return date
+      is
+         v_retirement_day date; -- 변수명
+      begin
+        select last_day(to_date(to_char(add_months(sysdate,(63-func_age(p_jubun))*12),'yyyy')    
+            -- 만 63세가 되어지는 오늘날 : add_months(sysdate,(63-현재나이)*12)
+            || case when substr(p_jubun,3,2) between '03' and '08' then '0801' else '0201' end,'yyyy-mm-dd'))
+            into v_retirement_day
+        from dual;
+         return v_retirement_day;
+      end func_retirement_day;
+    -- Function FUNC_RETIREMENT_DAY이(가) 컴파일되었습니다.
+    
+    SELECT employee_id as 사원번호
+        , first_name || '' || last_name as 사원명
+        , jubun as 주민번호
+        , func_gender(jubun) as 성별
+        , func_age(jubun) as 만나이
+        ,  to_char(nvl(salary + (salary*commission_pct),salary), '99,999') AS 월급
+        , to_char(hire_date,'yyyy-mm-dd') as 입사일자
+        , to_char(func_retirement_day(jubun),'yyyy-mm-dd') as 정년퇴직일
+        , trunc(months_between(func_retirement_day(jubun), hire_date),0) || '개월' as 정년까지근무개월수  -- 정년까지근무개월수
+        , to_char(trunc(nvl(salary + (salary*commission_pct),salary)
+                    * months_between(func_retirement_day(jubun), hire_date)/ 12, 0),'9,999,999')  as 퇴직금           -- 퇴직금
+    FROM employees;
+    
+    
+    
+    ---- *** 생성되어진 함수의 소스를 조회해봅니다. *** ----
+    select *
+    from user_source
+    where type = 'FUNCTION' and name = 'FUNC_AGE';
+    /*
+    "function func_age
+"
+"    (p_jubun in varchar2)   -- varchar2(13) 와 같이 자리수를 쓰면 오류이다.!!!
+"
+"    return number         -- 타입이 달라도 가능하다. number(6) 와 같이 자리수를 쓰면 오류이다.!!!
+"
+"    is
+"
+"        v_age    varchar2(6);
+"
+"    begin
+"
+"        select case when to_date(to_char(sysdate, 'yyyy') || substr(p_jubun, 3, 4), 'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'), 'yyyymmdd') > 0 
+"
+"                        then extract(year from sysdate) - ( to_number(substr(p_jubun,1,2)) + case when substr(p_jubun,7,1) in('1','2') then 1900 else 2000 end ) - 1 
+"
+"                        else extract(year from sysdate) - ( to_number(substr(p_jubun,1,2)) + case when substr(p_jubun,7,1) in('1','2') then 1900 else 2000 end ) 
+"
+"                        end
+"
+"        INTO
+"
+"            v_age
+"
+"        from dual;
+"
+    */
+    
+    
+    
+    
+    
+    
+    ---- [퀴즈] 아래와 같은 결과물이 나오도록 프로시저( pcd_employees_info )를 생성하세요...
+    ----       성별과 나이는 위에서 만든 함수를 사용하세요..
+   
+    execute pcd_employees_info(101);  -- 여기서 숫자 101은 사원번호이다. 
+    exec    pcd_employees_info(101);  -- 여기서 숫자 101은 사원번호이다.
+    /*
+      ------------------------------------------------------------
+       사원번호    부서명    부서장명   사원명    입사일자   성별   나이
+      ------------------------------------------------------------
+        101       .....    ......   .......   ....     ...   ...
+   */
+    
+    
+    create or replace function pcd_employees_info 
+    
+      (p_employee_id  IN  number)
+      return varchar2
+      is
+        v_result varchar2(1000)
+      begin
+        WITH
+        M AS
+        (
+            select employee_id 
+                , first_name || ' ' || last_name as manager_name
+            from employees 
+        )
+        ,
+        E AS
+        (
+             select employee_id, department_id
+            , first_name || '' || last_name as fullname
+            , hire_date
+            , func_gender(jubun) as gender
+            , func_age(jubun) as age
+            , manager_id
+            from employees
+        )
+        SELECT E.employee_id
+            , department_id
+            , M.manager_name
+            , fullname
+            , hire_date
+            , gender
+            , age
+            into v_result
+        FROM E LEFT JOIN M
+        ON E.manager_id = M.employee_id;
+         return v_result;
+      end pcd_employees_info;
+    
+    select *
+    from employees
     
     
     
@@ -10113,4 +10243,202 @@ group by department_id;
     
     
     
+    -- 강사님
+    /*
+       사원번호       부서명                         부서장명                     사원명    입사일자   성별   나이       부서번호
+      --------     -------                      ---------                -----------------------------  ------- 
+       employees   departments                  employees                          employees            employees   
+                   department_id(P.K)           employee_id(사원번호 P.K)                                  department_id(F.K)  
+                   manager_id(부서장사원번호 F.K)  
+   */    
+   
+   WITH V as
+   (
+     select D.department_name
+          , E.first_name || ' ' || E.last_name AS MGR_NAME
+          , D.department_id
+     from departments D JOIN employees E
+     ON D.manager_id = E.employee_id
+   )
+   select EMP.employee_id AS 사원번호
+        , nvl(V.department_name, ' ') AS 부서명
+        , nvl(V.mgr_name, ' ') AS 부서장명
+        , EMP.first_name || ' ' || EMP.last_name AS 사원명
+        , EMP.hire_date AS 입사일자
+        , func_gender(EMP.jubun) AS 성별
+        , func_age(EMP.jubun) AS 나이
+   from V RIGHT JOIN employees EMP
+   ON V.department_id = EMP.department_id
+   WHERE EMP.employee_id = 178;
+   
+   
+   create or replace procedure pcd_employees_info
+   (p_employee_id  in  employees.employee_id%type)
+   is
+      v_employee_id   employees.employee_id%type;
+      v_deptname      departments.department_name%type;
+      v_mgrname       varchar2(30);
+      v_empname       varchar2(30);
+      v_hire_date     varchar2(10);
+      v_gender        varchar2(6);
+      v_age           number(3);
+   begin
+       WITH V as
+       (
+         select D.department_name
+            , E.first_name || ' ' || E.last_name AS MGR_NAME
+            , D.department_id
+         from departments D JOIN employees E
+         ON D.manager_id = E.employee_id
+       )
+       select EMP.employee_id 
+            , nvl(V.department_name, ' ') 
+            , nvl(V.mgr_name, ' ') 
+            , EMP.first_name || ' ' || EMP.last_name 
+            , to_char(EMP.hire_date, 'yyyy-mm-dd') 
+            , func_gender(EMP.jubun) 
+            , func_age(EMP.jubun) 
+        INTO
+            v_employee_id, v_deptname, v_mgrname, v_empname, v_hire_date, v_gender, v_age 
+       from V RIGHT JOIN employees EMP
+       ON V.department_id = EMP.department_id
+       WHERE EMP.employee_id = p_employee_id;
+       
+       dbms_output.put_line( lpad('-',60,'-') );
+       dbms_output.put_line( '사원번호    부서명    부서장명   사원명    입사일자   성별   나이' );
+       dbms_output.put_line( lpad('-',60,'-') );
+       
+       dbms_output.put_line( v_employee_id || ' ' || 
+                             v_deptname || ' ' ||
+                             v_mgrname || ' ' ||
+                             v_empname || ' ' ||
+                             v_hire_date || ' ' || 
+                             v_gender || ' ' ||
+                             v_age );
+   end pcd_employees_info;
+ -- Procedure PCD_EMPLOYEES_INFO이(가) 컴파일되었습니다.  
+  
+  
+   exec pcd_employees_info(101);
+   -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+/*
+    ------------------------------------------------------------
+    사원번호    부서명    부서장명   사원명    입사일자   성별   나이
+    ------------------------------------------------------------
+    101 Executive Steven King Neena Kochhar 2005-09-21 남 37
+*/
+ 
+   exec pcd_employees_info(178); 
+   -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+/*
+    ------------------------------------------------------------
+    사원번호    부서명    부서장명   사원명    입사일자   성별   나이
+    ------------------------------------------------------------
+    178                          Kimberely Grant 2007-05-24 여 24
+*/
+    
+    
+    
+    
+    
+    
+    exec pcd_employees_info(337);
+    /*
+    오류~~
+    ===> 프로시저에서 데이터(행)가 없으면 no data found 라는 오류가 발생한다.!!!!!!
+    */
+    
+    
+    ---- *** [데이터(행)가 없을 경우 해결책] *** ----
+    --> 예외절(Exception) 처리
+    create or replace procedure pcd_employees_info
+   (p_employee_id  in  employees.employee_id%type)
+   is
+      v_employee_id   employees.employee_id%type;
+      v_deptname      departments.department_name%type;
+      v_mgrname       varchar2(30);
+      v_empname       varchar2(30);
+      v_hire_date     varchar2(10);
+      v_gender        varchar2(6);
+      v_age           number(3);
+   begin
+       WITH V as
+       (
+         select D.department_name
+            , E.first_name || ' ' || E.last_name AS MGR_NAME
+            , D.department_id
+         from departments D JOIN employees E
+         ON D.manager_id = E.employee_id
+       )
+       select EMP.employee_id 
+            , nvl(V.department_name, ' ') 
+            , nvl(V.mgr_name, ' ') 
+            , EMP.first_name || ' ' || EMP.last_name 
+            , to_char(EMP.hire_date, 'yyyy-mm-dd') 
+            , func_gender(EMP.jubun) 
+            , func_age(EMP.jubun) 
+        INTO
+            v_employee_id, v_deptname, v_mgrname, v_empname, v_hire_date, v_gender, v_age 
+       from V RIGHT JOIN employees EMP
+       ON V.department_id = EMP.department_id
+       WHERE EMP.employee_id = p_employee_id;
+       
+       dbms_output.put_line( lpad('-',60,'-') );
+       dbms_output.put_line( '사원번호    부서명    부서장명   사원명    입사일자   성별   나이' );
+       dbms_output.put_line( lpad('-',60,'-') );
+       
+       dbms_output.put_line( v_employee_id || ' ' || 
+                             v_deptname || ' ' ||
+                             v_mgrname || ' ' ||
+                             v_empname || ' ' ||
+                             v_hire_date || ' ' || 
+                             v_gender || ' ' ||
+                             v_age );
+        Exception 
+            WHEN no_data_found THEN -- no_data_found 은 오라클에서 데이터가 존재하지 않을 경우 발생하는 오류이다.
+                dbms_output.put_line('>>> 사원번호 ' || p_employee_id || '은 존재하지 않습니다. <<<');
+   end pcd_employees_info;
+ -- Procedure PCD_EMPLOYEES_INFO이(가) 컴파일되었습니다.
+    
+    exec pcd_employees_info(101); 
+    --
+    
+    exec pcd_employees_info(337);
+    --
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+       ---------- ====== *** 제어문(IF 문) *** ======= -----------
+/*
+   ※ 형식
+   
+   if     조건1  then  실행문장1;
+   elsif  조건2  then  실행문장2;
+   elsif  조건3  then  실행문장3;
+   else               실행문장4;
+   end if;
+   
+*/
+    
+    ----- 주민번호를 입력받아서 만나이를 알려주는 함수 func_age_3(주민번호)을 생성하세요. ----
+    create or replace function func_age_3
+    (p_jubun in varchar2)
+    return number
+    is
+        error_jubun exception;  -- error_jubun 은 사용자가 정의하는 예외절(Exception)임을 선언한다.
+    begin
+        if length(p_jubun) != 13 then raise error_jubun;
+        
+        end if;
+        
+        exception
+            when error_jubun then
+    end func_age_3;
     
