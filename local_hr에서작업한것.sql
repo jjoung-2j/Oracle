@@ -10106,6 +10106,9 @@ group by department_id;
     
     
     
+    
+    
+    
     ----- *** 정년퇴직일을 구해주는 함수 만들기 *** -----
     /*
     여기서 정년퇴직일이라 함은 
@@ -10195,13 +10198,13 @@ group by department_id;
         101       .....    ......   .......   ....     ...   ...
    */
     
-    
-    create or replace function pcd_employees_info 
+    -- 수정중 --
+    create or replace procedure pcd_employees_info 
     
       (p_employee_id  IN  number)
       return varchar2
       is
-        v_result varchar2(1000)
+        v_result varchar2(1000);
       begin
         WITH
         M AS
@@ -10234,8 +10237,7 @@ group by department_id;
          return v_result;
       end pcd_employees_info;
     
-    select *
-    from employees
+    
     
     
     
@@ -10271,7 +10273,7 @@ group by department_id;
    ON V.department_id = EMP.department_id
    WHERE EMP.employee_id = 178;
    
-   
+      
    create or replace procedure pcd_employees_info
    (p_employee_id  in  employees.employee_id%type)
    is
@@ -10317,6 +10319,8 @@ group by department_id;
                              v_age );
    end pcd_employees_info;
  -- Procedure PCD_EMPLOYEES_INFO이(가) 컴파일되었습니다.  
+  
+  
   
   
    exec pcd_employees_info(101);
@@ -10401,10 +10405,10 @@ group by department_id;
  -- Procedure PCD_EMPLOYEES_INFO이(가) 컴파일되었습니다.
     
     exec pcd_employees_info(101); 
-    --
+    -- 101 Executive Steven King Neena Kochhar 2005-09-21 남 38
     
     exec pcd_employees_info(337);
-    --
+    -- >>> 사원번호 337은 존재하지 않습니다. <<<
     
     
     
@@ -10427,18 +10431,293 @@ group by department_id;
    
 */
     
+    --- 오류를 발생시켜 보겠습니다.
+    delete from departments;
+    /*
+    오류 보고 -
+    ORA-02292: 무결성 제약조건(HR.EMP_DEPT_FK)이 위배되었습니다- 자식 레코드가 발견되었습니다
+    */
+    update employees set employee_id = 101
+    where employee_id = 102;
+    /*
+    오류 보고 -
+    ORA-00001: 무결성 제약 조건(HR.EMP_EMP_ID_PK)에 위배됩니다
+    */
+    
     ----- 주민번호를 입력받아서 만나이를 알려주는 함수 func_age_3(주민번호)을 생성하세요. ----
     create or replace function func_age_3
-    (p_jubun in varchar2)
+    (p_jubun IN varchar2)
     return number
-    is
-        error_jubun exception;  -- error_jubun 은 사용자가 정의하는 예외절(Exception)임을 선언한다.
-    begin
+    IS
+        error_jubun  exception; -- error_jubun은 개발자가 정의하는 exception(예외절)임을 선언한다는 뜻이다.
+        v_gender_num varchar2(1) := substr(p_jubun,7,1); -- := 초기값을 넣어주는 것
+                                                         -- v_gender_num 에는 입력받은 p_jubun 에서 7번째 부터 1개 글자만 넣어준다.
+                                                         -- 즉, v_gender_num 에는 '1' 또는 '2' 또는 '3' 또는 '4' 가 들어올 것이다.
+        v_year       number(4);
+        v_age        number(3);
+    BEGIN
         if length(p_jubun) != 13 then raise error_jubun;
-        
         end if;
         
-        exception
-            when error_jubun then
-    end func_age_3;
+        if    v_gender_num in ('1','2') then v_year := 1900;
+        elsif v_gender_num in ('3','4') then v_year := 2000;
+        else raise error_jubun;
+        end if;
+        
+        if to_date(to_char(sysdate,'yyyy')||substr(p_jubun,3,4),'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') > 0 
+             then v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2))) - 1;
+        else v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2)));
+        end if;
+        
+        return v_age;
+        
+        EXCEPTION 
+        WHEN error_jubun 
+        then raise_application_error(-20001, '잘못된 주민등록 번호입니다.'); -- raise_application_error() 는 dbms가 아닌 스크립트 출력창에 오류를 띄워준다.
+                              --     -20001 은 오류번호로써, 사용자가 정의해주는 EXCEPTION 에 대해서는 오류번호를 -20001 부터 -20999 까지만 가능하다. 그 이외의 오류번호는 사용할 수 없다.
+    END func_age_3;
+    -- Function FUNC_AGE_3이(가) 컴파일되었습니다.
     
+    
+    select func_age_3('901020123')
+    from dual;
+    /*
+    ORA-20001: >> 올바르지 않은 주민번호 입니다. <<
+    ORA-06512: "HR.FUNC_AGE_3",  29행
+    */
+    select func_age_3('12345678901234')
+    from dual;
+    /*
+    ORA-20001: >> 올바르지 않은 주민번호 입니다. <<
+    ORA-06512: "HR.FUNC_AGE_3",  29행
+    */
+    select func_age_3('901207234567')
+    from dual;
+    /*
+    ORA-20001: >> 올바르지 않은 주민번호 입니다. <<
+    ORA-06512: "HR.FUNC_AGE_3",  29행
+    */
+    select func_age_3('9023201234567')
+    from dual;
+    /*
+    ORA-01843: 지정한 월이 부적합합니다.
+    ORA-06512: "HR.FUNC_AGE_3",  20행
+    01843. 00000 -  "not a valid month"
+    */
+    select func_age_3('9001011234567'), func_age_3('9010201234567')
+        , func_age_3('0001014234567'), func_age_3('0010204234567')
+    from dual;
+    
+    select employee_id AS 사원번호
+      , first_name || ' ' || last_name AS 사원명
+      , jubun AS 주민번호
+      , func_gender(jubun) AS 성별
+      , func_age(jubun) AS 나이1 
+      , func_age_2(jubun) AS 나이2 
+      -- , func_age_3(jubun) AS 나이3 
+ from employees;
+    
+    
+    
+    
+    
+    
+    ---------- ===== **** 반복문 **** ===== ----------
+  /*
+     반복문에는 종류가 3가지가 있다.
+  
+     1. 기본 LOOP 문
+     2. FOR LOOP 문
+     3. WHILE LOOP 문
+  */
+    
+    ----- ====== ****  1. 기본 LOOP 문 **** ====== -----
+  /*
+      [문법]
+      LOOP
+          반복해야할 실행문장;
+      EXIT WHEN 탈출조건;   -- 탈출조건이 참 이라면 LOOP 를 탈출한다.
+      END LOOP;
+  */
+  create table tbl_looptest_1
+  (bunho   number
+  ,name    varchar2(50)
+  );
+  -- Table TBL_LOOPTEST_1이(가) 생성되었습니다.
+  
+  --- *** tbl_looptest_1 테이블에 행을 20000 개를 insert 해보겠습니다. *** ---
+    create or replace procedure pcd_tbl_looptest_1_insert
+    (p_name IN  tbl_looptest_1.name%type
+    ,p_count IN number  -- p_count 에 20000 을 넣을 것이다.
+    )
+    is
+        v_bunho tbl_looptest_1.bunho%type := 0;     -- 변수의 초기화!!(변수에 값을 처음부터 넣어주기)
+    begin
+        LOOP
+            v_bunho := v_bunho + 1;
+        EXIT WHEN v_bunho > p_count;   -- 20001 > 20000     탈출조건이 참 이라면 LOOP 를 탈출한다.
+            insert into tbl_looptest_1(bunho, name) values(v_bunho, p_name || v_bunho);
+        END LOOP;
+    end pcd_tbl_looptest_1_insert;
+    -- Procedure PCD_TBL_LOOPTEST_1_INSERT이(가) 컴파일되었습니다.
+    
+    exec pcd_tbl_looptest_1_insert('이순신',20000);
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    
+    select *
+    from tbl_looptest_1
+    order by bunho asc;
+    
+    select count(*)
+    from tbl_looptest_1;    -- 20000
+    
+    rollback;   -- commit/rollback 을 꼭 해야한다!!
+    -- 롤백 완료.
+    
+    select *
+    from tbl_looptest_1
+    order by bunho asc;
+    
+    select count(*)
+    from tbl_looptest_1;    -- 0
+    
+    exec pcd_tbl_looptest_1_insert('유관순',50000);
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    
+    select *
+    from tbl_looptest_1
+    order by bunho asc;
+    
+    select count(*)
+    from tbl_looptest_1;    -- 50000
+    
+    rollback;
+    -- 롤백 완료.
+    
+    
+    
+    
+    
+    
+    
+    ---- **** 이름이 없는 프로시저(Anonymous Procedure)로 tbl_looptest_1 테이블에 행을 30000 개를 insert 해보겠습니다. **** ---
+    declare
+        v_bunho tbl_looptest_1.bunho%type := 0; -- 변수의 선언 및 초기화
+        v_name  Nvarchar2(10) := '차은우';
+    begin
+        LOOP
+            v_bunho := v_bunho + 1;
+        EXIT WHEN v_bunho > 30000;   -- 탈출조건이 참 이라면 LOOP 를 탈출한다.
+            insert into tbl_looptest_1(bunho, name) values(v_bunho, v_name || v_bunho);
+        END LOOP;
+    end;
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    
+    select *
+    from tbl_looptest_1
+    order by bunho asc;
+    
+    select count(*)         -- 30000
+    from tbl_looptest_1;
+    
+    rollback;
+    -- 롤백 완료.
+    
+    
+    
+    
+    
+    
+    
+    
+    ----- ====== ****  2. FOR LOOP 문 **** ====== -----
+  /*
+      [문법]
+      
+      for 변수  in  [reverse]  시작값..마지막값  loop
+          반복해야할 실행문장;
+      end loop;
+  */
+    
+    ---- **** 이름이 없는 프로시저(Anonymous Procedure)로 tbl_looptest_1 테이블에 행을 40000 개를 insert 해보겠습니다. **** ---
+    declare
+        v_name  Nvarchar2(10) := '이혜리';  -- 변수의 선언 및 초기화
+    begin
+        for i  in  1..40000  loop   -- 변수 i에 맨처음에는 1 이 들어가고 매번 1씩 증가된 값이 i 에 들어가는데 40000 까지 i 에 들어간다. 
+          insert into tbl_looptest_1(bunho, name) values(i, v_name || i);
+      end loop;
+    end;
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    
+    select *
+    from tbl_looptest_1
+    order by bunho asc;
+    
+    select count(*)         -- 40000
+    from tbl_looptest_1;
+    
+    rollback;
+    -- 롤백 완료.
+    
+    
+    
+    declare
+        v_name  Nvarchar2(10) := '유나';  -- 변수의 선언 및 초기화
+    begin
+        for i  in  reverse 1..100  loop   -- 변수 i에 맨처음에는 100 이 들어가고 매번 1씩 감소된 값이 i 에 들어가는데 1 까지 i 에 들어간다. 
+          insert into tbl_looptest_1(bunho, name) values(i, v_name || i);
+      end loop;
+    end;
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    
+    select *
+    from tbl_looptest_1;
+    
+    select count(*)         -- 100
+    from tbl_looptest_1;
+    
+    rollback;
+    -- 롤백 완료.
+    
+    
+    
+    
+    
+    
+    
+    ----- ====== ****  3. WHILE LOOP 문 **** ====== -----
+  /*
+     [문법]
+     WHILE  조건  LOOP
+         반복해야할 실행문장;   -- 조건이 참이라면 실행함. 조건이 거짓이 되어지면 반복문을 빠져나간다.
+     END LOOP;
+     
+     WHILE NOT 조건  LOOP
+         반복해야할 실행문장;   -- 조건이 참이라면 반복문을 빠져나간다.
+     END LOOP;
+  */
+  
+  ---- **** 이름이 없는 프로시저(Anonymous Procedure)로 tbl_looptest_1 테이블에 행을 20000 개를 insert 해보겠습니다. **** ---
+    declare
+        v_cnt    number(5)   := 1;   -- 변수의 선언 및 초기화
+        v_name  Nvarchar2(10) := '안중근';
+    begin
+    WHILE NOT (v_cnt > 20000) LOOP      -- not(탈출조건)  탈출조건이 참이라면 전체가 거짓이 되어지므로 반복문을 빠져나간다. 
+        insert into tbl_looptest_1(bunho,name) values(v_cnt, v_name || v_cnt);
+        v_cnt := v_cnt + 1;
+    END LOOP;
+    end;
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+  
+    select *
+    from tbl_looptest_1;
+    
+    select count(*)         -- 2000
+    from tbl_looptest_1;
+    
+    rollback;
+    -- 롤백 완료.
+  
+    select func_age_3('900101123456a'), func_age_3('90102012345b7')
+        , func_age_3('0001014234c67'), func_age_3('001020423d567')
+    from dual;
