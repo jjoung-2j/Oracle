@@ -11084,3 +11084,427 @@ group by department_id;
             WHEN error_insert THEN raise_application_error(-20002,'>> 암호는 최소 5글자 이상이면서 영문자 및 숫자 및 특수기호가 혼합되어져야 합니다. <<');
     end pcd_tbl_member_test1_insert;
     -- Procedure PCD_TBL_MEMBER_TEST1_INSERT이(가) 컴파일되었습니다.
+    
+    commit;
+    -- 커밋 완료.
+    
+    -- [영업시간 평일 14:00:00 ~ 16:59:59 가 아닌 경우]
+    exec pcd_tbl_member_test1_insert('eomjh','qwer1234$','엄정화');
+    /*
+    오류 보고 -
+    ORA-20003: >> 영업시간(월~금 14:00 ~ 16:59:59 까지)이 아니므로 입력불가함 <<
+    ORA-06512: "HR.PCD_TBL_MEMBER_TEST1_INSERT",  42행
+    */
+    
+    -- [영업시간에 등록할 경우]
+    exec pcd_tbl_member_test1_insert('eomjh','qwer1234$','엄정화');    
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    
+    select *
+    from tbl_member_test1;
+    /*
+    hongkd	qwer1234$	홍길동
+    eomjh	qwer1234$	엄정화
+    */
+    
+    
+    
+    
+    
+    
+    
+    
+    --- ** 오라클에서는 배열이 없습니다만 배열처럼 사용되어지는 table 타입 변수가 있습니다. ** ---
+    --     그래서 table 타입 변수를 사용하여 자바의 배열처럼 사용합니다. --
+    
+    with E as
+    (
+    select department_id
+       , employee_id
+       , first_name || ' ' || last_name AS ENAME
+       , to_char(hire_date, 'yyyy-mm-dd') AS HIREDATE
+       , func_gender(jubun) AS GENDER
+       , func_age(jubun) AS AGE
+    from employees
+    where department_id = 30
+    )
+    select E.department_id, D.department_name, E.employee_id, E.ename, E.hiredate, E.gender, E.age
+    from departments D right join E
+    on D.department_id = E.department_id;
+    
+    
+    
+    
+    -- 아래의 소스는 잘못된 것 입니다. --
+    create or replace procedure pcd_employees_info_deptid
+    (p_department_id  IN  employees.department_id%type)
+    is
+        v_department_id      employees.department_id%type;
+        v_department_name    departments.department_name%type;
+        v_employee_id        employees.employee_id%type;
+        v_ename              varchar2(30);
+        v_hiredate           varchar2(10);
+        v_gender             varchar2(6);
+        v_age                number(3);
+    
+    begin
+    
+        with E as
+        (
+          select department_id
+               , employee_id
+               , first_name || ' ' || last_name AS ENAME
+               , to_char(hire_date, 'yyyy-mm-dd') AS HIREDATE
+               , func_gender(jubun) AS GENDER
+               , func_age(jubun) AS AGE
+          from employees
+          where department_id = p_department_id
+        )
+        select E.department_id, D.department_name, E.employee_id, E.ename, E.hiredate, E.gender, E.age
+               into
+               v_department_id, v_department_name, v_employee_id, v_ename, v_hiredate, v_gender, v_age 
+        from departments D right join E
+        on D.department_id = E.department_id;
+        
+        dbms_output.put_line( lpad('-',60,'-') );
+        dbms_output.put_line( '부서번호    부서명     사원번호     사원명    입사일자   성별   나이' );
+        dbms_output.put_line( lpad('-',60,'-') );
+        
+        dbms_output.put_line( v_department_id || ' ' || v_department_name || ' ' || 
+                              v_employee_id || ' ' || v_ename || ' ' || v_hiredate || ' ' || v_gender || ' ' || v_age );
+                              
+        EXCEPTION 
+           WHEN no_data_found THEN   -- no_data_found 은 오라클에서 데이터가 존재하지 않을 경우 발생하는 오류임.
+                dbms_output.put_line('>> 부서번호 ' || p_department_id || '은 존재하지 않습니다. <<');
+    
+    end pcd_employees_info_deptid; 
+    -- Procedure PCD_EMPLOYEES_INFO_DEPTID이(가) 컴파일되었습니다.
+    
+    exec pcd_employees_info_deptid(10);
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    /*
+    ------------------------------------------------------------
+    부서번호    부서명     사원번호     사원명    입사일자   성별   나이
+    ------------------------------------------------------------
+    10 Administration 200 Jennifer Whalen 2003-09-17 여 45
+    */
+    
+    exec pcd_employees_info_deptid(8888);
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    -- >> 부서번호 8888은 존재하지 않습니다. <<
+    
+    exec pcd_employees_info_deptid(30);
+    /*
+    오류 보고 -
+    ORA-01422: 실제 인출은 요구된 것보다 많은 수의 행을 추출합니다
+    ORA-06512: "HR.PCD_EMPLOYEES_INFO_DEPTID",  14행
+    */
+    
+    
+    
+    /*
+    6개 행이 나와야 하는데 프로시저에서 select 되어진 컬럼의 값을 담을 변수
+    into ~~~ 에 있는 (v_department_id, v_department_name, v_employee_id, v_ename, v_hiredate, v_gender, v_age )는 
+    데이터 값을 1개 밖에 담지 못하므로 위와 같은 오류가 발생한다.
+    */   
+  
+ /*
+     자바를 예를 들면
+     int jumsu = 0;
+     
+     변수 jumsu 에 90, 95, 88, 75, 91, 80 이라는 6개의 점수를 입력하고자 한다.
+     돼요? 안돼요?  안됩니다.
+ 
+     jumsu = 90;
+     jumsu = 85;
+     jumsu = 88;
+     jumsu = 75;
+     jumsu = 91;
+     jumsu = 80;
+     
+     최종적으로 변수 jumsu 에 담긴 값은 80 이 된다.
+     
+     그래서 자바에서는 아래와 같이 배열로 만들어서 한다. 
+     int[] jumsuArr = new int[6]; 
+     
+     jumsuArr[0] = 90;
+     jumsuArr[1] = 85;
+     jumsuArr[2] = 88;
+     jumsuArr[3] = 75;
+     jumsuArr[4] = 91;
+     jumsuArr[5] = 80;
+     
+     -------------------------------
+     | 90 | 85 | 88 | 75 | 91 | 80 | 
+     -------------------------------
+     
+ */ 
+    
+    select employee_id
+    from employees
+    where department_id = 30;
+ 
+ /*
+    아래의 모양은 자바에서 사용되던 1차원 배열의 모양을 90도 회전한 것과 같다.
+    그래서 오라클에서는 자바의 1차원 배열처럼 컬럼을 1개만 가지는 table 타입 변수를 사용하여 쓴다.
+    
+    EMPLOYEE_ID 
+     -------
+     | 114 |
+     -------
+     | 115 |
+     -------
+     | 116 |
+     -------
+     | 117 |
+     -------
+     | 118 |
+     -------
+     | 119 |
+     -------
+ 
+ */ 
+    ---- **** [ 위에서 만든 pcd_employees_info_deptid 을 올바르게 작동하도록 해결하기 ] **** ----
+    create or replace procedure pcd_employees_info_deptid
+    (p_department_id  IN  employees.department_id%type)
+    is
+        type department_id_type
+        is table of employees.department_id%type index by binary_integer;       -- v_department_id      employees.department_id%type;
+        type department_name_type
+        is table of departments.department_name%type index by binary_integer;   -- v_department_name    departments.department_name%type;
+        type employee_id_type
+        is table of employees.employee_id%type index by binary_integer;         -- v_employee_id        employees.employee_id%type;
+        type ename_type
+        is table of varchar2(30) index by binary_integer;                       -- v_ename              varchar2(30);
+        type hiredate_type
+        is table of varchar2(10) index by binary_integer;                       -- v_hiredate           varchar2(10);
+        type gender_type
+        is table of varchar2(6) index by binary_integer;                        -- v_gender             varchar2(6);
+        type age_type
+        is table of number(3) index by binary_integer;                          -- v_age                number(3);
+          
+        i binary_integer := 0;    -- i 가 마치 배열의 방번호 용도 처럼 쓰인다.
+                                -- 그런데 자바에서 배열의 시작은 0 부터 시작하지만
+                                -- 오라클에서는 1 부터 시작한다.
+    
+        v_department_id     department_id_type;
+        v_department_name   department_name_type;
+        v_employee_id       employee_id_type;
+        v_ename             ename_type;
+        v_hiredate          hiredate_type;
+        v_gender            gender_type;
+        v_age               age_type;
+    
+    begin
+    
+        FOR v_rcd IN (  -- FOR v_rcd IN(select 문) LOOP => select 문을 통해 나온 행의 개수만큼 출력
+                        WITH E as
+                        (
+                              select department_id
+                                   , employee_id
+                                   , first_name || ' ' || last_name AS ENAME
+                                   , to_char(hire_date, 'yyyy-mm-dd') AS HIREDATE
+                                   , func_gender(jubun) AS GENDER
+                                   , func_age(jubun) AS AGE
+                              from employees
+                              where department_id = p_department_id
+                        )
+                        select E.department_id, D.department_name, E.employee_id, E.ename, E.hiredate, E.gender, E.age
+                        from departments D right join E
+                        on D.department_id = E.department_id
+                    ) LOOP    
+                    
+                    i := i+1;
+                    v_department_id(i) := v_rcd.department_id;
+                    v_department_name(i) := v_rcd.department_name;
+                    v_employee_id(i) := v_rcd.employee_id;
+                    v_ename(i) := v_rcd.ename;
+                    v_hiredate(i) := v_rcd.hiredate;
+                    v_gender(i) := v_rcd.gender;
+                    v_age(i) := v_rcd.age;
+                    
+        END LOOP;
+        
+        if(i = 0) then raise no_data_found;
+        else dbms_output.put_line( lpad('-',60,'-') );
+             dbms_output.put_line( '부서번호    부서명     사원번호     사원명    입사일자   성별   나이' );
+             dbms_output.put_line( lpad('-',60,'-') );
+        
+            FOR K IN 1..i LOOP
+                dbms_output.put_line( v_department_id(k) || ' ' || v_department_name(k) || ' ' || 
+                              v_employee_id(k) || ' ' || v_ename(k) || ' ' || v_hiredate(k) || ' ' || v_gender(k) || ' ' || v_age(k) );
+            END LOOP;
+        end if;
+        
+        EXCEPTION 
+           WHEN no_data_found THEN   -- no_data_found 은 오라클에서 데이터가 존재하지 않을 경우 발생하는 오류임.
+                dbms_output.put_line('>> 부서번호 ' || p_department_id || '은 존재하지 않습니다. <<');
+    
+    end pcd_employees_info_deptid; 
+    -- Procedure PCD_EMPLOYEES_INFO_DEPTID이(가) 컴파일되었습니다.
+    
+    exec pcd_employees_info_deptid(30);
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    /*
+        ------------------------------------------------------------
+        부서번호    부서명     사원번호     사원명    입사일자   성별   나이
+        ------------------------------------------------------------
+        30 Purchasing 114 Den Raphaely 2002-12-07 여 56
+        30 Purchasing 115 Alexander Khoo 2003-05-18 남 62
+        30 Purchasing 116 Shelli Baida 2005-12-24 남 61
+        30 Purchasing 117 Sigal Tobias 2005-07-24 여 62
+        30 Purchasing 118 Guy Himuro 2006-11-15 남 45
+        30 Purchasing 119 Karen Colmenares 2007-08-10 남 44
+    */
+    
+    
+    -----------------------------------------------------------------------------
+    
+            ---- ===== **** CURSOR **** ===== -----
+              
+    --  PL/SQL 에서 SELECT 되어져 나오는 행의 개수가 2개 이상인 경우에는 위에서 한 것처럼
+    --  table 타입의 변수를 사용하여 나타낼 수 있고, 또는 CURSOR 를 사용하여 나타낼 수도 있다. 
+    --  table 타입의 변수를 사용하는 것 보다 CURSOR 를 사용하는 것이 더 편하므로 
+    --  대부분 CURSOR 를 많이 사용한다.
+    
+    
+    ----- *** 명시적 CURSOR 만들기 *** -----
+    ※ 형식
+    
+    1단계 -- CURSOR 의 선언(정의)
+     
+    CURSOR 커서명
+    IS
+    SELECT 문;  
+    
+    2단계 -- CURSOR 의 OPEN
+    
+    OPEN 커서명;
+    
+    3단계 -- CURSOR 의 FETCH
+           (FETCH 란? SELECT 되어진 결과물을 끄집어 내는 작업을 말한다)
+    
+    FETCH  커서명 INTO 변수;
+    
+    4단계 -- CURSOR 의 CLOSE
+    
+    CLOSE 커서명;
+      
+    
+    
+    ※ ==== 커서의 속성변수 ==== ※
+    
+    1. 커서명%ISOPEN   ==> 커서가 OPEN 되어진 상태인가를 체크하는 것.
+                       만약에 커서가 OPEN 되어진 상태이라면 TRUE.
+    
+    2. 커서명%FOUND    ==> FETCH 된 레코드(행)이 있는지 체크하는 것.
+                       만약에 FETCH 된 레코드(행)이 있으면 TRUE.
+    
+    3. 커서명%NOTFOUND ==> FETCH 된 레코드(행)이 없는지 체크하는 것.
+                       만약에 FETCH 된 레코드(행)이 없으면 TRUE.
+    
+    4. 커서명%ROWCOUNT ==> 현재까지 FETCH 된 레코드(행)의 갯수를 반환해줌.
+    
+    create or replace procedure pcd_employees_deptid_cursor
+    (p_department_id  IN  employees.department_id%type)
+    is
+        -- 1단계. CURSOR 의 선언(정의)
+        cursor cur_empinfo
+        is
+        WITH E as
+        (
+            select department_id
+               , employee_id
+               , first_name || ' ' || last_name AS ENAME
+               , to_char(hire_date, 'yyyy-mm-dd') AS HIREDATE
+               , func_gender(jubun) AS GENDER
+               , func_age(jubun) AS AGE
+            from employees
+            where department_id = p_department_id
+        )
+        select E.department_id, D.department_name, E.employee_id, E.ename, E.hiredate, E.gender, E.age
+        from departments D right join E
+        on D.department_id = E.department_id;
+        
+        v_department_id     employees.department_id%type;
+        v_department_name   departments.department_name%type;
+        v_employee_id       employees.employee_id%type;
+        v_ename             varchar2(30);
+        v_hiredate          varchar2(10);
+        v_gender            varchar2(6);
+        v_age               number(3);
+        
+        v_fetch_count       number := 0;
+        
+    begin
+        -- 2단계. CURSOR 의 OPEN
+        OPEN cur_empinfo;
+        -- 3단계. CURSOR 의 FETCH
+        LOOP
+            FETCH cur_empinfo INTO v_department_id, v_department_name, v_employee_id, v_ename, v_hiredate, v_gender, v_age;
+            EXIT WHEN cur_empinfo%NOTFOUND;      -- 더 이상 FETCH 되어진 행이 없다라면 반복문을 빠져나간다면
+            v_fetch_count := cur_empinfo%ROWCOUNT;   -- 현재까지 FETCH 된 레코드(행)의 갯수
+            if(v_fetch_count = 1) then   -- 현재까지 FETCH 된 레코드(행)의 갯수
+                dbms_output.put_line( lpad('-',60,'-') );
+                dbms_output.put_line( '부서번호    부서명     사원번호     사원명    입사일자   성별   나이' );
+                dbms_output.put_line( lpad('-',60,'-') );
+            end if;
+            dbms_output.put_line( v_department_id || ' ' || v_department_name || ' ' || 
+                              v_employee_id || ' ' || v_ename || ' ' || v_hiredate || ' ' || v_gender || ' ' || v_age);
+        END LOOP;
+        -- 4단계. CURSOR 의 CLOSE
+        CLOSE cur_empinfo;
+        
+        if(v_fetch_count = 0) then
+            dbms_output.put_line('>> 부서번호 ' || p_department_id || '은 존재하지 않습니다. <<');
+        else
+            dbms_output.put_line(' ');
+            dbms_output.put_line('>> 조회된 행의 개수 : ' || v_fetch_count || '개 <<');
+        end if;
+    end pcd_employees_deptid_cursor;
+    -- Procedure PCD_EMPLOYEES_DEPTID_CURSOR이(가) 컴파일되었습니다.
+    
+    exec pcd_employees_deptid_cursor(10);
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    /*
+        ------------------------------------------------------------
+        부서번호    부서명     사원번호     사원명    입사일자   성별   나이
+        ------------------------------------------------------------
+        10 Administration 200 Jennifer Whalen 2003-09-17 여 45
+        
+        >> 조회된 행의 개수 : 1개 <<
+    */
+    exec pcd_employees_deptid_cursor(30);
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    /*
+        ------------------------------------------------------------
+        부서번호    부서명     사원번호     사원명    입사일자   성별   나이
+        ------------------------------------------------------------
+        30 Purchasing 114 Den Raphaely 2002-12-07 여 56
+        30 Purchasing 115 Alexander Khoo 2003-05-18 남 62
+        30 Purchasing 116 Shelli Baida 2005-12-24 남 61
+        30 Purchasing 117 Sigal Tobias 2005-07-24 여 62
+        30 Purchasing 118 Guy Himuro 2006-11-15 남 45
+        30 Purchasing 119 Karen Colmenares 2007-08-10 남 44
+         
+        >> 조회된 행의 개수 : 6개 <<
+    */
+    exec pcd_employees_deptid_cursor(8888);
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    -- >> 부서번호 8888은 존재하지 않습니다. <<
+    
+    
+    -------------- *****  FOR LOOP CURSOR 만들기 ***** -----------------
+    /*
+         FOR LOOP CURSOR 문을 사용하면
+         커서의 OPEN, 커서의 FETCH, 커서의 CLOSE 가 자동적으로 발생되어지기 때문에
+         우리는 커서의 OPEN, 커서의 FETCH, 커서의 CLOSE 문장을 기술할 필요가 없다.
+    */
+    
+    ※ 형식
+    FOR 변수명(select 되어진 행의 정보가 담기는 변수) IN 커서명 LOOP
+      실행문장;
+    END LOOP; 
+    
+    
+    
