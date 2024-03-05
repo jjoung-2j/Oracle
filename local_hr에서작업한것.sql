@@ -5582,7 +5582,7 @@ group by department_id;
        ---------------------------------  
    */
    
-
+    -- [잘못된 경우]
     select B1.*
     from tbl_authorbook B1, tbl_authorbook B2   --- SQL 1992 CODE
     where B1.bookname = B2.bookname and
@@ -6312,10 +6312,10 @@ group by department_id;
     
     select rowid, userid, name, address
     from tbl_heowon
-    where rowid between 'AAASDWAAHAAAAGrAAD' and 'AAASDWAAHAAAAGrAAI';
+    where rowid between 'AAASTlAAHAAAAGtAAD' and 'AAASTlAAHAAAAGtAAI';  -- 컴퓨터마다 상이하다.
     
     delete from tbl_heowon
-    where rowid between 'AAASDWAAHAAAAGrAAD' and 'AAASDWAAHAAAAGrAAI';
+    where rowid between 'AAASTlAAHAAAAGtAAD' and 'AAASTlAAHAAAAGtAAI';
     -- 6개 행 이(가) 삭제되었습니다.
     
     commit;
@@ -7076,22 +7076,23 @@ group by department_id;
                                             -- 파일을 메모장으로 열어서 확인한다.                                 
     */
     
-    -- 각 지점은 tbl_reservation_hyejoung 이라는 테이블을 생성한다.
-   create table tbl_reservation_hyejoung
+    -- 각 지점은 tbl_reservation_yanghyejoung 이라는 테이블을 생성한다.
+   create table tbl_reservation_yanghyejoung
    (rsvno       varchar2(20)    -- 예약고유번호
    ,memberid    varchar2(20)    -- 회원ID
    ,ticketcnt   number          -- 티켓개수
-   ,constraint PK_tbl_reservation_hyejoung primary key(rsvno)
+   ,constraint PK_tbl_reservation_yanghyejoung primary key(rsvno)
    );
     -- Table TBL_RESERVATION_HYEJOUNG이(가) 생성되었습니다.
     
-    insert into tbl_reservation_hyejoung(rsvno, memberid, ticketcnt)
-    values('hyejoung001', '양혜정', 3);
+    insert into tbl_reservation_yanghyejoung(rsvno, memberid, ticketcnt)
+    values('yanghyejoung001', '양혜정', 3);
    
-    insert into tbl_reservation_hyejoung(rsvno, memberid, ticketcnt)
-    values('hyejoung002', '김환진', 7);
+    insert into tbl_reservation_yanghyejoung(rsvno, memberid, ticketcnt)
+    values('yanghyejoung002', '김환진', 7);
    
     commit;
+    
     
     
     /* 강사님만 하는 것! (본점)
@@ -7108,7 +7109,7 @@ group by department_id;
     from tbl_reservation_merge@BONJUM_SERVER;
     
     select *
-    from tbl_reservation_hyejoung; 
+    from tbl_reservation_yanghyejoung; 
     
     -- 아래는 지점DB서버(각자 수강생들)에서 하는 것입니다.
     merge into tbl_reservation_merge@BONJUM_SERVER R
@@ -7370,7 +7371,7 @@ group by department_id;
                 , E.address = O.address
     when not matched then   -- 똑같은 것이 없을 경우
     insert (no, name, address) values(O.no, O.name, O.address);    
-    -- 2개 행 이(가) 업데이트되었습니다.
+    -- 2개 행 이(가) 병합되었습니다.
     
     -- 강사님 방법 --
     update tbl_exam set name = (select name from tbl_exam_origin where no = tbl_exam.no)
@@ -7479,7 +7480,6 @@ group by department_id;
     
     select count(*)
     from tbl_emp_copy1; -- 0    
-    
     
     select * from tab;
     
@@ -8776,6 +8776,7 @@ group by department_id;
     -- "부모" 테이블(여기서는 tbl_gogek 테이블)에 존재하는 경우에
     -- "부모" 테이블의 행을 삭제할 때 어떻게 되어지는지 알아봅니다.
     
+       
     select *
     from tbl_gogek;  -- "부모" 테이블 
     
@@ -10103,28 +10104,28 @@ group by department_id;
     where (trunc(func_age(jubun),-1) = 20 and func_gender(jubun) = '여')
         or  (trunc(func_age_2(jubun),-1) = 40 and func_gender_2(jubun) = '남')   -- and 가 먼저 처리되기 때문에 () 해주기!!
     order by 성별1,나이1;
-    
-    
-    
-    
-    
-    
-    ----- *** 정년퇴직일을 구해주는 함수 만들기 *** -----
+
+
+
+
+
+
+ ----- *** 정년퇴직일을 구해주는 함수 만들기 *** -----
     /*
-    여기서 정년퇴직일이라 함은 
-        해당 사원의 생월이 3월에서 8월에 태어난 사람은 
+    여기서 정년퇴직일이라 함은
+        해당 사원의 생월이 3월에서 8월에 태어난 사람은
         해당사원의 나이가 63세가 되는 년도의 8월말일(8월 31일)로 하고,
-        해당사원의 생월이 9월에서 2월에 태어난 사람은 
+        해당사원의 생월이 9월에서 2월에 태어난 사람은
         해당사원의 나이가 63세가 되는 년도의 2월말일(2월 28일 또는 2월 29일)로 한다.
     */
-    
+
     create or replace function func_retirement_day
     (p_jubun  IN  varchar2)
     return date
       is
          v_retirement_day date; -- 변수명
       begin
-        select last_day(to_date(to_char(add_months(sysdate,(63-func_age(p_jubun))*12),'yyyy')    
+        select last_day(to_date(to_char(add_months(sysdate,(63-func_age(p_jubun))*12),'yyyy')
             -- 만 63세가 되어지는 오늘날 : add_months(sysdate,(63-현재나이)*12)
             || case when substr(p_jubun,3,2) between '03' and '08' then '0801' else '0201' end,'yyyy-mm-dd'))
             into v_retirement_day
@@ -10132,7 +10133,7 @@ group by department_id;
          return v_retirement_day;
       end func_retirement_day;
     -- Function FUNC_RETIREMENT_DAY이(가) 컴파일되었습니다.
-    
+
     SELECT employee_id as 사원번호
         , first_name || '' || last_name as 사원명
         , jubun as 주민번호
@@ -10145,9 +10146,9 @@ group by department_id;
         , to_char(trunc(nvl(salary + (salary*commission_pct),salary)
                     * months_between(func_retirement_day(jubun), hire_date)/ 12, 0),'9,999,999')  as 퇴직금           -- 퇴직금
     FROM employees;
-    
-    
-    
+
+
+
     ---- *** 생성되어진 함수의 소스를 조회해봅니다. *** ----
     select *
     from user_source
@@ -10165,11 +10166,11 @@ group by department_id;
 "
 "    begin
 "
-"        select case when to_date(to_char(sysdate, 'yyyy') || substr(p_jubun, 3, 4), 'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'), 'yyyymmdd') > 0 
+"        select case when to_date(to_char(sysdate, 'yyyy') || substr(p_jubun, 3, 4), 'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'), 'yyyymmdd') > 0
 "
-"                        then extract(year from sysdate) - ( to_number(substr(p_jubun,1,2)) + case when substr(p_jubun,7,1) in('1','2') then 1900 else 2000 end ) - 1 
+"                        then extract(year from sysdate) - ( to_number(substr(p_jubun,1,2)) + case when substr(p_jubun,7,1) in('1','2') then 1900 else 2000 end ) - 1
 "
-"                        else extract(year from sysdate) - ( to_number(substr(p_jubun,1,2)) + case when substr(p_jubun,7,1) in('1','2') then 1900 else 2000 end ) 
+"                        else extract(year from sysdate) - ( to_number(substr(p_jubun,1,2)) + case when substr(p_jubun,7,1) in('1','2') then 1900 else 2000 end )
 "
 "                        end
 "
@@ -10180,16 +10181,16 @@ group by department_id;
 "        from dual;
 "
     */
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
     ---- [퀴즈] 아래와 같은 결과물이 나오도록 프로시저( pcd_employees_info )를 생성하세요...
     ----       성별과 나이는 위에서 만든 함수를 사용하세요..
-   
-    execute pcd_employees_info(101);  -- 여기서 숫자 101은 사원번호이다. 
+
+    execute pcd_employees_info(101);  -- 여기서 숫자 101은 사원번호이다.
     exec    pcd_employees_info(101);  -- 여기서 숫자 101은 사원번호이다.
     /*
       ------------------------------------------------------------
@@ -10197,9 +10198,9 @@ group by department_id;
       ------------------------------------------------------------
         101       .....    ......   .......   ....     ...   ...
    */
-    
+
     -- 내방법 --
-    create or replace procedure pcd_employees_info 
+    create or replace procedure pcd_employees_info
       (p_employee_id  IN  number)
       is
         -- v_result varchar2(1000);
@@ -10214,9 +10215,9 @@ group by department_id;
         WITH
         M AS
         (
-            select employee_id 
+            select employee_id
                 , first_name || ' ' || last_name as manager_name
-            from employees 
+            from employees
         )
         ,
         E AS
@@ -10245,29 +10246,29 @@ group by department_id;
         dbms_output.put_line( lpad('-',60,'-') );
         dbms_output.put_line( '사원번호    부서명    부서장명   사원명    입사일자   성별   나이' );
         dbms_output.put_line( lpad('-',60,'-') );
-        
-        dbms_output.put_line( v_employee_id || ' ' || 
+
+        dbms_output.put_line( v_employee_id || ' ' ||
                             v_deptname || ' ' ||
                             v_mgrname || ' ' ||
                             v_empname || ' ' ||
-                            v_hire_date || ' ' || 
+                            v_hire_date || ' ' ||
                             v_gender || ' ' ||
                             v_age );
       end pcd_employees_info;
-    -- Procedure PCD_EMPLOYEES_INFO이(가) 컴파일되었습니다.   
-    
+    -- Procedure PCD_EMPLOYEES_INFO이(가) 컴파일되었습니다.
+
     exec pcd_employees_info(101);
-    
-    
+
+
     -- 강사님
     /*
        사원번호       부서명                         부서장명                     사원명    입사일자   성별   나이       부서번호
-      --------     -------                      ---------                -----------------------------  ------- 
-       employees   departments                  employees                          employees            employees   
-                   department_id(P.K)           employee_id(사원번호 P.K)                                  department_id(F.K)  
-                   manager_id(부서장사원번호 F.K)  
-   */    
-   
+      --------     -------                      ---------                -----------------------------  -------
+       employees   departments                  employees                          employees            employees
+                   department_id(P.K)           employee_id(사원번호 P.K)                                  department_id(F.K)
+                   manager_id(부서장사원번호 F.K)
+   */
+
    WITH V as
    (
      select D.department_name
@@ -10286,8 +10287,8 @@ group by department_id;
    from V RIGHT JOIN employees EMP
    ON V.department_id = EMP.department_id
    WHERE EMP.employee_id = 178;
-   
-      
+
+
    create or replace procedure pcd_employees_info
    (p_employee_id  in  employees.employee_id%type)
    is
@@ -10307,36 +10308,36 @@ group by department_id;
          from departments D JOIN employees E
          ON D.manager_id = E.employee_id
        )
-       select EMP.employee_id 
-            , nvl(V.department_name, ' ') 
-            , nvl(V.mgr_name, ' ') 
-            , EMP.first_name || ' ' || EMP.last_name 
-            , to_char(EMP.hire_date, 'yyyy-mm-dd') 
-            , func_gender(EMP.jubun) 
-            , func_age(EMP.jubun) 
+       select EMP.employee_id
+            , nvl(V.department_name, ' ')
+            , nvl(V.mgr_name, ' ')
+            , EMP.first_name || ' ' || EMP.last_name
+            , to_char(EMP.hire_date, 'yyyy-mm-dd')
+            , func_gender(EMP.jubun)
+            , func_age(EMP.jubun)
         INTO
-            v_employee_id, v_deptname, v_mgrname, v_empname, v_hire_date, v_gender, v_age 
+            v_employee_id, v_deptname, v_mgrname, v_empname, v_hire_date, v_gender, v_age
        from V RIGHT JOIN employees EMP
        ON V.department_id = EMP.department_id
        WHERE EMP.employee_id = p_employee_id;
-       
+
        dbms_output.put_line( lpad('-',60,'-') );
        dbms_output.put_line( '사원번호    부서명    부서장명   사원명    입사일자   성별   나이' );
        dbms_output.put_line( lpad('-',60,'-') );
-       
-       dbms_output.put_line( v_employee_id || ' ' || 
+
+       dbms_output.put_line( v_employee_id || ' ' ||
                              v_deptname || ' ' ||
                              v_mgrname || ' ' ||
                              v_empname || ' ' ||
-                             v_hire_date || ' ' || 
+                             v_hire_date || ' ' ||
                              v_gender || ' ' ||
                              v_age );
    end pcd_employees_info;
- -- Procedure PCD_EMPLOYEES_INFO이(가) 컴파일되었습니다.  
-  
-  
-  
-  
+ -- Procedure PCD_EMPLOYEES_INFO이(가) 컴파일되었습니다.
+
+
+
+
    exec pcd_employees_info(101);
    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
 /*
@@ -10345,8 +10346,8 @@ group by department_id;
     ------------------------------------------------------------
     101 Executive Steven King Neena Kochhar 2005-09-21 남 37
 */
- 
-   exec pcd_employees_info(178); 
+
+   exec pcd_employees_info(178);
    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
 /*
     ------------------------------------------------------------
@@ -10354,16 +10355,16 @@ group by department_id;
     ------------------------------------------------------------
     178                          Kimberely Grant 2007-05-24 여 24
 */
-    
+
     exec pcd_employees_info(337);
     /*
     오류 보고 -
     ORA-01403: 데이터를 찾을 수 없습니다.  ===> 프로시저에서 데이터(행)가 없으면 no data found 라는 오류가 발생한다.!!!!!!
     */
-    
-    
-    
-    
+
+
+
+
     ---- *** [데이터(행)가 없을 경우 해결책] *** ----
     --> 예외절(Exception) 처리
     create or replace procedure pcd_employees_info
@@ -10385,63 +10386,63 @@ group by department_id;
          from departments D JOIN employees E
          ON D.manager_id = E.employee_id
        )
-       select EMP.employee_id 
-            , nvl(V.department_name, ' ') 
-            , nvl(V.mgr_name, ' ') 
-            , EMP.first_name || ' ' || EMP.last_name 
-            , to_char(EMP.hire_date, 'yyyy-mm-dd') 
-            , func_gender(EMP.jubun) 
-            , func_age(EMP.jubun) 
+       select EMP.employee_id
+            , nvl(V.department_name, ' ')
+            , nvl(V.mgr_name, ' ')
+            , EMP.first_name || ' ' || EMP.last_name
+            , to_char(EMP.hire_date, 'yyyy-mm-dd')
+            , func_gender(EMP.jubun)
+            , func_age(EMP.jubun)
         INTO
-            v_employee_id, v_deptname, v_mgrname, v_empname, v_hire_date, v_gender, v_age 
+            v_employee_id, v_deptname, v_mgrname, v_empname, v_hire_date, v_gender, v_age
        from V RIGHT JOIN employees EMP
        ON V.department_id = EMP.department_id
        WHERE EMP.employee_id = p_employee_id;
-       
+
        dbms_output.put_line( lpad('-',60,'-') );
        dbms_output.put_line( '사원번호    부서명    부서장명   사원명    입사일자   성별   나이' );
        dbms_output.put_line( lpad('-',60,'-') );
-       
-       dbms_output.put_line( v_employee_id || ' ' || 
+
+       dbms_output.put_line( v_employee_id || ' ' ||
                              v_deptname || ' ' ||
                              v_mgrname || ' ' ||
                              v_empname || ' ' ||
-                             v_hire_date || ' ' || 
+                             v_hire_date || ' ' ||
                              v_gender || ' ' ||
                              v_age );
-        Exception 
+        Exception
             WHEN no_data_found THEN -- no_data_found 은 오라클에서 데이터가 존재하지 않을 경우 발생하는 오류이다.
                 dbms_output.put_line('>>> 사원번호 ' || p_employee_id || '은 존재하지 않습니다. <<<');
    end pcd_employees_info;
  -- Procedure PCD_EMPLOYEES_INFO이(가) 컴파일되었습니다.
-    
-    exec pcd_employees_info(101); 
+
+    exec pcd_employees_info(101);
     -- 101 Executive Steven King Neena Kochhar 2005-09-21 남 38
-    
+
     exec pcd_employees_info(337);
     -- >>> 사원번호 337은 존재하지 않습니다. <<<
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
+
+
        ---------- ====== *** 제어문(IF 문) *** ======= -----------
 /*
    ※ 형식
-   
+
    if     조건1  then  실행문장1;
    elsif  조건2  then  실행문장2;
    elsif  조건3  then  실행문장3;
    else               실행문장4;
    end if;
-   
+
 */
-    
+
     --- 오류를 발생시켜 보겠습니다.
     delete from departments;
     /*
@@ -10454,7 +10455,7 @@ group by department_id;
     오류 보고 -
     ORA-00001: 무결성 제약 조건(HR.EMP_EMP_ID_PK)에 위배됩니다
     */
-    
+
     ----- 주민번호를 입력받아서 만나이를 알려주는 함수 func_age_3(주민번호)을 생성하세요. ----
     create or replace function func_age_3
     (p_jubun IN varchar2)
@@ -10469,27 +10470,27 @@ group by department_id;
     BEGIN
         if length(p_jubun) != 13 then raise error_jubun;
         end if;
-        
+
         if    v_gender_num in ('1','2') then v_year := 1900;
         elsif v_gender_num in ('3','4') then v_year := 2000;
         else raise error_jubun;
         end if;
-        
-        if to_date(to_char(sysdate,'yyyy')||substr(p_jubun,3,4),'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') > 0 
+
+        if to_date(to_char(sysdate,'yyyy')||substr(p_jubun,3,4),'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') > 0
              then v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2))) - 1;
         else v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2)));
         end if;
-        
+
         return v_age;
-        
-        EXCEPTION 
-        WHEN error_jubun 
+
+        EXCEPTION
+        WHEN error_jubun
         then raise_application_error(-20001, '잘못된 주민등록 번호입니다.'); -- raise_application_error() 는 dbms가 아닌 스크립트 출력창에 오류를 띄워준다.
                               --     -20001 은 오류번호로써, 사용자가 정의해주는 EXCEPTION 에 대해서는 오류번호를 -20001 부터 -20999 까지만 가능하다. 그 이외의 오류번호는 사용할 수 없다.
     END func_age_3;
     -- Function FUNC_AGE_3이(가) 컴파일되었습니다.
-    
-    
+
+
     select func_age_3('901020123')
     from dual;
     /*
@@ -10518,30 +10519,30 @@ group by department_id;
     select func_age_3('9001011234567'), func_age_3('9010201234567')
         , func_age_3('0001014234567'), func_age_3('0010204234567')
     from dual;
-    
+
     select employee_id AS 사원번호
       , first_name || ' ' || last_name AS 사원명
       , jubun AS 주민번호
       , func_gender(jubun) AS 성별
-      , func_age(jubun) AS 나이1 
-      , func_age_2(jubun) AS 나이2 
-      , func_age_3(jubun) AS 나이3 
+      , func_age(jubun) AS 나이1
+      , func_age_2(jubun) AS 나이2
+      , func_age_3(jubun) AS 나이3
  from employees;
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
     ---------- ===== **** 반복문 **** ===== ----------
   /*
      반복문에는 종류가 3가지가 있다.
-  
+
      1. 기본 LOOP 문
      2. FOR LOOP 문
      3. WHILE LOOP 문
   */
-    
+
     ----- ====== ****  1. 기본 LOOP 문 **** ====== -----
   /*
       [문법]
@@ -10555,7 +10556,7 @@ group by department_id;
   ,name    varchar2(50)
   );
   -- Table TBL_LOOPTEST_1이(가) 생성되었습니다.
-  
+
   --- *** tbl_looptest_1 테이블에 행을 20000 개를 insert 해보겠습니다. *** ---
     create or replace procedure pcd_tbl_looptest_1_insert
     (p_name IN  tbl_looptest_1.name%type
@@ -10571,46 +10572,46 @@ group by department_id;
         END LOOP;
     end pcd_tbl_looptest_1_insert;
     -- Procedure PCD_TBL_LOOPTEST_1_INSERT이(가) 컴파일되었습니다.
-    
+
     exec pcd_tbl_looptest_1_insert('이순신',20000);
     -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
-    
+
     select *
     from tbl_looptest_1
     order by bunho asc;
-    
+
     select count(*)
     from tbl_looptest_1;    -- 20000
-    
+
     rollback;   -- commit/rollback 을 꼭 해야한다!!
     -- 롤백 완료.
-    
+
     select *
     from tbl_looptest_1
     order by bunho asc;
-    
+
     select count(*)
     from tbl_looptest_1;    -- 0
-    
+
     exec pcd_tbl_looptest_1_insert('유관순',50000);
     -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
-    
+
     select *
     from tbl_looptest_1
     order by bunho asc;
-    
+
     select count(*)
     from tbl_looptest_1;    -- 50000
-    
+
     rollback;
     -- 롤백 완료.
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
     ---- **** 이름이 없는 프로시저(Anonymous Procedure)로 tbl_looptest_1 테이블에 행을 30000 개를 insert 해보겠습니다. **** ---
     declare
         v_bunho tbl_looptest_1.bunho%type := 0; -- 변수의 선언 및 초기화
@@ -10623,123 +10624,123 @@ group by department_id;
         END LOOP;
     end;
     -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
-    
+
     select *
     from tbl_looptest_1
     order by bunho asc;
-    
+
     select count(*)         -- 30000
     from tbl_looptest_1;
-    
+
     rollback;
     -- 롤백 완료.
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
     ----- ====== ****  2. FOR LOOP 문 **** ====== -----
   /*
       [문법]
-      
+
       for 변수  in  [reverse]  시작값..마지막값  loop
           반복해야할 실행문장;
       end loop;
   */
-    
+
     ---- **** 이름이 없는 프로시저(Anonymous Procedure)로 tbl_looptest_1 테이블에 행을 40000 개를 insert 해보겠습니다. **** ---
     declare
         v_name  Nvarchar2(10) := '이혜리';  -- 변수의 선언 및 초기화
     begin
-        for i  in  1..40000  loop   -- 변수 i에 맨처음에는 1 이 들어가고 매번 1씩 증가된 값이 i 에 들어가는데 40000 까지 i 에 들어간다. 
+        for i  in  1..40000  loop   -- 변수 i에 맨처음에는 1 이 들어가고 매번 1씩 증가된 값이 i 에 들어가는데 40000 까지 i 에 들어간다.
           insert into tbl_looptest_1(bunho, name) values(i, v_name || i);
       end loop;
     end;
     -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
-    
+
     select *
     from tbl_looptest_1
     order by bunho asc;
-    
+
     select count(*)         -- 40000
     from tbl_looptest_1;
-    
+
     rollback;
     -- 롤백 완료.
-    
-    
-    
+
+
+
     declare
         v_name  Nvarchar2(10) := '유나';  -- 변수의 선언 및 초기화
     begin
-        for i  in  reverse 1..100  loop   -- 변수 i에 맨처음에는 100 이 들어가고 매번 1씩 감소된 값이 i 에 들어가는데 1 까지 i 에 들어간다. 
+        for i  in  reverse 1..100  loop   -- 변수 i에 맨처음에는 100 이 들어가고 매번 1씩 감소된 값이 i 에 들어가는데 1 까지 i 에 들어간다.
           insert into tbl_looptest_1(bunho, name) values(i, v_name || i);
       end loop;
     end;
     -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
-    
+
     select *
     from tbl_looptest_1;
-    
+
     select count(*)         -- 100
     from tbl_looptest_1;
-    
+
     rollback;
     -- 롤백 완료.
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
     ----- ====== ****  3. WHILE LOOP 문 **** ====== -----
   /*
      [문법]
      WHILE  조건  LOOP
          반복해야할 실행문장;   -- 조건이 참이라면 실행함. 조건이 거짓이 되어지면 반복문을 빠져나간다.
      END LOOP;
-     
+
      WHILE NOT 조건  LOOP
          반복해야할 실행문장;   -- 조건이 참이라면 반복문을 빠져나간다.
      END LOOP;
   */
-  
+
   ---- **** 이름이 없는 프로시저(Anonymous Procedure)로 tbl_looptest_1 테이블에 행을 20000 개를 insert 해보겠습니다. **** ---
     declare
         v_cnt    number(5)   := 1;   -- 변수의 선언 및 초기화
         v_name  Nvarchar2(10) := '안중근';
     begin
-    WHILE NOT (v_cnt > 20000) LOOP      -- not(탈출조건)  탈출조건이 참이라면 전체가 거짓이 되어지므로 반복문을 빠져나간다. 
+    WHILE NOT (v_cnt > 20000) LOOP      -- not(탈출조건)  탈출조건이 참이라면 전체가 거짓이 되어지므로 반복문을 빠져나간다.
         insert into tbl_looptest_1(bunho,name) values(v_cnt, v_name || v_cnt);
         v_cnt := v_cnt + 1;
     END LOOP;
     end;
     -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
-  
+
     select *
     from tbl_looptest_1;
-    
+
     select count(*)         -- 2000
     from tbl_looptest_1;
-    
+
     rollback;
     -- 롤백 완료.
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
     -- 주민번호가 올바르지 못해도 나이가 나온다.
     select func_age_3('900101123456a'), func_age_3('90102012345b7')
         , func_age_3('0001014234c67'), func_age_3('001020423d567')
     from dual;
     -- 34	33	24	23
-    
+
     ----- [LOOP] 주민번호를 입력받아서 만나이를 알려주는 함수 func_age_3(주민번호)을 생성하세요. ----
     create or replace function func_age_3
     (p_jubun IN varchar2)
@@ -10755,35 +10756,35 @@ group by department_id;
     BEGIN
         if length(p_jubun) != 13 then raise error_jubun;
         end if;
-        
+
         LOOP
             i := i+1;
             EXIT WHEN i > 13;
             if not(substr(p_jubun,i,1) between '0' and '9') then raise error_jubun; -- jubun 이 문자열 타입이므로 '' 타입!
             end if; -- end if 꼭 쓰기!!
         END LOOP;
-        
+
         if    v_gender_num in ('1','2') then v_year := 1900;
         elsif v_gender_num in ('3','4') then v_year := 2000;
         else raise error_jubun;
         end if;
-        
-        if to_date(to_char(sysdate,'yyyy')||substr(p_jubun,3,4),'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') > 0 
+
+        if to_date(to_char(sysdate,'yyyy')||substr(p_jubun,3,4),'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') > 0
              then v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2))) - 1;
         else v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2)));
         end if;
-        
+
         return v_age;
-        
-        EXCEPTION 
-        WHEN error_jubun 
+
+        EXCEPTION
+        WHEN error_jubun
         then raise_application_error(-20001, '잘못된 주민등록번호입니다.'); -- raise_application_error() 는 dbms가 아닌 스크립트 출력창에 오류를 띄워준다.
                               --     -20001 은 오류번호로써, 사용자가 정의해주는 EXCEPTION 에 대해서는 오류번호를 -20001 부터 -20999 까지만 가능하다. 그 이외의 오류번호는 사용할 수 없다.
     END func_age_3;
     -- Function FUNC_AGE_3이(가) 컴파일되었습니다.
-    
-    
-    
+
+
+
      ----- [FOR LOOP] 주민번호를 입력받아서 만나이를 알려주는 함수 func_age_4(주민번호)을 생성하세요. ----
      create or replace function func_age_4
     (p_jubun IN varchar2)
@@ -10798,33 +10799,33 @@ group by department_id;
     BEGIN
         if length(p_jubun) != 13 then raise error_jubun;
         end if;
-        
+
         for i  in  1..13  loop
-            if not(substr(p_jubun,i,1) between '0' and '9') then raise error_jubun; 
-            end if; 
+            if not(substr(p_jubun,i,1) between '0' and '9') then raise error_jubun;
+            end if;
         end loop;
-        
+
         if    v_gender_num in ('1','2') then v_year := 1900;
         elsif v_gender_num in ('3','4') then v_year := 2000;
         else raise error_jubun;
         end if;
-        
-        if to_date(to_char(sysdate,'yyyy')||substr(p_jubun,3,4),'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') > 0 
+
+        if to_date(to_char(sysdate,'yyyy')||substr(p_jubun,3,4),'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') > 0
              then v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2))) - 1;
         else v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2)));
         end if;
-        
+
         return v_age;
-        
-        EXCEPTION 
-        WHEN error_jubun 
+
+        EXCEPTION
+        WHEN error_jubun
         then raise_application_error(-20001, '잘못된 주민등록번호입니다.'); -- raise_application_error() 는 dbms가 아닌 스크립트 출력창에 오류를 띄워준다.
                               --     -20001 은 오류번호로써, 사용자가 정의해주는 EXCEPTION 에 대해서는 오류번호를 -20001 부터 -20999 까지만 가능하다. 그 이외의 오류번호는 사용할 수 없다.
     END func_age_4;
     -- Function FUNC_AGE_4이(가) 컴파일되었습니다.
-    
-    
-    
+
+
+
     ----- [WHILE LOOP] 주민번호를 입력받아서 만나이를 알려주는 함수 func_age_5(주민번호)을 생성하세요. ----
     create or replace function func_age_5
     (p_jubun IN varchar2)
@@ -10840,32 +10841,32 @@ group by department_id;
     BEGIN
         if length(p_jubun) != 13 then raise error_jubun;
         end if;
-        
+
         WHILE NOT( i > 13 ) LOOP
             i := i+1;
             if not(substr(p_jubun,i,1) between '0' and '9') then raise error_jubun; -- jubun 이 문자열 타입이므로 '' 타입!
             end if;
         END LOOP;
-        
+
         if    v_gender_num in ('1','2') then v_year := 1900;
         elsif v_gender_num in ('3','4') then v_year := 2000;
         else raise error_jubun;
         end if;
-        
-        if to_date(to_char(sysdate,'yyyy')||substr(p_jubun,3,4),'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') > 0 
+
+        if to_date(to_char(sysdate,'yyyy')||substr(p_jubun,3,4),'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') > 0
              then v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2))) - 1;
         else v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2)));
         end if;
-        
+
         return v_age;
-        
-        EXCEPTION 
-        WHEN error_jubun 
+
+        EXCEPTION
+        WHEN error_jubun
         then raise_application_error(-20001, '잘못된 주민등록번호입니다.'); -- raise_application_error() 는 dbms가 아닌 스크립트 출력창에 오류를 띄워준다.
                               --     -20001 은 오류번호로써, 사용자가 정의해주는 EXCEPTION 에 대해서는 오류번호를 -20001 부터 -20999 까지만 가능하다. 그 이외의 오류번호는 사용할 수 없다.
     END func_age_5;
     -- Function FUNC_AGE_5이(가) 컴파일되었습니다.
-    
+
     -- 강사님
     create or replace function func_age_5
     (p_jubun IN varchar2)
@@ -10881,33 +10882,33 @@ group by department_id;
     BEGIN
         if length(p_jubun) != 13 then raise error_jubun;
         end if;
-        
+
         WHILE NOT(not(substr(p_jubun,i,1) between '0' and '9') or i = 14) LOOP  -- 13까지 검사해야되니까 14이면 빠져나와야한다.
             i := i+1;
         END LOOP;
-        
+
         IF i != 14 THEN raise error_jubun;
         END IF;
-        
+
         if    v_gender_num in ('1','2') then v_year := 1900;
         elsif v_gender_num in ('3','4') then v_year := 2000;
         else raise error_jubun;
         end if;
-        
-        if to_date(to_char(sysdate,'yyyy')||substr(p_jubun,3,4),'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') > 0 
+
+        if to_date(to_char(sysdate,'yyyy')||substr(p_jubun,3,4),'yyyymmdd') - to_date(to_char(sysdate,'yyyymmdd'),'yyyymmdd') > 0
              then v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2))) - 1;
         else v_age := extract(year from sysdate) - (v_year + to_number(substr(p_jubun,1,2)));
         end if;
-        
+
         return v_age;
-        
-        EXCEPTION 
-        WHEN error_jubun 
+
+        EXCEPTION
+        WHEN error_jubun
         then raise_application_error(-20001, '잘못된 주민등록번호입니다.'); -- raise_application_error() 는 dbms가 아닌 스크립트 출력창에 오류를 띄워준다.
                               --     -20001 은 오류번호로써, 사용자가 정의해주는 EXCEPTION 에 대해서는 오류번호를 -20001 부터 -20999 까지만 가능하다. 그 이외의 오류번호는 사용할 수 없다.
     END func_age_5;
     -- Function FUNC_AGE_5이(가) 컴파일되었습니다.
-    
+
     -- 결과확인
     select func_age_3('9001011234567'), func_age_4('9001011234567'), func_age_5('9001011234567')
     from dual;
@@ -10924,13 +10925,13 @@ group by department_id;
     from dual;
     -- ORA-20001: 잘못된 주민등록번호입니다.
     -- ORA-06512: "HR.FUNC_AGE_5",  36행
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
     create table tbl_member_test1
     (userid      varchar2(20)
     ,passwd      varchar2(20) not null
@@ -10938,15 +10939,15 @@ group by department_id;
     ,constraint  PK_tbl_member_test1_userid primary key(userid)
     );
     -- Table TBL_MEMBER_TEST1이(가) 생성되었습니다.
- 
 
-    -- [퀴즈] tbl_member_test1 테이블에 insert 해주는 pcd_tbl_member_test1_insert 라는 프로시저를 작성하세요.  
+
+    -- [퀴즈] tbl_member_test1 테이블에 insert 해주는 pcd_tbl_member_test1_insert 라는 프로시저를 작성하세요.
     exec pcd_tbl_member_test1_insert('hongkd','qwer1234$','홍길동'); --> 정상적으로 insert 되어진다.
-    
-    exec pcd_tbl_member_test1_insert('eomjh','a3$','유관순');       --> 오류메시지 -20002  '암호는 최소 5글자 이상이면서 영문자 및 숫자 및 특수기호가 혼합되어져야 합니다.' 이 뜬다. 그러므로 insert 가 안되어진다. 
-    exec pcd_tbl_member_test1_insert('eomjh','abc1234','유관순');   --> 오류메시지 -20002  '암호는 최소 5글자 이상이면서 영문자 및 숫자 및 특수기호가 혼합되어져야 합니다.' 이 뜬다. 그러므로 insert 가 안되어진다.  
-    
-    
+
+    exec pcd_tbl_member_test1_insert('eomjh','a3$','유관순');       --> 오류메시지 -20002  '암호는 최소 5글자 이상이면서 영문자 및 숫자 및 특수기호가 혼합되어져야 합니다.' 이 뜬다. 그러므로 insert 가 안되어진다.
+    exec pcd_tbl_member_test1_insert('eomjh','abc1234','유관순');   --> 오류메시지 -20002  '암호는 최소 5글자 이상이면서 영문자 및 숫자 및 특수기호가 혼합되어져야 합니다.' 이 뜬다. 그러므로 insert 가 안되어진다.
+
+
     create or replace procedure pcd_tbl_member_test1_insert
     (p_userid IN tbl_member_test1.userid%type
     ,p_passwd IN tbl_member_test1.passwd%type
@@ -10965,7 +10966,7 @@ group by department_id;
         else
             For i in 1..v_passwd_length LOOP
                 v_ch := substr(p_passwd,i,1);
-                
+
                 if(v_ch between 'A' and 'Z') or (v_ch between 'a' and 'z') then     -- 영문자 이라면
                     v_flag_alphabet := 1;
                 elsif(v_ch between '0' and '9') then    -- 숫자 이라면
@@ -10974,28 +10975,28 @@ group by department_id;
                     v_flag_special := 1;
                 end if;
             END LOOP;   -- end of for loop-------------------------------------------------------------
-            
+
             if(v_flag_alphabet * v_flag_number * v_flag_special = 1) then
                 insert into tbl_member_test1(userid,passwd,name) values(p_userid,p_passwd,p_name);
             else raise error_insert;     -- 사용자가 정의하는 예외절(Exception)을 구동시켜라.
             end if;
         end if;
-        
+
         Exception   -- 정의내리기
             WHEN error_insert THEN raise_application_error(-20002,'>> 암호는 최소 5글자 이상이면서 영문자 및 숫자 및 특수기호가 혼합되어져야 합니다. <<');
     end pcd_tbl_member_test1_insert;
     -- Procedure PCD_TBL_MEMBER_TEST1_INSERT이(가) 컴파일되었습니다.
-    
+
     exec pcd_tbl_member_test1_insert('hongkd','qwer1234$','홍길동');
     -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
-    
+
     select *
     from tbl_member_test1;
     -- hongkd	qwer1234$	홍길동
-    
+
     commit;
     -- 커밋 완료.
-    
+
     exec pcd_tbl_member_test1_insert('eomjh','a3$','유관순');
     /*
     오류 보고 -
@@ -11008,48 +11009,48 @@ group by department_id;
     ORA-20002: >> 암호는 최소 5글자 이상이면서 영문자 및 숫자 및 특수기호가 혼합되어져야 합니다. <<
     ORA-06512: "HR.PCD_TBL_MEMBER_TEST1_INSERT",  36행
     */
-    
-    
-    
-    
+
+
+
+
     ------------ ***** 사용자 정의 예외절(EXCEPTION) ***** ----------------
      예외절 = 오류절
-     
+
      ※ 형식
-     
+
      exception
           when  익셉션이름1  [or 익셉션이름2]  then
                 실행문장1;
                 실행문장2;
                 실행문장3;
-                
+
           when  익셉션이름3  [or 익셉션이름4]  then
                 실행문장4;
                 실행문장5;
-                실행문장6; 
-                
-          when  others  then  
+                실행문장6;
+
+          when  others  then
                 실행문장7;
                 실행문장8;
-                실행문장9; 
-   ------------------------------------------------------------------    
-   
-   
+                실행문장9;
+   ------------------------------------------------------------------
+
+
    /*
       === tbl_member_test1 테이블에 insert 할 수 있는 요일명과 시간을 제한해 두겠습니다. ===
-        
+
           tbl_member_test1 테이블에 insert 할 수 있는 요일명은 월,화,수,목,금 만 가능하며
           또한 월,화,수,목,금 중에 오후 2시 부터 오후 5시 이전까지만(오후 5시 정각은 안돼요) insert 가 가능하도록 하고자 한다.
-          만약에 insert 가 불가한 요일명(토,일)이거나 불가한 시간대에 insert 를 시도하면 
-          '영업시간(월~금 14:00 ~ 16:59:59 까지) 아니므로 입력불가함!!' 이라는 오류메시지가 뜨도록 한다. 
-   */ 
-   
+          만약에 insert 가 불가한 요일명(토,일)이거나 불가한 시간대에 insert 를 시도하면
+          '영업시간(월~금 14:00 ~ 16:59:59 까지) 아니므로 입력불가함!!' 이라는 오류메시지가 뜨도록 한다.
+   */
+
     select to_char(sysdate,'d') -- sysdate의 주의 일요일 부터(지금은 2024년 3월 4일) sysdate(지금은 2024년 3월 4일) 까지 며칠째 인지를 알려주는 것이다.
                                 -- '1'(일요일) '2'(월요일) '3'(화요일) '4'(수요일) '5'(목요일) '6'(금요일) '7'(토요일)
     from dual;
-   
-   
-   
+
+
+
    create or replace procedure pcd_tbl_member_test1_insert
     (p_userid IN tbl_member_test1.userid%type
     ,p_passwd IN tbl_member_test1.passwd%type
@@ -11065,16 +11066,16 @@ group by department_id;
         v_flag_special  number(1) := 0; -- 특수문자 확인 용도
     begin
         -- 입력(insert)이 불가한 요일명과 시간대를 알아봅니다. --
-        if(to_char(sysdate,'d') in ('1','7') or to_number(to_char(sysdate,'hh24')) < 14 or to_number(to_char(sysdate,'hh24')) > 16) 
+        if(to_char(sysdate,'d') in ('1','7') or to_number(to_char(sysdate,'hh24')) < 14 or to_number(to_char(sysdate,'hh24')) > 16)
             then raise error_dayTime;
         else    -- 입력(insert)이 가능한 요일명과 시간대 이라면 암호를 검사하겠다.
-    
+
             v_passwd_length := length(p_passwd);
             if(v_passwd_length < 5 or v_passwd_length > 20) then raise error_insert;    -- 사용자가 정의하는 예외절(Exception)을 구동시켜라.
             else
                 For i in 1..v_passwd_length LOOP
                     v_ch := substr(p_passwd,i,1);
-                    
+
                     if(v_ch between 'A' and 'Z') or (v_ch between 'a' and 'z') then     -- 영문자 이라면
                         v_flag_alphabet := 1;
                     elsif(v_ch between '0' and '9') then    -- 숫자 이라면
@@ -11083,7 +11084,7 @@ group by department_id;
                         v_flag_special := 1;
                     end if;
                 END LOOP;   -- end of for loop-------------------------------------------------------------
-                
+
                 if(v_flag_alphabet * v_flag_number * v_flag_special = 1) then
                     insert into tbl_member_test1(userid,passwd,name) values(p_userid,p_passwd,p_name);
                 else raise error_insert;     -- 사용자가 정의하는 예외절(Exception)을 구동시켜라.
@@ -11095,10 +11096,10 @@ group by department_id;
             WHEN error_insert THEN raise_application_error(-20002,'>> 암호는 최소 5글자 이상이면서 영문자 및 숫자 및 특수기호가 혼합되어져야 합니다. <<');
     end pcd_tbl_member_test1_insert;
     -- Procedure PCD_TBL_MEMBER_TEST1_INSERT이(가) 컴파일되었습니다.
-    
+
     commit;
     -- 커밋 완료.
-    
+
     -- [영업시간 평일 14:00:00 ~ 16:59:59 가 아닌 경우]
     exec pcd_tbl_member_test1_insert('eomjh','qwer1234$','엄정화');
     /*
@@ -11106,28 +11107,28 @@ group by department_id;
     ORA-20003: >> 영업시간(월~금 14:00 ~ 16:59:59 까지)이 아니므로 입력불가함 <<
     ORA-06512: "HR.PCD_TBL_MEMBER_TEST1_INSERT",  42행
     */
-    
+
     -- [영업시간에 등록할 경우]
-    exec pcd_tbl_member_test1_insert('eomjh','qwer1234$','엄정화');    
+    exec pcd_tbl_member_test1_insert('eomjh','qwer1234$','엄정화');
     -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
-    
+
     select *
     from tbl_member_test1;
     /*
     hongkd	qwer1234$	홍길동
     eomjh	qwer1234$	엄정화
     */
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+
+
     --- ** 오라클에서는 배열이 없습니다만 배열처럼 사용되어지는 table 타입 변수가 있습니다. ** ---
     --     그래서 table 타입 변수를 사용하여 자바의 배열처럼 사용합니다. --
-    
+
     with E as
     (
     select department_id
@@ -11142,10 +11143,10 @@ group by department_id;
     select E.department_id, D.department_name, E.employee_id, E.ename, E.hiredate, E.gender, E.age
     from departments D right join E
     on D.department_id = E.department_id;
-    
-    
-    
-    
+
+
+
+
     -- 아래의 소스는 잘못된 것 입니다. --
     create or replace procedure pcd_employees_info_deptid
     (p_department_id  IN  employees.department_id%type)
@@ -11157,9 +11158,9 @@ group by department_id;
         v_hiredate           varchar2(10);
         v_gender             varchar2(6);
         v_age                number(3);
-    
+
     begin
-    
+
         with E as
         (
           select department_id
@@ -11173,24 +11174,24 @@ group by department_id;
         )
         select E.department_id, D.department_name, E.employee_id, E.ename, E.hiredate, E.gender, E.age
                into
-               v_department_id, v_department_name, v_employee_id, v_ename, v_hiredate, v_gender, v_age 
+               v_department_id, v_department_name, v_employee_id, v_ename, v_hiredate, v_gender, v_age
         from departments D right join E
         on D.department_id = E.department_id;
-        
+
         dbms_output.put_line( lpad('-',60,'-') );
         dbms_output.put_line( '부서번호    부서명     사원번호     사원명    입사일자   성별   나이' );
         dbms_output.put_line( lpad('-',60,'-') );
-        
-        dbms_output.put_line( v_department_id || ' ' || v_department_name || ' ' || 
+
+        dbms_output.put_line( v_department_id || ' ' || v_department_name || ' ' ||
                               v_employee_id || ' ' || v_ename || ' ' || v_hiredate || ' ' || v_gender || ' ' || v_age );
-                              
-        EXCEPTION 
+
+        EXCEPTION
            WHEN no_data_found THEN   -- no_data_found 은 오라클에서 데이터가 존재하지 않을 경우 발생하는 오류임.
                 dbms_output.put_line('>> 부서번호 ' || p_department_id || '은 존재하지 않습니다. <<');
-    
-    end pcd_employees_info_deptid; 
+
+    end pcd_employees_info_deptid;
     -- Procedure PCD_EMPLOYEES_INFO_DEPTID이(가) 컴파일되었습니다.
-    
+
     exec pcd_employees_info_deptid(10);
     -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
     /*
@@ -11199,67 +11200,67 @@ group by department_id;
     ------------------------------------------------------------
     10 Administration 200 Jennifer Whalen 2003-09-17 여 45
     */
-    
+
     exec pcd_employees_info_deptid(8888);
     -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
     -- >> 부서번호 8888은 존재하지 않습니다. <<
-    
+
     exec pcd_employees_info_deptid(30);
     /*
     오류 보고 -
     ORA-01422: 실제 인출은 요구된 것보다 많은 수의 행을 추출합니다
     ORA-06512: "HR.PCD_EMPLOYEES_INFO_DEPTID",  14행
     */
-    
-    
-    
+
+
+
     /*
     6개 행이 나와야 하는데 프로시저에서 select 되어진 컬럼의 값을 담을 변수
-    into ~~~ 에 있는 (v_department_id, v_department_name, v_employee_id, v_ename, v_hiredate, v_gender, v_age )는 
+    into ~~~ 에 있는 (v_department_id, v_department_name, v_employee_id, v_ename, v_hiredate, v_gender, v_age )는
     데이터 값을 1개 밖에 담지 못하므로 위와 같은 오류가 발생한다.
-    */   
-  
+    */
+
  /*
      자바를 예를 들면
      int jumsu = 0;
-     
+
      변수 jumsu 에 90, 95, 88, 75, 91, 80 이라는 6개의 점수를 입력하고자 한다.
      돼요? 안돼요?  안됩니다.
- 
+
      jumsu = 90;
      jumsu = 85;
      jumsu = 88;
      jumsu = 75;
      jumsu = 91;
      jumsu = 80;
-     
+
      최종적으로 변수 jumsu 에 담긴 값은 80 이 된다.
-     
-     그래서 자바에서는 아래와 같이 배열로 만들어서 한다. 
-     int[] jumsuArr = new int[6]; 
-     
+
+     그래서 자바에서는 아래와 같이 배열로 만들어서 한다.
+     int[] jumsuArr = new int[6];
+
      jumsuArr[0] = 90;
      jumsuArr[1] = 85;
      jumsuArr[2] = 88;
      jumsuArr[3] = 75;
      jumsuArr[4] = 91;
      jumsuArr[5] = 80;
-     
+
      -------------------------------
-     | 90 | 85 | 88 | 75 | 91 | 80 | 
+     | 90 | 85 | 88 | 75 | 91 | 80 |
      -------------------------------
-     
- */ 
-    
+
+ */
+
     select employee_id
     from employees
     where department_id = 30;
- 
+
  /*
     아래의 모양은 자바에서 사용되던 1차원 배열의 모양을 90도 회전한 것과 같다.
     그래서 오라클에서는 자바의 1차원 배열처럼 컬럼을 1개만 가지는 table 타입 변수를 사용하여 쓴다.
-    
-    EMPLOYEE_ID 
+
+    EMPLOYEE_ID
      -------
      | 114 |
      -------
@@ -11273,8 +11274,8 @@ group by department_id;
      -------
      | 119 |
      -------
- 
- */ 
+
+ */
     ---- **** [ 위에서 만든 pcd_employees_info_deptid 을 올바르게 작동하도록 해결하기 ] **** ----
     create or replace procedure pcd_employees_info_deptid
     (p_department_id  IN  employees.department_id%type)
@@ -11293,11 +11294,11 @@ group by department_id;
         is table of varchar2(6) index by binary_integer;                        -- v_gender             varchar2(6);
         type age_type
         is table of number(3) index by binary_integer;                          -- v_age                number(3);
-          
+
         i binary_integer := 0;    -- i 가 마치 배열의 방번호 용도 처럼 쓰인다.
                                 -- 그런데 자바에서 배열의 시작은 0 부터 시작하지만
                                 -- 오라클에서는 1 부터 시작한다.
-    
+
         v_department_id     department_id_type;
         v_department_name   department_name_type;
         v_employee_id       employee_id_type;
@@ -11305,9 +11306,9 @@ group by department_id;
         v_hiredate          hiredate_type;
         v_gender            gender_type;
         v_age               age_type;
-    
+
     begin
-    
+
         FOR v_rcd IN (  -- FOR v_rcd IN(select 문) LOOP => select 문을 통해 나온 행의 개수만큼 출력
                         WITH E as
                         (
@@ -11323,8 +11324,8 @@ group by department_id;
                         select E.department_id, D.department_name, E.employee_id, E.ename, E.hiredate, E.gender, E.age
                         from departments D right join E
                         on D.department_id = E.department_id
-                    ) LOOP    
-                    
+                    ) LOOP
+
                     i := i+1;
                     v_department_id(i) := v_rcd.department_id;
                     v_department_name(i) := v_rcd.department_name;
@@ -11333,27 +11334,27 @@ group by department_id;
                     v_hiredate(i) := v_rcd.hiredate;
                     v_gender(i) := v_rcd.gender;
                     v_age(i) := v_rcd.age;
-                    
+
         END LOOP;
-        
+
         if(i = 0) then raise no_data_found;
         else dbms_output.put_line( lpad('-',60,'-') );
              dbms_output.put_line( '부서번호    부서명     사원번호     사원명    입사일자   성별   나이' );
              dbms_output.put_line( lpad('-',60,'-') );
-        
+
             FOR K IN 1..i LOOP
-                dbms_output.put_line( v_department_id(k) || ' ' || v_department_name(k) || ' ' || 
+                dbms_output.put_line( v_department_id(k) || ' ' || v_department_name(k) || ' ' ||
                               v_employee_id(k) || ' ' || v_ename(k) || ' ' || v_hiredate(k) || ' ' || v_gender(k) || ' ' || v_age(k) );
             END LOOP;
         end if;
-        
-        EXCEPTION 
+
+        EXCEPTION
            WHEN no_data_found THEN   -- no_data_found 은 오라클에서 데이터가 존재하지 않을 경우 발생하는 오류임.
                 dbms_output.put_line('>> 부서번호 ' || p_department_id || '은 존재하지 않습니다. <<');
-    
-    end pcd_employees_info_deptid; 
+
+    end pcd_employees_info_deptid;
     -- Procedure PCD_EMPLOYEES_INFO_DEPTID이(가) 컴파일되었습니다.
-    
+
     exec pcd_employees_info_deptid(30);
     -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
     /*
@@ -11367,55 +11368,55 @@ group by department_id;
         30 Purchasing 118 Guy Himuro 2006-11-15 남 45
         30 Purchasing 119 Karen Colmenares 2007-08-10 남 44
     */
-    
-    
+
+
     -----------------------------------------------------------------------------
-    
+
             ---- ===== **** CURSOR **** ===== -----
-              
+
     --  PL/SQL 에서 SELECT 되어져 나오는 행의 개수가 2개 이상인 경우에는 위에서 한 것처럼
-    --  table 타입의 변수를 사용하여 나타낼 수 있고, 또는 CURSOR 를 사용하여 나타낼 수도 있다. 
-    --  table 타입의 변수를 사용하는 것 보다 CURSOR 를 사용하는 것이 더 편하므로 
+    --  table 타입의 변수를 사용하여 나타낼 수 있고, 또는 CURSOR 를 사용하여 나타낼 수도 있다.
+    --  table 타입의 변수를 사용하는 것 보다 CURSOR 를 사용하는 것이 더 편하므로
     --  대부분 CURSOR 를 많이 사용한다.
-    
-    
+
+
     ----- *** 명시적 CURSOR 만들기 *** -----
     ※ 형식
-    
+
     1단계 -- CURSOR 의 선언(정의)
-     
+
     CURSOR 커서명
     IS
-    SELECT 문;  
-    
+    SELECT 문;
+
     2단계 -- CURSOR 의 OPEN
-    
+
     OPEN 커서명;
-    
+
     3단계 -- CURSOR 의 FETCH
            (FETCH 란? SELECT 되어진 결과물을 끄집어 내는 작업을 말한다)
-    
+
     FETCH  커서명 INTO 변수;
-    
+
     4단계 -- CURSOR 의 CLOSE
-    
+
     CLOSE 커서명;
-      
-    
-    
+
+
+
     ※ ==== 커서의 속성변수 ==== ※
-    
+
     1. 커서명%ISOPEN   ==> 커서가 OPEN 되어진 상태인가를 체크하는 것.
                        만약에 커서가 OPEN 되어진 상태이라면 TRUE.
-    
+
     2. 커서명%FOUND    ==> FETCH 된 레코드(행)이 있는지 체크하는 것.
                        만약에 FETCH 된 레코드(행)이 있으면 TRUE.
-    
+
     3. 커서명%NOTFOUND ==> FETCH 된 레코드(행)이 없는지 체크하는 것.
                        만약에 FETCH 된 레코드(행)이 없으면 TRUE.
-    
+
     4. 커서명%ROWCOUNT ==> 현재까지 FETCH 된 레코드(행)의 갯수를 반환해줌.
-    
+
     create or replace procedure pcd_employees_deptid_cursor
     (p_department_id  IN  employees.department_id%type)
     is
@@ -11436,7 +11437,7 @@ group by department_id;
         select E.department_id, D.department_name, E.employee_id, E.ename, E.hiredate, E.gender, E.age
         from departments D right join E
         on D.department_id = E.department_id;
-        
+
         v_department_id     employees.department_id%type;
         v_department_name   departments.department_name%type;
         v_employee_id       employees.employee_id%type;
@@ -11444,9 +11445,9 @@ group by department_id;
         v_hiredate          varchar2(10);
         v_gender            varchar2(6);
         v_age               number(3);
-        
+
         v_fetch_count       number := 0;
-        
+
     begin
         -- 2단계. CURSOR 의 OPEN
         OPEN cur_empinfo;
@@ -11460,12 +11461,12 @@ group by department_id;
                 dbms_output.put_line( '부서번호    부서명     사원번호     사원명    입사일자   성별   나이' );
                 dbms_output.put_line( lpad('-',60,'-') );
             end if;
-            dbms_output.put_line( v_department_id || ' ' || v_department_name || ' ' || 
+            dbms_output.put_line( v_department_id || ' ' || v_department_name || ' ' ||
                               v_employee_id || ' ' || v_ename || ' ' || v_hiredate || ' ' || v_gender || ' ' || v_age);
         END LOOP;
         -- 4단계. CURSOR 의 CLOSE
         CLOSE cur_empinfo;
-        
+
         if(v_fetch_count = 0) then
             dbms_output.put_line('>> 부서번호 ' || p_department_id || '은 존재하지 않습니다. <<');
         else
@@ -11474,7 +11475,7 @@ group by department_id;
         end if;
     end pcd_employees_deptid_cursor;
     -- Procedure PCD_EMPLOYEES_DEPTID_CURSOR이(가) 컴파일되었습니다.
-    
+
     exec pcd_employees_deptid_cursor(10);
     -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
     /*
@@ -11482,7 +11483,7 @@ group by department_id;
         부서번호    부서명     사원번호     사원명    입사일자   성별   나이
         ------------------------------------------------------------
         10 Administration 200 Jennifer Whalen 2003-09-17 여 45
-        
+
         >> 조회된 행의 개수 : 1개 <<
     */
     exec pcd_employees_deptid_cursor(30);
@@ -11497,24 +11498,542 @@ group by department_id;
         30 Purchasing 117 Sigal Tobias 2005-07-24 여 62
         30 Purchasing 118 Guy Himuro 2006-11-15 남 45
         30 Purchasing 119 Karen Colmenares 2007-08-10 남 44
-         
+
         >> 조회된 행의 개수 : 6개 <<
     */
     exec pcd_employees_deptid_cursor(8888);
     -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
     -- >> 부서번호 8888은 존재하지 않습니다. <<
-    
+
+
+
     -------------- *****  FOR LOOP CURSOR 만들기 ***** -----------------
     /*
          FOR LOOP CURSOR 문을 사용하면
          커서의 OPEN, 커서의 FETCH, 커서의 CLOSE 가 자동적으로 발생되어지기 때문에
          우리는 커서의 OPEN, 커서의 FETCH, 커서의 CLOSE 문장을 기술할 필요가 없다.
     */
-    
+
     ※ 형식
-    FOR 변수명(select 되어진 행의 정보가 담기는 변수) IN 커서명 LOOP
+    FOR 변수명(select 되어진 행의 정보가 담기는 변수) IN 커서명 LOOP   -- 2단계
       실행문장;
-    END LOOP; 
+    END LOOP;
+
+
+    create or replace procedure pcd_employees_deptid_forcursor
+    (p_department_id  IN  employees.department_id%type)
+    is
+        -- 1단계. CURSOR 의 선언(정의)
+        cursor cur_empinfo
+        is
+        WITH E as
+        (
+            select department_id
+               , employee_id
+               , first_name || ' ' || last_name AS ENAME
+               , to_char(hire_date, 'yyyy-mm-dd') AS HIREDATE
+               , func_gender(jubun) AS GENDER
+               , func_age(jubun) AS AGE
+            from employees
+            where department_id = p_department_id
+        )
+        select E.department_id, D.department_name, E.employee_id, E.ename, E.hiredate, E.gender, E.age
+        from departments D right join E
+        on D.department_id = E.department_id;
+
+        v_fetch_count       number := 0;
+
+    begin
+        -- 2단계. 
+        /*
+            FOR 변수명(select 되어진 행의 정보가 담기는 변수) IN 커서명 LOOP
+            실행문장;
+            END LOOP;
+        */
+        FOR v_rcd IN cur_empinfo LOOP   -- 이때 변수는 자동적으로 선언되어진다.
+            v_fetch_count := cur_empinfo%ROWCOUNT;   -- 현재까지 FETCH 된 레코드(행)의 갯수
+            
+            if(v_fetch_count = 1) then   -- 현재까지 FETCH 된 레코드(행)의 갯수
+                dbms_output.put_line( lpad('-',60,'-') );
+                dbms_output.put_line( '부서번호    부서명     사원번호     사원명    입사일자   성별   나이' );
+                dbms_output.put_line( lpad('-',60,'-') );
+            end if;
+            
+            dbms_output.put_line( v_rcd.department_id || ' ' || v_rcd.department_name || ' ' ||
+                              v_rcd.employee_id || ' ' || v_rcd.ename || ' ' || v_rcd.hiredate || ' ' || v_rcd.gender || ' ' || v_rcd.age);
+        END LOOP;
+        
+        if(v_fetch_count = 0) then
+            dbms_output.put_line('>> 부서번호 ' || p_department_id || '은 존재하지 않습니다. <<');
+        else
+            dbms_output.put_line(' ');
+            dbms_output.put_line('>> 조회된 행의 개수 : ' || v_fetch_count || '개 <<');
+        end if;
+    end pcd_employees_deptid_forcursor;
+    -- Procedure PCD_EMPLOYEES_DEPTID_FORCURSOR이(가) 컴파일되었습니다.
+    
+    
+    exec pcd_employees_deptid_forcursor(10);
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    /*
+        ------------------------------------------------------------
+        부서번호    부서명     사원번호     사원명    입사일자   성별   나이
+        ------------------------------------------------------------
+        10 Administration 200 Jennifer Whalen 2003-09-17 여 45
+
+        >> 조회된 행의 개수 : 1개 <<
+    */
+    exec pcd_employees_deptid_forcursor(30);
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    /*
+        ------------------------------------------------------------
+        부서번호    부서명     사원번호     사원명    입사일자   성별   나이
+        ------------------------------------------------------------
+        30 Purchasing 114 Den Raphaely 2002-12-07 여 56
+        30 Purchasing 115 Alexander Khoo 2003-05-18 남 62
+        30 Purchasing 116 Shelli Baida 2005-12-24 남 61
+        30 Purchasing 117 Sigal Tobias 2005-07-24 여 62
+        30 Purchasing 118 Guy Himuro 2006-11-15 남 45
+        30 Purchasing 119 Karen Colmenares 2007-08-10 남 44
+
+        >> 조회된 행의 개수 : 6개 <<
+    */
+    exec pcd_employees_deptid_forcursor(8888);
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    -- >> 부서번호 8888은 존재하지 않습니다. <<
     
     
     
+    
+    
+    
+    
+    
+    ------------------- ****** PACKAGE(패키지) ****** -------------------
+   
+    --->   PACKAGE(패키지)란?  여러개의 Procedure 와 여러개의 Function 들의 묶음
+    
+    -- 1. PACKAGE(패키지)의 선언하기
+    create or replace package employee_pack
+    is
+        -- employee_pack 패키지에 들어올 프로시저 또는 함수를 선언해준다.
+        procedure  pcd_emp_info(p_deptno in employees.department_id%type); 
+        procedure  pcd_dept_info(p_deptno in departments.department_id%type); 
+        function   func_gender(p_jubun in employees.jubun%type) return Nvarchar2;   -- 함수는 return 이 반드시 필요!! 유형타입에 자리수 X(넣지 말아야한다!!)
+    end employee_pack;
+    -- Package EMPLOYEE_PACK이(가) 컴파일되었습니다.
+    
+    -- 2. PACKAGE(패키지)의 BODY(본문) 생성하기
+    create or replace package body employee_pack
+    is
+        procedure  pcd_emp_info(p_deptno in employees.department_id%type)
+        is
+            cursor  cur_empinfo
+            is
+            SELECT E.department_id, D.department_name, E.employee_id, E.ename
+            FROM
+            (
+            select department_id, employee_id, first_name || ' ' || last_name AS ename
+            from employees
+            where department_id = p_deptno
+            ) E JOIN departments D
+            ON E.department_id = D.department_id;
+            
+          v_fetch_count  number := 0;
+          
+        begin
+            for v_rcd in cur_empinfo loop
+              
+              v_fetch_count := cur_empinfo%rowcount;
+              
+              if(v_fetch_count = 1) then
+                 dbms_output.put_line( lpad('-',60,'-') );
+                 dbms_output.put_line('부서번호  부서명       사원번호  사원명 ');
+                 dbms_output.put_line( lpad('-',60,'-') );
+              end if;
+              
+              dbms_output.put_line(v_rcd.department_id || ' ' ||
+                                   v_rcd.department_name || ' ' ||
+                                   v_rcd.employee_id || ' ' ||
+                                   v_rcd.ename);
+            end loop; 
+            
+            if(v_fetch_count = 0) then
+               dbms_output.put_line('>> 부서번호 ' || p_deptno || '은 없습니다.<<'); 
+            else
+               dbms_output.put_line(' ');
+               dbms_output.put_line('>> 조회건수 ' || v_fetch_count || '개');
+            end if;
+            
+        end pcd_emp_info;   -- 이때 end 는 프로시저에 end 이다!
+        
+        procedure  pcd_dept_info(p_deptno in departments.department_id%type)
+        is
+            v_department_id    departments.department_id%type;
+            v_department_name  departments.department_name%type;
+        begin
+            select department_id, department_name
+                   into
+                   v_department_id, v_department_name
+            from departments
+            where department_id = p_deptno;
+            
+            dbms_output.put_line( lpad('-',40,'-') );
+            dbms_output.put_line( '부서번호  부서명' );
+            dbms_output.put_line( lpad('-',40,'-') );
+            
+            dbms_output.put_line( v_department_id || ' ' || v_department_name ); 
+            
+            exception
+               when no_data_found then
+                    dbms_output.put_line('>> 부서번호 ' || p_deptno || '은 없습니다.<<');
+                    
+        end pcd_dept_info;  -- 이때 end 는 프로시저에 end 이다!
+        
+        function   func_gender(p_jubun in employees.jubun%type) return Nvarchar2
+        is
+            v_jubun_length  number;
+            v_cnt           number(2) := 0;
+            v_gender        Nvarchar2(1);    -- '' : NULL, ' ': 공백
+            
+            error_jubun     exception;
+            
+        begin
+            v_jubun_length := length(p_jubun);
+            
+            if(v_jubun_length != 13) then
+                raise  error_jubun;
+            else
+                for i in 1..v_jubun_length loop
+                    v_cnt := v_cnt + 1;
+            
+                    if not (substr(p_jubun, i, 1) between '0' and '9') then 
+                        raise  error_jubun;
+                    end if;   
+                 end loop;
+            
+                if(v_cnt = v_jubun_length) then
+                    if( substr(p_jubun, 7, 1) in('1','3') ) then 
+                        v_gender := '남';
+                    elsif( substr(p_jubun, 7, 1) in('2','4') ) then 
+                        v_gender := '여';
+                    else     
+                        raise  error_jubun;
+                    end if;    
+                end if;
+            
+            end if;
+            
+            return v_gender;
+            
+            exception 
+            when error_jubun then
+                raise_application_error(-20001, '>> 주민번호가 올바르지 않습니다. <<'); 
+        end func_gender;    -- 이때 end 는 function에 end 이다!
+        
+    end employee_pack;
+    -- Package Body EMPLOYEE_PACK이(가) 컴파일되었습니다.
+    
+    
+    -- *** 패키지 실행하기 *** --
+    begin
+        employee_pack.pcd_emp_info(30);
+    end;
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    /*
+        ------------------------------------------------------------
+        부서번호  부서명       사원번호  사원명 
+        ------------------------------------------------------------
+        30 Purchasing 114 Den Raphaely
+        30 Purchasing 115 Alexander Khoo
+        30 Purchasing 116 Shelli Baida
+        30 Purchasing 117 Sigal Tobias
+        30 Purchasing 118 Guy Himuro
+        30 Purchasing 119 Karen Colmenares
+        
+        >> 조회건수 6개
+    */
+    
+    begin
+        employee_pack.pcd_emp_info(2345);
+    end;
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    -- >> 부서번호 2345은 없습니다.<<
+    
+    begin
+        employee_pack.pcd_dept_info(30);
+    end;
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    /*
+        ----------------------------------------
+        부서번호  부서명
+        ----------------------------------------
+        30 Purchasing
+    */
+    
+    begin
+        employee_pack.pcd_dept_info(2345);
+    end;
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    -- >> 부서번호 2345은 없습니다.<<
+    
+    select employee_pack.func_gender('9010201234567')
+    from dual;
+    
+    select employee_pack.func_gender('9010201234567')
+        , employee_pack.func_gender('9010202234567')
+        , employee_pack.func_gender('0010203234567')
+        , employee_pack.func_gender('0010204234567')
+    from dual;
+    -- 남	여	남	여
+    
+    select employee_pack.func_gender('901020123456b')
+    from dual;
+    -- ORA-20001: >> 주민번호가 올바르지 않습니다. <<
+    
+    select employee_pack.func_gender('901020123456')
+    from dual;
+    -- ORA-20001: >> 주민번호가 올바르지 않습니다. <<
+    
+    select employee_id, first_name, jubun, employee_pack.func_gender(jubun)
+    from employees
+    order by 1 asc;
+    
+    
+    ----- *** 패키지 소스 보기 *** -----
+    select text
+    from user_source
+    where type = 'PACKAGE' and name = 'EMPLOYEE_PACK';  -- 패키지명 대문자로 입력하기!
+    /*
+    "package employee_pack
+"
+"    is
+"
+"        -- employee_pack 패키지에 들어올 프로시저 또는 함수를 선언해준다.
+"
+"        procedure  pcd_emp_info(p_deptno in employees.department_id%type); 
+"
+"        procedure  pcd_dept_info(p_deptno in departments.department_id%type); 
+"
+"        function   func_gender(p_jubun in employees.jubun%type) return Nvarchar2;   -- 함수는 return 이 반드시 필요!! 유형타입에 자리수 X(넣지 말아야한다!!)
+"
+    end employee_pack;
+    */
+    
+    
+    ----- *** 패키지 BODY(본문) 소스 보기 *** -----
+    select line, text
+    from user_source
+    where type = 'PACKAGE BODY' and name = 'EMPLOYEE_PACK';
+    /*
+    1	"package body employee_pack
+"
+2	"    is
+"
+3	"        procedure  pcd_emp_info(p_deptno in employees.department_id%type)
+"
+4	"        is
+"
+5	"            cursor  cur_empinfo
+"
+6	"            is
+"
+7	"            SELECT E.department_id, D.department_name, E.employee_id, E.ename
+"
+8	"            FROM
+"
+9	"            (
+"
+10	"            select department_id, employee_id, first_name || ' ' || last_name AS ename
+"
+11	"            from employees
+"
+12	"            where department_id = p_deptno
+"
+13	"            ) E JOIN departments D
+"
+14	"            ON E.department_id = D.department_id;
+"
+15	"
+"
+16	"          v_fetch_count  number := 0;
+"
+17	"
+"
+18	"        begin
+"
+19	"            for v_rcd in cur_empinfo loop
+"
+20	"
+"
+21	"              v_fetch_count := cur_empinfo%rowcount;
+"
+22	"
+"
+23	"              if(v_fetch_count = 1) then
+"
+24	"                 dbms_output.put_line( lpad('-',60,'-') );
+"
+25	"                 dbms_output.put_line('부서번호  부서명       사원번호  사원명 ');
+"
+26	"                 dbms_output.put_line( lpad('-',60,'-') );
+"
+27	"              end if;
+"
+28	"
+"
+29	"              dbms_output.put_line(v_rcd.department_id || ' ' ||
+"
+30	"                                   v_rcd.department_name || ' ' ||
+"
+31	"                                   v_rcd.employee_id || ' ' ||
+"
+32	"                                   v_rcd.ename);
+"
+33	"            end loop; 
+"
+34	"
+"
+35	"            if(v_fetch_count = 0) then
+"
+36	"               dbms_output.put_line('>> 부서번호 ' || p_deptno || '은 없습니다.<<'); 
+"
+37	"            else
+"
+38	"               dbms_output.put_line(' ');
+"
+39	"               dbms_output.put_line('>> 조회건수 ' || v_fetch_count || '개');
+"
+40	"            end if;
+"
+41	"
+"
+42	"        end pcd_emp_info;   -- 이때 end 는 프로시저에 end 이다!
+"
+43	"
+"
+44	"        procedure  pcd_dept_info(p_deptno in departments.department_id%type)
+"
+45	"        is
+"
+46	"            v_department_id    departments.department_id%type;
+"
+47	"            v_department_name  departments.department_name%type;
+"
+48	"        begin
+"
+49	"            select department_id, department_name
+"
+50	"                   into
+"
+51	"                   v_department_id, v_department_name
+"
+52	"            from departments
+"
+53	"            where department_id = p_deptno;
+"
+54	"
+"
+55	"            dbms_output.put_line( lpad('-',40,'-') );
+"
+56	"            dbms_output.put_line( '부서번호  부서명' );
+"
+57	"            dbms_output.put_line( lpad('-',40,'-') );
+"
+58	"
+"
+59	"            dbms_output.put_line( v_department_id || ' ' || v_department_name ); 
+"
+60	"
+"
+61	"            exception
+"
+62	"               when no_data_found then
+"
+63	"                    dbms_output.put_line('>> 부서번호 ' || p_deptno || '은 없습니다.<<');
+"
+64	"
+"
+65	"        end pcd_dept_info;  -- 이때 end 는 프로시저에 end 이다!
+"
+66	"
+"
+67	"        function   func_gender(p_jubun in employees.jubun%type) return Nvarchar2
+"
+68	"        is
+"
+69	"            v_jubun_length  number;
+"
+70	"            v_cnt           number(2) := 0;
+"
+71	"            v_gender        Nvarchar2(1) := ' ';    -- '' : NULL, ' ': 공백
+"
+72	"
+"
+73	"            error_jubun     exception;
+"
+74	"
+"
+75	"        begin
+"
+76	"            v_jubun_length := length(p_jubun);
+"
+77	"
+"
+78	"            if(v_jubun_length != 13) then
+"
+79	"                raise  error_jubun;
+"
+80	"            else
+"
+81	"                for i in 1..v_jubun_length loop
+"
+82	"                    v_cnt := v_cnt + 1;
+"
+83	"
+"
+84	"                    if not (substr(p_jubun, i, 1) between '0' and '9') then 
+"
+85	"                        raise  error_jubun;
+"
+86	"                    end if;   
+"
+87	"                 end loop;
+"
+88	"
+"
+89	"                if(v_cnt = v_jubun_length) then
+"
+90	"                    if( substr(p_jubun, 7, 1) in('1','3') ) then 
+"
+91	"                        v_gender := '남';
+"
+92	"                    elsif( substr(p_jubun, 7, 1) in('2','4') ) then 
+"
+93	"                        v_gender := '여';
+"
+94	"                    else     
+"
+95	"                        raise  error_jubun;
+"
+96	"                    end if;    
+"
+97	"                end if;
+"
+98	"
+"
+99	"            end if;
+"
+100	"
+"
+101	"            return v_gender;
+"
+102	"
+"
+103	"            exception 
+"
+104	"            when error_jubun then
+"
+105	"                raise_application_error(-20001, '>> 주민번호가 올바르지 않습니다. <<'); 
+"
+    */
