@@ -9599,6 +9599,48 @@ group by department_id;
     where table_name = 'TBL_JIKWON';
     
     
+    
+    ----- **** 자식테이블이 있는 부모테이블을 drop 하기 **** -----
+    create table tbl_buseo_parent
+    (buno     number(2)
+    ,buname   varchar2(20)
+    ,constraint PK_tbl_buseo_parent primary key(buno)
+    );
+    -- Table TBL_BUSEO_PARENT이(가) 생성되었습니다.
+    
+    create table tbl_sawon_child
+    (sano    number(4)
+    ,saname  varchar2(20)
+    ,fk_buno number(2)
+    ,constraint PK_tbl_sawon_child_sano primary key(sano)
+    ,constraint FK_tbl_sawon_child_fk_buno foreign key(fk_buno) references tbl_buseo_parent(buno)
+    );
+    -- Table TBL_SAWON_CHILD이(가) 생성되었습니다.
+    
+    select *
+    from user_constraints
+    where table_name = 'TBL_SAWON_CHILD';
+    
+    drop table tbl_buseo_parent purge;
+    -- 오류 보고 -
+    -- ORA-02449: 외래 키에 의해 참조되는 고유/기본 키가 테이블에 있습니다
+    
+    drop table tbl_buseo_parent cascade constraint purge;
+    -- Table TBL_BUSEO_PARENT이(가) 삭제되었습니다.
+    
+    -- tbl_buseo_parent 테이블을 참조하고 있는 모든 자식테이블(지금은 tbl_sawon_child)에 존재하는
+    -- foreign key 중에서 tbl_buseo_parent 테이블을 참조하고 있는 foreign key 만 먼저 삭제한다.
+    -- 그런 다음에는 부모자식 관계가 없으므로 tbl_buseo 테이블을 drop purge 한다.
+    
+    -- [확인]
+    select *
+    from user_constraints
+    where table_name = 'TBL_SAWON_CHILD';
+    -- PK_TBL_SAWON_CHILD_SANO	P
+    
+    
+    
+    
     ------------------------------------------------------------------------------
     ---- *** >>> 데이터 백업 없이 drop 되어진 테이블 복구하기 <<< *** ----
    
@@ -10456,6 +10498,163 @@ group by department_id;
     from user_indexes A JOIN user_ind_columns B
     ON A.index_name = B.index_name
     where A.table_name = 'TBL_STUDENT_2';
+    
+    
+    
+    
+    
+    ------ ====== **** 데이터사전(Data Dictionary) **** ====== -------
+    
+    ---- **** ORACLE DATA DICTIONARY VIEW(오라클 데이터 사전 뷰) **** ---- 
+    show user;
+    -- USER이(가) "SYS"입니다.
+    
+    -- 먼저 index 공부를 할때 trace(자동추적) 때문에 아래와 같이 HR에게 부여했던 SELECT ANY DICTIONARY 권한을 회수하겠습니다. 
+    revoke SELECT ANY DICTIONARY from HR;
+    -- Revoke을(를) 성공했습니다.
+    
+    revoke SELECT_CATALOG_ROLE from HR;
+    -- Revoke을(를) 성공했습니다.
+    
+    
+    show user;
+    -- USER이(가) "HR"입니다.
+    
+    select * 
+    from dictionary;
+    -- 또는
+    select * 
+    from dict;
+    /*
+        USER_CONS_COLUMNS
+        ALL_CONS_COLUMNS
+    */
+    
+    --- ===== SYS 로 접속한 것 시작 ===== ---
+    show user;
+    -- USER이(가) "SYS"입니다.
+    
+    select * 
+    from dictionary;
+    -- 또는
+    select * 
+    from dict;
+    /*
+        USER_CONS_COLUMNS
+        ALL_CONS_COLUMNS
+        DBA_CONS_COLUMNS
+    */
+    
+    /*
+     DBA_로 시작하는 것 
+     ==> 관리자만 조회가능한 것으로 모든오라클사용자정보, 모든테이블, 모든인덱스, 모든데이터베이스링크 등등등 의 정보가 다 들어있는 것.
+     
+     USER_로 시작하는 것 
+     ==> 오라클서버에 접속한 사용자 소유의 자신의오라클사용자정보, 자신이만든테이블, 자신이만든인덱스, 자신이만든데이터베이스링크 등등등 의 정보가 다 들어있는 것.
+     
+     ALL_로 시작하는 것 
+     ==> 오라클서버에 접속한 사용자 소유의 즉, 자신의오라클사용자정보, 자신이만든테이블, 자신이만든인덱스, 자신이만든데이터베이스링크 등등등 의 정보가 다 들어있는 것
+         과(와)
+         자신의 것은 아니지만 조회가 가능한 다른사용자의오라클사용자정보, 다른사용자소유의테이블, 다른사용자소유의인덱스, 다른사용자소유의데이터베이스링크 등등등 의 정보가 다 들어있는 것. 
+    */
+    
+    select *
+    from dba_tables
+    where owner in('HR', 'ORAUSER1');
+    --- ===== SYS 로 접속한 것 끝 ===== ---
+    
+    
+    --- ===== HR 로 접속한 것 시작 ===== ---
+    show user;
+    -- USER이(가) "HR"입니다.
+    
+    select *
+    from dba_tables;
+    -- ORA-00942: 테이블 또는 뷰가 존재하지 않습니다   => 사실상 권한이 없어서 조회불가이다.
+    
+    select *
+    from user_tables;
+    
+    select *
+    from all_tables;
+    
+    select *
+    from all_tables
+    where owner = 'ORAUSER1';   -- 권한을 받았기때문에 접근이 가능하다.
+    
+    select *
+    from ORAUSER1.TBL_SAWON;
+    
+    -- *** 자신이 만든 테이블에 대한 모든 정보를 조회하고 싶다. 어디서 보면 될까요? *** --
+    select *
+    from dict
+    where table_name like 'USER_%' and lower(comments) like '%table%';
+    
+    select *
+    from USER_TABLES;
+    
+    -- *** USER_TABLES 에서 보여지는 컬럼에 대한 설명을 보고 싶으면 아래와 같이 하면 됩니다. *** -- 
+    select *
+    from dict_columns
+    where table_name = 'USER_TABLES';
+    
+    -- *** 자신이 만든 테이블의 컬럼에 대한 모든 정보를 조회하고 싶다. 어디서 보면 될까요? *** --
+    select *
+    from dict_columns
+    where table_name like 'USER_%' and lower(comments) like '%column%';
+    
+    select *
+    from USER_TAB_COLUMNS
+    where table_name = 'EMPLOYEES';
+    
+    -- *** USER_TAB_COLUMNS 에서 보여지는 컬럼에 대한 설명을 보고 싶으면 아래와 같이 하면 됩니다. *** --
+    select *
+    from dict_columns
+    where table_name = 'USER_TAB_COLUMNS';
+    
+    -- *** 자신이 만든 테이블의 제약조건에 대한 모든 정보를 조회하고 싶다. 어디서 보면 될까요? *** --
+    select *
+    from dict
+    where table_name like 'USER_%' and lower(comments) like '%constraint%';
+    
+    select *
+    from USER_CONSTRAINTS
+    where table_name = 'EMPLOYEES';
+    
+    select *
+    from USER_CONS_COLUMNS
+    where table_name = 'EMPLOYEES';
+    
+    -- *** 자신이 만든 데이터베이스 링크에 대한 모든 정보를 조회하고 싶다. 어디서 보면 될까요? *** --
+    select *
+    from dict
+    where table_name like 'USER_%' and lower(comments) like '%database link%';
+    
+    select *
+    from USER_DB_LINKS;
+    
+    -- *** 자신이 만든 시퀀스에 대한 모든 정보를 조회하고 싶다. 어디서 보면 될까요? *** --
+    select *
+    from dict
+    where table_name like 'USER_%' and lower(comments) like '%sequence%';
+    
+    select *
+    from USER_SEQUENCES;
+    
+    -- *** 자신이 만든 인덱스에 대한 모든 정보를 조회하고 싶다. 어디서 보면 될까요? *** --
+    select *
+    from dict
+    where table_name like 'USER_%' and lower(comments) like '%index%';
+    
+    select *
+    from USER_INDEXES
+    where table_name = 'EMPLOYEES';
+    
+    select *
+    from USER_IND_COLUMNS
+    where table_name = 'EMPLOYEES';
+    
+    --- ===== HR 로 접속한 것 끝 ===== ---
     
     
     
