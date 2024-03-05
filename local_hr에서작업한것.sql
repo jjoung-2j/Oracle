@@ -9869,6 +9869,7 @@ group by department_id;
         
         LOOP
             v_cnt := v_cnt + 1;
+            
             EXIT WHEN v_cnt > 10000;
             
             -- 채번
@@ -9896,6 +9897,568 @@ group by department_id;
     select seq_tbl_student_1.currval AS 최근에사용한시퀀스값
     from dual;
     -- 10000
+    
+    
+    insert into tbl_student_1(hakbun, name, email, address)
+    values(to_char(sysdate, 'yyyymmdd')||'-'||(seq_tbl_student_1.currval + 1), '배수지'||(seq_tbl_student_1.currval + 1), 'baesuji'||(seq_tbl_student_1.currval + 1)||'@gmail.com', '서울시 마포구 월드컵로 '||(seq_tbl_student_1.currval + 1));
+    --     '20240305-10001'
+    
+    insert into tbl_student_1(hakbun, name, email, address)
+    values(to_char(sysdate, 'yyyymmdd')||'-'||(seq_tbl_student_1.currval + 2), '배수지'||(seq_tbl_student_1.currval + 2), 'baesuji'||(seq_tbl_student_1.currval + 2)||'@gmail.com', '서울시 마포구 월드컵로 '||(seq_tbl_student_1.currval + 2));
+    --     '20240305-10002'
+    
+    insert into tbl_student_1(hakbun, name, email, address)
+    values(to_char(sysdate, 'yyyymmdd')||'-'||(seq_tbl_student_1.currval + 3), '배수지'||(seq_tbl_student_1.currval + 3), 'baesuji'||(seq_tbl_student_1.currval + 3)||'@gmail.com', '서울시 마포구 월드컵로 '||(seq_tbl_student_1.currval + 3));
+    --     '20240305-10003'
+    
+    commit;
+    -- 커밋 완료.
+    
+    select count(*)
+    from tbl_student_1
+    order by hakbun asc;
+    -- 10003
+    
+    select A.index_name, A.uniqueness, B.column_name, B.descend
+    from user_indexes A JOIN user_ind_columns B
+    ON A.index_name = B.index_name
+    where A.table_name = 'TBL_STUDENT_1';
+    /*
+    -----------------------------------------------------------------------
+    INDEX_NAME                  UNIQUENESS      COLUMN_NAME     DESCEND
+    ------------------------------------------------------------------------
+    IDX_TBL_STUDENT_1_HAKBUN	UNIQUE	        HAKBUN	          ASC
+    IDX_TBL_STUDENT_1_NAME	    NONUNIQUE	    NAME	          ASC
+    */
+    
+    
+    
+    -- ==== *** SQL*Developer 에서 Plan(실행계획) 확인하는 방법 *** ==== --
+    /*
+      select 문이 실행될 때 인덱스를 사용하여 데이터를 얻어오는지 인덱스를 사용하지 않고 
+      Table Full Scan 하여 얻어오는지 알아봐야 한다.
+      이럴때 사용하는 것이 SQL Plan(실행계획)이다. 
+      
+      SQL*Developer 에서는 "SQL편집창(SQL 워크시트)"에 Plan(실행계획) 과 Trace(자동추적) 메뉴가 상단에 있다.
+      
+      Plan(실행계획) 과 Trace(자동추적) 의 차이는,
+      Plan(실행계획) 은 SQL을 실행하기 전에 Oracle Optimizer(옵티마이저, 최적화기)가 SQL을 어떻게 실행할지를 미리 알려주는 것이고,
+      Trace(자동추적) 는 SQL을 실행해보고, Oracle Optimizer(옵티마이저, 최적화기)가 SQL을 어떻게 실행했는지 그 결과를 알려주는 것이다.
+
+      그러므로, 정확도로 말하자면, Trace(자동추적)가 Plan(실행계획) 보다 훨씬 정확한 것이다.
+      Plan(실행계획) 은 말그대로 계획이라서 Oracle Optimizer가 계획은 그렇게 세우긴 했으나 
+      실제 실행할때는 여러가지 이유로 다르게 실행할 수도 있기 때문이다.
+      그래서 Trace(자동추적)가 정확하기는 하나 Trace(자동추적)는 한번 실행해봐야 하는것이라서 
+      시간이 오래 걸리는 SQL인 경우에는 한참 기다려야 하는 단점이 있기는 하다.
+   */       
+    
+    
+   /* 
+      실행해야할 SQL문을 블럭으로 잡은 후에
+      "SQL 워크시트" 의 상단 아이콘들중에 3번째 아이콘( 계획 설명... (F10) )을 클릭하면 현재 SQL의 Plan(실행계획)을 아래에 보여준다.
+      COST(비용)의 값이 적을 수록 속도가 빠른 것이다.
+   */
+    
+    select *
+    from tbl_student_1
+    where hakbun = '20240305-6789';     -- hakbun 에는 unnique index 가 있다.    --> unique 한 인덱스 IDX_TBL_STUDENT_1_HAKBUN 을 사용하여 빠르게 조회
+    
+    select *
+    from tbl_student_1
+    where name = '이순신5783';     --> non - unique 한 인덱스 IDX_TBL_STUDENT_1_NAME 을 사용하여 빠르게 조회
+    
+    select *
+    from tbl_student_1
+    where address = '서울시 마포구 월드컵로 3987';     
+    --> address 컬럼에는 인덱스가 없으므로 tbl_student_1 테이블에 있는 모든 데이터를 조회해서 
+    --  address 컬럼의 값이  '서울시 마포구 월드컵로 3987' 인 데이터를 가져온다.
+    --  이와 같이 인덱스를 사용하지 않고 데이터를 조회해올 때를 Table Full-scan(인덱스를 사용하지 않고 테이블 전체 조회) 이라고 부른다.
+    --  Table Full-scan(인덱스를 사용하지 않고 테이블 전체 조회)이 속도가 가장 느린 것이다.
+    
+    select *
+    from tbl_student_1
+    where email = 'leess2654@gmail.com'; 
+    --> email 컬럼에는 인덱스가 없으므로 Table Full-scan(인덱스를 사용하지 않고 테이블 전체 조회)하여 조회
+    
+    
+    
+    
+    -----------------------------------------------------------------------------------------------------------
+    -- *** Trace(자동추적)을 하기 위해서는 SYS 또는 SYSTEM 으로 부터 권한을 부여 받은 후 HR은 재접속을 해야 한다. *** --
+    show user;
+    -- USER이(가) "SYS"입니다.
+    
+    grant select_catalog_role to hr;
+    -- Grant을(를) 성공했습니다.
+    
+    grant select any dictionary to hr;
+    -- Grant을(를) 성공했습니다.
+ ----------------------------------------------------------------------------   
+ 
+    -- 접속에 가서 local_hr 에서 재접속을 클릭한다.
+    
+    show user;
+    -- USER이(가) "HR"입니다.
+    
+    /* 
+      실행해야할 SQL문을 블럭으로 잡은 후에
+      "SQL 워크시트" 의 상단 아이콘들중에 4번째 아이콘( 자동 추적... (F6) )을 클릭하면 현재 SQL의 Trace(자동추적)을 아래에 보여준다.
+      
+      Trace(자동추적)을 하면 Plan(실행계획) 도 나오고, 동시에 아래쪽에 통계정보도 같이 나온다.
+
+      오른쪽에 Plan(실행계획)에서는 보이지 않던 LAST_CR_BUFFER_GETS 와 LAST_ELAPSED_TIME 컬럼이 나온다.
+      LAST_CR_BUFFER_GETS 는 SQL을 실행하면서 각 단계에서 읽어온 블록(Block) 갯수를 말하는 것이고,
+      LAST_ELAPSED_TIME 은 경과시간 정보이다.
+      즉, 이 정보를 통해서 어느 구간에서 시간이 많이 걸렸는지를 확인할 수 있으므로, 이 부분의 값이 적게 나오도록 SQL 튜닝을 하게 된다.
+    */  
+    
+    -- [ last_elapsed_time 경과시간 확인하기 ]
+    select *
+    from tbl_student_1
+    where hakbun = '20240305-6789';
+    
+    select *
+    from tbl_student_1
+    where name = '이순신5783';
+    
+    select *
+    from tbl_student_1
+    where address = '서울시 마포구 월드컵로 3987'; 
+    
+    select *
+    from tbl_student_1
+    where email = 'leess2654@gmail.com'; 
+    
+    
+    
+    ---- *** DML(insert, update, delete)이 빈번하게 발생하는 테이블에 index가 생성되어 있으면
+    ---      DML(insert, update, delete) 작업으로 인해 Index 에 나쁜 결과를 초래하므로  
+    ---      index 가 많다고 해서 결코 좋은 것이 아니기에 테이블당 index 의 개수는 최소한의 개수로 만드는 것이 좋다.
+    
+    ---- *** index 가 생성되어진 테이블에 insert 를 하면 Index Split(인덱스 쪼개짐) 가 발생하므로
+    ----     index 가 없을시 보다 insert 의 속도가 떨어지게 된다.
+    ----     그러므로 index 가 많다고 결코 좋은 것이 아니므로 최소한의 개수로 index 를 만드는 것이 좋다.
+    ----     Index Split(인덱스 쪼개짐)란 Index 의 block(블럭)들이 1개에서 2개로 나뉘어지는 현상을 말한다.
+    ----     Index Split(인덱스 쪼개짐)이 발생하는 이유는 Index 는 정렬이 되어 저장되기 때문에 
+    ---      Index 의 마지막 부분에 추가되는 것이 아니라 정렬로 인해 중간 자리에 끼워들어가는 현상이
+    ----     발생할 수 있기 때문이다. 
+    
+    
+    ---- *** index 가 생성되어진 테이블에 delete 를 하면 테이블의 데이터는 삭제가 되어지지만 
+    ----     Index 자리에는 데이터는 삭제되지 않고서 사용을 안한다는 표시만 하게 된다.
+    ----     그래서 10만 건이 들어있던 테이블에 9만건의 데이터를 delete 를 하면 테이블에는 데이터가 삭제되어 지지만
+    ----     Index 자리에는 10만 건의 정보가 그대로 있고 1만건만 사용하고 9만건은 사용되지 않은채로 되어있기에
+    ----     사용하지 않는 9만건의 Index 정보로 인해서 index를 사용해서 select를 해올 때 index 검색속도가 떨어지게 된다.   
+    ----     이러한 경우 Index Rebuild 작업을 해주어 사용하지 않는 9만건의 index 정보를 삭제해주어야만 
+    ----     select를 해올 때 index 검색속도가 빨라지게 된다. 
+    
+    
+    ---- *** index 가 생성되어진 테이블에 update 를 하면 테이블의 데이터는 "수정" 되어지지만 
+    ----     Index 는 "수정" 이라는 작업은 없고 index 를 delete 를 하고 새로이 insert 를 해준다.
+    ----     그러므로 index 를 delete 할 때 발생하는 단점 및 index 를 insert 를 할 때 발생하는 Index Split(인덱스 쪼개짐) 가 발생하므로
+    ----     Index 에는 최악의 상황을 맞게 된다. 
+    ----     이로 인해 테이블의 데이터를 update를 빈번하게 발생시켜 버리면 select를 해올 때 index 검색속도가 현저히 느려지게 된다. 
+    ----     이러한 경우도 select를 해올 때 index 검색속도가 빨라지게끔 Index Rebuild 작업을 해주어야 한다. 
+    
+    ---- **** Index(인덱스)의 상태 확인하기 **** ----
+    analyze index IDX_TBL_STUDENT_1_NAME validate structure;
+    -- Index IDX_TBL_STUDENT_1_NAME이(가) 분석되었습니다.
+    
+    select (del_lf_rows_len / lf_rows_len) * 100 "인덱스상태(Balance)"
+    from index_stats
+    where name = 'IDX_TBL_STUDENT_1_NAME';
+    /*
+       인덱스상태(Balance)
+       ------------------
+              0          <== 0 에 가까울 수록 인덱스 상태가 좋은 것이다.     // delete 하기 전의 index 를 분석한 것이므로 0 이라고 나올 뿐이다.
+    */
+    
+    select count(*)
+    from tbl_student_1;
+    -- 10003
+    
+    delete from tbl_student_1
+    where hakbun between '20240305-400' and '20240305-9400';
+    -- 6,001개 행 이(가) 삭제되었습니다.
+    
+    commit;
+    -- 커밋 완료.
+    
+    select count(*)
+    from tbl_student_1;
+    -- 4002
+    
+    ---- **** Index(인덱스)의 상태 확인하기 **** ----
+    analyze index IDX_TBL_STUDENT_1_NAME validate structure;
+    -- Index IDX_TBL_STUDENT_1_NAME이(가) 분석되었습니다.
+    
+    select (del_lf_rows_len / lf_rows_len) * 100 "인덱스상태(Balance)"
+    from index_stats
+    where name = 'IDX_TBL_STUDENT_1_NAME';
+    /*
+                    인덱스상태(Balance)
+       ------------------------------------------
+        59.99108333467217197114534967787542374243   <== 인덱스 밸런스가 대략 60%정도가 깨진 것이다.
+    */
+    
+    update tbl_student_1 set name = '홍길동'
+    where hakbun between '20240305-9401' and '20240305-9901';
+    -- 556개 행 이(가) 업데이트되었습니다.
+    
+    commit;
+    -- 커밋 완료.
+    
+    
+    ---- **** Index(인덱스)의 상태 확인하기 **** ----
+    analyze index IDX_TBL_STUDENT_1_NAME validate structure;    -- set 이 name 컬럼이기때문에 name 이다.
+    -- Index IDX_TBL_STUDENT_1_NAME이(가) 분석되었습니다.
+    
+    select (del_lf_rows_len / lf_rows_len) * 100 "인덱스상태(Balance)"
+    from index_stats
+    where name = 'IDX_TBL_STUDENT_1_NAME';
+    /*
+                    인덱스상태(Balance)
+       ------------------------------------------
+        60.02157957571107984032755006174384305166   <== 인덱스 밸런스가 대략 60%정도가 깨진 것이다.
+    */
+    
+    
+    
+    ----- *** ==== Index Rebuild(인덱스 재건축) 하기 ==== *** -----
+    -- 인덱스 밸런스가 대략 61% 정도 깨진 IDX_TBL_STUDENT_1_NAME 을 Index Rebuild(인덱스 재건축) 하겠습니다. --
+    alter index IDX_TBL_STUDENT_1_NAME rebuild;
+    -- Index IDX_TBL_STUDENT_1_NAME이(가) 변경되었습니다.
+    
+    ---- **** Index(인덱스)의 상태 확인하기 **** ----
+    analyze index IDX_TBL_STUDENT_1_NAME validate structure;   
+    -- Index IDX_TBL_STUDENT_1_NAME이(가) 분석되었습니다.
+    
+    select (del_lf_rows_len / lf_rows_len) * 100 "인덱스상태(Balance)"
+    from index_stats
+    where name = 'IDX_TBL_STUDENT_1_NAME';
+    /*
+       인덱스상태(Balance)
+       ------------------
+              0          <== 0 에 가까울 수록 인덱스 상태가 좋은 것이다.
+    */
+    
+    
+    ---- *** index 삭제학시 *** ----
+    -- drop index 삭제할인덱스명;
+    
+    select A.index_name, A.uniqueness, B.column_name, B.descend
+    from user_indexes A JOIN user_ind_columns B
+    ON A.index_name = B.index_name
+    where A.table_name = 'TBL_STUDENT_1';
+    /*
+    -----------------------------------------------------------------------
+    INDEX_NAME                  UNIQUENESS      COLUMN_NAME     DESCEND
+    ------------------------------------------------------------------------
+    IDX_TBL_STUDENT_1_HAKBUN	UNIQUE	        HAKBUN	          ASC
+    IDX_TBL_STUDENT_1_NAME	    NONUNIQUE	    NAME	          ASC
+    */
+    
+    drop index IDX_TBL_STUDENT_1_HAKBUN;
+    -- Index IDX_TBL_STUDENT_1_HAKBUN이(가) 삭제되었습니다.
+    
+    drop index IDX_TBL_STUDENT_1_NAME;
+    -- Index IDX_TBL_STUDENT_1_NAME이(가) 삭제되었습니다.
+
+
+
+
+
+
+    ------ **** !!!!! 복합인덱스(Composite index) 생성하기 !!!!! **** -------
+    -- 복합인덱스(composite index)란? 
+    -- 2개 이상의 컬럼으로 묶어진 인덱스를 말하는 것으로서
+    -- where 절에 2개의 컬럼이 사용될 경우 각각 1개 컬럼마다 각각의 인덱스를 만들어서 사용하는 것보다
+    -- 2개의 컬럼을 묶어서 하나의 인덱스로 만들어 사용하는 것이 속도가 좀 더 빠르다.
+    select *
+    from tbl_student_1
+    where name = '배수지10001' and address = '서울시 마포구 월드컵로 10001';
+    
+    
+    -- !!!!  중요  !!!! --
+    -- 복합인덱스(composite index) 생성시 중요한 것은 선행컬럼을 정하는 것이다.
+    -- 선행컬럼은 맨처음에 나오는 것으로 아래에서는 name 이 선행컬럼이 된다.
+    -- 복합인덱스(composite index)로 사용되는 컬럼중 선행컬럼으로 선정되는 기준은 where 절에 가장 많이 사용되는 것이며 
+    -- 선택도(selectivity)가 높은 컬럼이 선행컬럼으로 선정되어야 한다.
+    
+    create index idx_tbl_student_1_name_addr
+    on tbl_student_1(name, address);  -- name 컬럼이 선행컬럼이 된다.
+    -- Index IDX_TBL_STUDENT_1_NAME_ADDR이(가) 생성되었습니다.
+    
+  /*
+    create index idx_tbl_student_1_name_addr
+    on tbl_student_1(address, name);  -- address 컬럼이 선행컬럼이 된다. 
+  */
+    
+    select A.index_name, A.uniqueness, B.column_name, B.descend
+        , B.column_position
+    from user_indexes A JOIN user_ind_columns B
+    ON A.index_name = B.index_name
+    where A.table_name = 'TBL_STUDENT_1';
+    /*
+    ------------------------------------------------------------------------------------------------------
+    INDEX_NAME                  UNIQUENESS      COLUMN_NAME     DESCEND     Column_Position
+    ------------------------------------------------------------------------------------------------------
+    IDX_TBL_STUDENT_1_NAME_ADDR	NONUNIQUE	      NAME	          ASC               1 (숫자 1이 선행컬럼이다)
+    IDX_TBL_STUDENT_1_NAME_ADDR	NONUNIQUE	     ADDRESS	      ASC               2
+    */
+    
+    
+    select *
+    from tbl_student_1
+    where name = '배수지10001' and address = '서울시 마포구 월드컵로 10001'; 
+    -- where 절에 선행컬럼인 name 이 사용되어지면 복합인덱스(composite index)인 IDX_TBL_STUDENT_1_NAME_ADDR 을 사용하여 빨리 조회해온다.
+    
+    select *
+    from tbl_student_1
+    where address = '서울시 마포구 월드컵로 10001' and name = '배수지10001'; 
+    -- where 절에 선행컬럼인 name 이 사용되어지면 복합인덱스(composite index)인 IDX_TBL_STUDENT_1_NAME_ADDR 을 사용하여 빨리 조회해온다.
+    
+    select *
+    from tbl_student_1
+    where name = '배수지10001'; 
+    -- where 절에 선행컬럼인 name 이 사용되어지면 복합인덱스(composite index)인 IDX_TBL_STUDENT_1_NAME_ADDR 을 사용하여 빨리 조회해온다.
+    
+    select *
+    from tbl_student_1
+    where address = '서울시 마포구 월드컵로 10001'; 
+    -- where 절에 선행컬럼이 없으므로 복합인덱스(composite index)인 IDX_TBL_STUDENT_1_NAME_ADDR 을 사용하지 못하고 Table Full Scan 하여 조회해오므로 속도가 떨어진다. 
+
+
+
+    
+
+    create table tbl_member
+   (userid      varchar2(20)
+   ,passwd      varchar2(30) not null
+   ,name        varchar2(20) not null 
+   ,address     varchar2(100)
+   ,email       varchar2(50) not null 
+   ,constraint  PK_tbl_member_userid primary key(userid)
+   ,constraint  UQ_tbl_member_email unique(email)
+   );
+    -- Table TBL_MEMBER이(가) 생성되었습니다.
+    
+    declare 
+         v_cnt  number := 1;  
+    begin
+         loop
+             exit when v_cnt > 10000;
+             
+             insert into tbl_member(userid, passwd, name, address, email)
+             values('hongkd'||v_cnt, 'qwer1234$', '홍길동'||v_cnt, '서울시 마포구 '||v_cnt, 'hongkd'||v_cnt||'@gmail.com');
+             
+             v_cnt := v_cnt + 1;
+         end loop;
+    end;
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    
+    commit;
+    -- 커밋 완료.
+    
+    select *
+    from tbl_member;
+    
+    -- [테이블 인덱스 보기]
+    select A.index_name, A.uniqueness, B.column_name, B.descend, B.column_position   
+    from user_indexes A JOIN user_ind_columns B
+    ON A.index_name = B.index_name
+    where A.table_name = 'TBL_MEMBER';
+    /*
+     ---------------------------------------------------------------------------------------------
+      index_name                   uniqueness    column_name   descend      column_position
+     --------------------------------------------------------------------------------------------- 
+      PK_TBL_MEMBER_USERID          UNIQUE        USERID          ASC            1
+      UQ_TBL_MEMBER_EMAIL          UNIQUE        EMAIL          ASC            1
+     --------------------------------------------------------------------------------------------- 
+    */
+
+    --- 로그인을 하는데 로그인이 성공되어지면 그 회원의 성명만을 보여주도록 한다.
+    select name 
+    from tbl_member
+    where userid = 'hongkd201' and passwd = 'qwer1234$';
+
+
+    --- **** userid, passwd, name 컬럼을 가지고 복합인덱스(composite index)를 생성해 봅니다. **** ---
+    create index idx_tbl_member_id_pwd_name
+    on tbl_member(userid, passwd, name);
+    -- Index IDX_TBL_MEMBER_ID_PWD_NAME이(가) 생성되었습니다.
+
+     -- [테이블 인덱스 보기]
+    select A.index_name, A.uniqueness, B.column_name, B.descend, B.column_position   
+    from user_indexes A JOIN user_ind_columns B
+    ON A.index_name = B.index_name
+    where A.table_name = 'TBL_MEMBER';
+    /*
+     ---------------------------------------------------------------------------------------------
+      index_name                   uniqueness    column_name   descend      column_position
+     --------------------------------------------------------------------------------------------- 
+    PK_TBL_MEMBER_USERID            UNIQUE          USERID       ASC                1
+    UQ_TBL_MEMBER_EMAIL             UNIQUE          EMAIL        ASC                1
+    IDX_TBL_MEMBER_ID_PWD_NAME	  NONUNIQUE	        USERID	     ASC	            1
+    IDX_TBL_MEMBER_ID_PWD_NAME	  NONUNIQUE	        PASSWD	     ASC	            2
+    IDX_TBL_MEMBER_ID_PWD_NAME	  NONUNIQUE	        NAME	     ASC	            3
+     --------------------------------------------------------------------------------------------- 
+    */
+
+    -- 로그인을 하는데 로그인이 성공되어지면 그 회원의 성명만을 보여주도록 한다.
+    select name 
+    from tbl_member
+    where userid = 'hongkd201' and passwd = 'qwer1234$';
+    -- where 절 및 select 에 복합인덱스(composite index)인 IDX_TBL_MEMBER_ID_PWD_NAME 에 사용되어진 컬럼만 있으므로
+    -- 테이블 tbl_member 에는 접근하지 않고 인덱스 IDX_TBL_MEMBER_ID_PWD_NAME 에만 접근해서 조회하므로 속도가 빨라진다. 
+    
+    select name, address
+    from tbl_member
+    where userid = 'hongkd201' and passwd = 'qwer1234$';
+    -- where 절에 userid 및 passwd 가 사용되었으므로 복합인덱스(composite index)인 IDX_TBL_MEMBER_ID_PWD_NAME 을 사용하는데 
+    -- select 절에 IDX_TBL_MEMBER_ID_PWD_NAME 에 없는 address 컬럼이 있으므로 테이블 tbl_member 에 접근해야 한다.
+    -- 그러므로 인덱스 IDX_TBL_MEMBER_ID_PWD_NAME 만 접근하는 것 보다는 조회 속도가 쬐금 느려진다. 
+    
+    drop index idx_tbl_member_id_pwd_name;
+    -- Index IDX_TBL_MEMBER_ID_PWD_NAME이(가) 삭제되었습니다.
+    
+    
+    
+    
+    ------ **** 함수기반 인덱스(function based index) 생성하기 **** -------
+    select A.index_name, A.uniqueness, B.column_name, B.descend, B.column_position   
+    from user_indexes A JOIN user_ind_columns B
+    ON A.index_name = B.index_name
+    where A.table_name = 'TBL_STUDENT_1';
+    
+    drop index IDX_TBL_STUDENT_1_NAME_ADDR;     -- 현재 남은 인덱스 지우기
+    -- Index IDX_TBL_STUDENT_1_NAME_ADDR이(가) 삭제되었습니다.
+    
+    
+    create index idx_tbl_student_1_name
+    on tbl_student_1(name);
+    -- Index IDX_TBL_STUDENT_1_NAME이(가) 생성되었습니다.
+    
+    select * 
+    from tbl_student_1
+    where name = '배수지10002';
+    -- name 컬럼에 생성해둔 인덱스 IDX_TBL_STUDENT_1_NAME 인덱스를 사용하여 조회해온다.
+    
+    select * 
+    from tbl_student_1
+    where substr(name,2,2) = '수지';
+    -- name 컬럼에 생성해둔 인덱스 IDX_TBL_STUDENT_1_NAME 인덱스를 사용하지 않고 Table Full Scan 하여 조회해온다.
+    
+    create index idx_func_tbl_student_1_name
+    on tbl_student_1(substr(name,2,2));     -- 함수기반 인덱스(function based index) 생성
+    -- Index IDX_FUNC_TBL_STUDENT_1_NAME이(가) 생성되었습니다.
+    
+    select * 
+    from tbl_student_1
+    where substr(name,2,2) = '수지';  -- => 실행계획-> cost 가 줄어든 모습을 볼 수 있다.
+    -- 함수 기반 인덱스인 Index IDX_FUNC_TBL_STUDENT_1_NAME 을 사용하여 조회해온다.
+    
+    drop index IDX_FUNC_TBL_STUDENT_1_NAME; -- 대소문자 구분 X
+    -- Index IDX_FUNC_TBL_STUDENT_1_NAME이(가) 삭제되었습니다.
+    
+    -- 남아있는 INDEX 컬럼
+    select A.index_name, A.uniqueness, B.column_name, B.descend, B.column_position   
+    from user_indexes A JOIN user_ind_columns B
+    ON A.index_name = B.index_name
+    where A.table_name = 'TBL_STUDENT_1';
+    /*
+     ---------------------------------------------------------------------------------
+            index_name         uniqueness    column_name   descend   column_position
+     ---------------------------------------------------------------------------------
+    IDX_TBL_STUDENT_1_NAME	   NONUNIQUE	   NAME	        ASC	           1
+    */
+    
+    
+    select * 
+    from tbl_student_1
+    where name = '배수지10002';
+    -- 인덱스 IDX_TBL_STUDENT_1_NAME 을 사용하여 조회해온다.
+    
+    select * 
+    from tbl_student_1
+    where name like '배수지10002';
+    -- 인덱스 IDX_TBL_STUDENT_1_NAME 을 사용하여 조회해온다.
+    
+    select * 
+    from tbl_student_1
+    where name like '배수지%';
+    -- 인덱스 IDX_TBL_STUDENT_1_NAME 을 사용하여 조회해온다.
+    
+    select * 
+    from tbl_student_1
+    where name like '%배수지%';
+    -- 맨앞에 % 또는 _ 가 나오면 인덱스 IDX_TBL_STUDENT_1_NAME 을 사용하지 않고 Table Full Scan 하여 조회해온다. 
+    
+    
+    
+    
+    
+    
+    --- **** 어떤 테이블의 어떤 컬럼에 Primary Key 제약 또는 Unique 제약을 주면
+    --       자동적으로 그 컬럼에는 unique 한 index가 생성되어진다.
+    --       인덱스명은 제약조건명이 된다. **** 
+    
+    create table tbl_student_2
+    (hakbun      varchar2(10) 
+    ,name        varchar2(20)
+    ,email       varchar2(20) not null
+    ,address     varchar2(20)
+    ,constraint PK_tbl_student_2_hakbun primary key(hakbun)
+    ,constraint UQ_tbl_student_2_email unique(email)
+    );
+    -- Table TBL_STUDENT_2이(가) 생성되었습니다.
+    
+    select A.index_name, uniqueness, column_name, descend 
+    from user_indexes A JOIN user_ind_columns B
+    ON A.index_name = B.index_name
+    where A.table_name = 'TBL_STUDENT_2';
+    
+    
+    -- Primary Key 제약 또는 Unique 제약으로 생성되어진 index 의 제거는 
+    -- drop index index명; 이 아니라
+    -- alter table 테이블명 drop constraint 제약조건명; 이다.
+    -- 제약조건을 삭제하면 자동적으로 index 도 삭제가 된다.
+    
+    drop index PK_TBL_STUDENT_2_HAKBUN;
+    /*
+       오류 보고 -
+       ORA-02429: 고유/기본 키 적용을 위한 인덱스를 삭제할 수 없습니다.
+    */
+    
+    drop index UQ_TBL_STUDENT_2_EMAIL;
+    /*
+       오류 보고 -
+       ORA-02429: 고유/기본 키 적용을 위한 인덱스를 삭제할 수 없습니다.
+    */
+   
+    alter table tbl_student_2
+    drop primary key;       -- 제약조건을 없애는 것
+    -- Table TBL_STUDENT_2이(가) 변경되었습니다.
+    
+    alter table tbl_student_2
+    drop constraint UQ_tbl_student_2_email;
+    -- Table TBL_STUDENT_2이(가) 변경되었습니다.
+    
+    
+    select A.constraint_name, A.constraint_type, A.search_condition, 
+           B.column_name, B.position 
+    from user_constraints A join user_cons_columns B 
+    on A.constraint_name = B.constraint_name
+    where A.table_name = 'TBL_STUDENT_2';
+    
+    
+    select A.index_name, uniqueness, column_name, descend 
+    from user_indexes A JOIN user_ind_columns B
+    ON A.index_name = B.index_name
+    where A.table_name = 'TBL_STUDENT_2';
+    
+    
+    
     
     
     
