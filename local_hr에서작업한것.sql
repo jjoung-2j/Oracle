@@ -12450,7 +12450,8 @@ group by department_id;
     */
     exec pcd_employees_deptid_cursor(8888);
     -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
-    -- >> 부서번호 8888은 존재하지 않습니다. <<
+    -- >> 부서번호 
+    8888은 존재하지 않습니다. <<
 
 
 
@@ -12485,7 +12486,7 @@ group by department_id;
             where department_id = p_department_id
         )
         select E.department_id, D.department_name, E.employee_id, E.ename, E.hiredate, E.gender, E.age
-        from departments D right join E
+        from departments D right join E 
         on D.department_id = E.department_id;
 
         v_fetch_count       number := 0;
