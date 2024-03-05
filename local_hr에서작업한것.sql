@@ -9707,10 +9707,195 @@ group by department_id;
     
     --★-------------- ============== ★★★★★★ INDEX(인덱스, 색인) ★★★★★★ ============== --------------★--
     
+    /* 
+       index(==색인)는 예를 들어 설명하면 아주 두꺼운 책 뒤에 나오는 "찾아보기" 와 같은 기능을 하는 것이다.
+       "찾아보기" 의 특징은 정렬되어 있는 것인데 index(==색인) 에 저장된 데이터도 정렬되어 저장되어 있다는 것이 특징이다.
+    */
+    -- index(==색인)를 생성해서 사용하는 이유는 where 절이 있는 select 명령문의 속도를 향상 시키기 위함이다.
+    -- index(==색인)은 어떤 컬럼에 만들어 할까요?
+    
+    /*
+       1. where 절에서 자주 사용되어진 컬럼에 만들어야 한다.
+       
+       2. 선택도(selectivity)가 높은 컬럼에 만들어야 한다.
+       ※ 선택도(selectivity)가 높다라는 것은 고유한 데이터일수록 선택도(selectivity)가 높아진다.
+       예: 성별컬럼 --> 선택도(selectivity)가 아주 낮다. 왜냐하면 수많은 사람중 남자 아니면 여자중 하나만 골라야 하므로 선택의 여지가 아주 낮다.
+           학번    --> 선택도(selectivity)가 아주 좋다. 왜냐하면 학번은 다양하고 고유하므로 골라야할 대상이 아주 많으므로 선택도가 높은 것이다.
+    
+       3. 카디널리티(cardinality)가 높은 컬럼에 만들어야 한다.
+       ※ 카디널리티(cardinality)의 사전적인 뜻은 집합원의 갯수를 뜻하는 것으로서,
+          카디널리티(cardinality)가 높다라는 것은 중복도가 낮아 고유한 데이터일수록 카디널리티(cardinality)가 상대적으로 높다 라는 것이다.
+          카디널리티(cardinality)가 낮다라는 것은 중복도가 높아 중복된 데이터가 많을수록 카디널리티(cardinality)가 상대적으로 낮다 라는 것이다.
+          
+          카디널리티(cardinality)는 "상대적인 개념" 이다.
+          예를들어, 주민등록번호 같은 경우는 중복되는 값이 없으므로 카디널리티(cardinality)가 높다고 할 수 있다.
+          이에 비해 성명같은 경우는 "주민등록번호에 비해" 중복되는 값이 많으므로, 성명은 "주민등록번호에 비해" 카디널리티가 낮다고 할 수 있다.
+          이와같이 카디널리티(cardinality)는 상대적인 개념으로 이해해야 한다.
+    */ 
     
     
+    create table tbl_student_1
+    (hakbun      varchar2(20) not null
+    ,name        varchar2(20)
+    ,email       varchar2(30)
+    ,address     varchar2(200)
+    );
+   -- Table TBL_STUDENT_1이(가) 생성되었습니다.
+   
+    --- *** unique 한 index 생성하기 *** ---
+    /* 
+        어떤 컬럼에 unique 한 index 를 생성하면 그 컬럼에 들어오는 값은 중복된 값은 들어올 수 없으며 오로지 고유한 값만 들어오게 된다.
+        unique 한 index 가 뒤에 나오는 non-unique 한 index 보다 검색속도가 조금 더 빠르다.
+
+        [문법]
+        create unique index 인덱스명
+        on 해당테이블명(컬럼명 asc|desc);
+    */
+    
+    create unique index idx_tbl_student_1_hakbun
+        on tbl_student_1(hakbun);   -- on tbl_student_1(hakbun asc); 와 동일하다
+        -- on tbl_student_1(hakbun asc);
+        -- on tbl_student_1(hakbun desc);
+    -- Index IDX_TBL_STUDENT_1_HAKBUN이(가) 생성되었습니다.
+    
+    insert into tbl_student_1(hakbun, name, email, address) values('1', '일미자', 'ilmj@naver.com', '서울시 강동구');
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    insert into tbl_student_1(hakbun, name, email, address) values('1', '이미자', 'twomj@naver.com', '서울시 강서구');
+    -- 오류 보고 -
+    -- ORA-00001: 무결성 제약 조건(HR.IDX_TBL_STUDENT_1_HAKBUN)에 위배됩니다
+    
+    insert into tbl_student_1(hakbun, name, email, address) values('2', '이미자', 'twomj@naver.com', '서울시 강서구');
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    commit;
+    -- 커밋 완료.
     
     
+    --- *** tbl_student_1 테이블에 생성 되어진 index 조회하기 *** ---
+    select *
+    from user_indexes       -- columns 명이 나오지 않는다.
+    where table_name = 'TBL_STUDENT_1'; -- 대문자로 쓰기!
+    
+    select *
+    from user_ind_columns   -- columns 명이 나온다.
+    where table_name = 'TBL_STUDENT_1'; -- 대문자로 쓰기!
+    
+    select A.index_name, A.uniqueness, B.column_name, B.descend
+    from user_indexes A JOIN user_ind_columns B
+    ON A.index_name = B.index_name
+    where A.table_name = 'TBL_STUDENT_1';
+    
+    --- *** non-unique 한 index 생성하기 *** ---
+    /* 
+     어떤 컬럼에 non-unique 한 index 생성하면 그 컬럼에 들어오는 값은 중복된 값이 들어올 수 있다는 것이다.
+     non-unique 한 index 는 unique 한 index 보다 검색속도가 다소 늦은 편이다.
+    
+    [문법]
+    create index 인덱스명
+    on 해당테이블명(컬럼명 asc|desc);
+    */
+    
+    create index idx_tbl_student_1_name
+    on tbl_student_1(name);
+    -- Index IDX_TBL_STUDENT_1_NAME이(가) 생성되었습니다.
+    
+    insert into tbl_student_1(hakbun, name, email, address) values('3', '삼미자', 'three@naver.com', '서울시 강서구');
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    insert into tbl_student_1(hakbun, name, email, address) values('4', '삼미자', 'sam@naver.com', '서울시 강남구');
+    -- 1 행 이(가) 삽입되었습니다.
+    
+    commit;
+    -- 커밋 완료.
+    
+    select *
+    from tbl_student_1;
+    
+    select A.index_name, A.uniqueness, B.column_name, B.descend
+    from user_indexes A JOIN user_ind_columns B
+    ON A.index_name = B.index_name
+    where A.table_name = 'TBL_STUDENT_1';
+    /*
+    -----------------------------------------------------------------------
+    INDEX_NAME                  UNIQUENESS      COLUMN_NAME     DESCEND
+    ------------------------------------------------------------------------
+    IDX_TBL_STUDENT_1_HAKBUN	UNIQUE	        HAKBUN	          ASC
+    IDX_TBL_STUDENT_1_NAME	    NONUNIQUE	    NAME	          ASC
+    */
+    
+    
+    select *
+    from tbl_student_1
+    where hakbun = '2';  -->  unique한 인덱스 IDX_TBL_STUDENT_1_HAKBUN 를 사용하여 빠르게 조회해옴.
+    
+    
+    select *
+    from tbl_student_1
+    where name = '이미자';  --> non-unique한 인덱스 IDX_TBL_STUDENT_1_NAME 를 사용하여 빠르게 조회해옴.
+    
+    
+    select *
+    from tbl_student_1
+    where address = '서울시 강동구';  --> address 컬럼에는 인덱스가 없으므로 tbl_student_1 테이블에 있는 모든 데이터를 조회해서 
+                                    --  address 컬럼의 값이  '서울시 강동구' 인 데이터를 가져온다.
+                                    --  이와 같이 인덱스를 사용하지 않고 데이터를 조회해올 때를 Table Full-scan(인덱스를 사용하지 않고 테이블 전체 조회) 이라고 부른다.
+                                    --  Table Full-scan(인덱스를 사용하지 않고 테이블 전체 조회)이 속도가 가장 느린 것이다.
+                                    
+    
+    delete from tbl_student_1;  
+    -- 4개 행 이(가) 삭제되었습니다.
+    
+    commit;
+    -- 커밋 완료.
+    
+    
+    create sequence seq_tbl_student_1
+    start with 1
+    increment by 1
+    nomaxvalue
+    nominvalue
+    nocycle
+    nocache;
+    -- Sequence SEQ_TBL_STUDENT_1이(가) 생성되었습니다.
+    
+    declare
+        v_today     varchar2(8);
+        v_seq       number;
+        v_cnt       number := 0;
+    begin
+        select to_char(sysdate,'yyyymmdd') into v_today
+        from dual;
+        
+        LOOP
+            v_cnt := v_cnt + 1;
+            EXIT WHEN v_cnt > 10000;
+            
+            -- 채번
+            select seq_tbl_student_1.nextval into v_seq
+            from dual;
+            
+            insert into tbl_student_1(hakbun, name, email, address)
+            values(v_today || '-' || v_seq, '이순신' || v_seq, 'leess' || v_seq || '@gmail.com', '서울시 마포구 월드컵로 ' || v_seq);
+        END LOOP;
+    end;
+    -- PL/SQL 프로시저가 성공적으로 완료되었습니다.
+    
+    commit;
+    -- 커밋 완료.
+    
+    select *
+    from tbl_student_1
+    order by hakbun asc;
+    
+    select count(*)
+    from tbl_student_1
+    order by hakbun asc;
+    -- 10000
+    
+    select seq_tbl_student_1.currval AS 최근에사용한시퀀스값
+    from dual;
+    -- 10000
     
     
     
