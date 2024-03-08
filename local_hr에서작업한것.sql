@@ -4478,22 +4478,22 @@ group by department_id;
     3.
     TEACHER =
   (DESCRIPTION =
-    (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.220)(PORT = 1521))
+    (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.220)(PORT = 1521)) -- 강사님 IP 주소 변동 -> (HOST = 192.168.0.185)
     (CONNECT_DATA =
       (SERVER = DEDICATED)
       (SERVICE_NAME = XE)
     )
   )
     을 추가한다.
-    HOST = 192.168.0.220 이 연결하고자 하는 원격지 오라클서버의 IP 주소이다.
-    그런데 전제조건은 원격지 오라클서버(192.168.0.220)의 방화벽에서 포트번호 1521 을 허용으로 만들어주어야 한다.
+    HOST = 192.168.0.220 이 연결하고자 하는 원격지 오라클서버의 IP 주소이다. -- HOST = 192.168.0.185
+    그런데 전제조건은 원격지 오라클서버(192.168.0.220)의 방화벽에서 포트번호 1521 을 허용으로 만들어주어야 한다.   -- HOST = 192.168.0.185
     
     그리고 TEACHER 를 'Net Service Name 네트서비스네임(넷서비스명)' 이라고 부른다.   
     
-    4. 명령프롬프트를 열어서 원격지 오라클서버(192.168.0.220)에 연결이 가능한지 테스트를 한다. 
+    4. 명령프롬프트를 열어서 원격지 오라클서버(192.168.0.220)에 연결이 가능한지 테스트를 한다.  -- HOST = 192.168.0.185
       C:\Users\user>tnsping TEACHER 5
     
-    별칭 분석을 위해 TNSNAMES 어댑터 사용
+    별칭 분석을 위해 TNSNAMES 어댑터 사용   -- HOST = 192.168.0.185
     (DESCRIPTION = (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.220)(PORT = 1521)) (CONNECT_DATA = (SERVER = DEDICATED) (SERVICE_NAME = XE)))에 접속하려고 시도하는 중
     확인(0밀리초)
     확인(20밀리초)
@@ -4545,11 +4545,11 @@ group by department_id;
   )
   -- 데이터베이스 링크 만들기
     create database link dh_oracle_server
-    connect to hr identified by gclass -- 이때 hr 과 암호 gclass 는 연결하고자 하는 원격지 오라클서버(192.168.0.220)의 계정명과 암호이다.  
+    connect to hr identified by gclass -- 이때 hr 과 암호 gclass 는 연결하고자 하는 원격지 오라클서버(192.168.0.220)의 계정명과 암호이다.  HOST = 192.168.0.185
     using 'DH';
     
     create database link ws_oracle_server
-    connect to hr identified by gclass -- 이때 hr 과 암호 gclass 는 연결하고자 하는 원격지 오라클서버(192.168.0.220)의 계정명과 암호이다.  
+    connect to hr identified by gclass -- 이때 hr 과 암호 gclass 는 연결하고자 하는 원격지 오라클서버(192.168.0.220)의 계정명과 암호이다.  HOST = 192.168.0.185
     using 'WS';
     
  -- 데이터베이스 링크 만든거 연결
@@ -4564,7 +4564,7 @@ group by department_id;
  --=========================================================================================================== --   
     
     SELECT *
-    FROM employees@teacher_oracle_server    -- 원격지 오라클 서버(192.168.0.220)
+    FROM employees@teacher_oracle_server    -- 원격지 오라클 서버(192.168.0.220)    HOST = 192.168.0.185
     ORDER BY employee_id asc;
     
     
